@@ -1,8 +1,8 @@
-"""Identificación conservadora y por FILA del sensor en archivos NASA FIRMS.
+"""Conservative, per-ROW sensor identification in NASA FIRMS files.
 
-Nunca clasifica un CSV entero a partir del satélite de la primera fila.
-Evita mezclar plataformas NOAA-20, NOAA-21 y Suomi-NPP cuando llegan
-juntas en un archivo descargado o unido por la persona usuaria.
+It never classifies a whole CSV from the satellite of the first row.
+It avoids mixing NOAA-20, NOAA-21 and Suomi-NPP platforms when they arrive
+together in a file downloaded or merged by the user.
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ def clasificar_instrumentos(df: pd.DataFrame, nombre_archivo: str = "") -> pd.Se
     sat = (df["satellite"].fillna("").astype(str).str.upper().str.strip()
            if "satellite" in df else pd.Series("",index=idx))
     name = str(nombre_archivo).lower()
-    # Estas etiquetas provienen de productos FIRMS y no de la resolución inferida.
+    # These labels come from FIRMS products, not from the inferred resolution.
     archivo_modis = any(x in name for x in ("m-c61", "modis", "mcd14", "mod14"))
     archivo_viirs = any(x in name for x in ("viirs", "sv-c2", "j1v", "j2v", "noaa"))
     familia_modis = inst.str.startswith("MODIS") | (
@@ -27,7 +27,7 @@ def clasificar_instrumentos(df: pd.DataFrame, nombre_archivo: str = "") -> pd.Se
     familia_viirs = inst.str.startswith("VIIRS") | (
         inst.eq("") & sat.isin(["N20","NOAA-20","J1","N21","NOAA-21","J2","SNPP","S-NPP","NPP"])
     ) | (inst.eq("") & sat.eq("") & archivo_viirs)
-    # Si la fila declara explícitamente MODIS/VIIRS, gana al nombre de archivo.
+    # If the row explicitly declares MODIS/VIIRS, it wins over the file name.
     salida = pd.Series(pd.NA,index=idx,dtype="object",name="instrumento")
     salida.loc[familia_modis] = "MODIS"
     salida.loc[familia_viirs & ~familia_modis] = "VIIRS (plataforma no identificada)"
@@ -38,8 +38,8 @@ def clasificar_instrumentos(df: pd.DataFrame, nombre_archivo: str = "") -> pd.Se
     salida.loc[vi & s20] = "VIIRS NOAA-20"
     salida.loc[vi & s21] = "VIIRS NOAA-21"
     salida.loc[vi & snpp] = "VIIRS S-NPP"
-    # Rescate únicamente si el archivo tiene una plataforma inequívoca,
-    # sin sobreescribir metadatos satelitales conocidos de otra plataforma.
+    # Rescue only if the file has an unambiguous platform, without
+    # overwriting known satellite metadata from another platform.
     sin_plataforma = vi & ~(s20 | s21 | snpp) & sat.eq("")
     if any(x in name for x in ("j2v", "noaa21", "noaa-21")):
         salida.loc[sin_plataforma] = "VIIRS NOAA-21"

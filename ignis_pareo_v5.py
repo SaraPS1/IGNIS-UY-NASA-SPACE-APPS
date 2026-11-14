@@ -1,8 +1,8 @@
-"""Pareo exploratorio MODIS–VIIRS con unicidad global y continuidad UTC.
+"""Exploratory MODIS–VIIRS pairing with global uniqueness and UTC continuity.
 
-No iguala sensibilidades, no calibra FRP, no identifica incendios únicos.
-A diferencia del pareo original, permite cruces a medianoche UTC y no
-reutiliza un registro MODIS o VIIRS en otra pareja del mismo resultado.
+It does not equalize sensitivities, calibrate FRP or identify unique fires.
+Unlike the original pairing, it allows UTC midnight crossings and does not
+reuse a MODIS or VIIRS record in another pair of the same result.
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ COLUMNAS = [
 
 
 def tiempos_adquisicion(datos: pd.DataFrame) -> pd.Series:
-    """Interpretar acq_time FIRMS como HHMM UTC, descartando tiempos inválidos."""
+    """Interpret FIRMS acq_time as HHMM UTC, discarding invalid times."""
     fecha = pd.to_datetime(datos["fecha"], errors="coerce", utc=True)
     if "acq_time" not in datos.columns:
         return pd.Series(pd.NaT, index=datos.index, dtype="datetime64[ns, UTC]")
@@ -49,7 +49,7 @@ def _xyz(lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
 
 
 def preparar_pareo(datos: pd.DataFrame | None) -> pd.DataFrame:
-    """Registro válido = lat/lon, fecha, hora UTC y familia inequívocas."""
+    """Valid record = unambiguous lat/lon, date, UTC time and family."""
     if datos is None or datos.empty:
         return pd.DataFrame(columns=[
             "instrumento", "latitude", "longitude", "frp", "instante", "dia_utc"
@@ -57,7 +57,7 @@ def preparar_pareo(datos: pd.DataFrame | None) -> pd.DataFrame:
     requeridas = {"fecha", "latitude", "longitude", "instrumento"}
     faltantes = requeridas - set(datos.columns)
     if faltantes:
-        raise ValueError("Faltan columnas para pareo: " + ", ".join(sorted(faltantes)))
+        raise ValueError("Missing columns for pairing: " + ", ".join(sorted(faltantes)))
     z = datos.copy()
     z["latitude"] = pd.to_numeric(z["latitude"], errors="coerce")
     z["longitude"] = pd.to_numeric(z["longitude"], errors="coerce")
@@ -79,8 +79,8 @@ def preparar_pareo(datos: pd.DataFrame | None) -> pd.DataFrame:
     if z.empty:
         return z
     z["dia_utc"] = z.instante.dt.floor("D")
-    # El Maestro ya está deduplicado; esto evita replicados accidentales
-    # también al llamar el módulo con tablas de laboratorio.
+    # The Master is already deduplicated; this also avoids accidental
+    # replicas when the module is called with lab tables.
     if "id_registro" in z:
         ids = z["id_registro"].fillna("").astype(str).str.strip()
         con_id = ids.ne("")
@@ -105,18 +105,18 @@ def emparejar_global(
     ventana_min: int = 30,
     max_candidatos: int = 250_000,
 ) -> pd.DataFrame:
-    """Seleccionar parejas globalmente únicas, ordenadas por tiempo y distancia.
+    """Select globally unique pairs, ordered by time and distance.
 
-    El filtro de año se aplica a MODIS (referencia); se pueden asociar
-    observaciones VIIRS del día siguiente cuando existe cruce de año.
-    Una estrategia greedy no equivale a emparejamiento global de costo mínimo.
+    The year filter applies to MODIS (reference); VIIRS observations from the
+    next day can be associated when there is a year crossing.
+    A greedy strategy is not equivalent to global minimum-cost matching.
     """
     if not (0 < float(radio_km) <= 50):
-        raise ValueError("radio_km debe estar entre 0 y 50.")
+        raise ValueError("radio_km must be between 0 and 50.")
     if not (0 <= int(ventana_min) <= 1440):
-        raise ValueError("ventana_min debe estar entre 0 y 1440.")
+        raise ValueError("ventana_min must be between 0 and 1440.")
     if max_candidatos < 1:
-        raise ValueError("max_candidatos debe ser positivo.")
+        raise ValueError("max_candidatos must be positive.")
     z = preparar_pareo(datos)
     if z.empty:
         return pd.DataFrame(columns=COLUMNAS)
@@ -126,7 +126,7 @@ def emparejar_global(
         m = m[m.instante.dt.year == int(ano)]
     if m.empty or v.empty:
         return pd.DataFrame(columns=COLUMNAS)
-    # Restringir a ±1 día UTC para ventana <=24 h; evita O(M*V) global.
+    # Restrict to ±1 UTC day for windows <=24 h; avoids global O(M*V).
     v_por_dia = {dia: df for dia, df in v.groupby("dia_utc", sort=False)}
     radio_cuerda = 2 * np.sin(float(radio_km) / (2 * R_TIERRA_KM))
     candidatos = []
@@ -158,8 +158,8 @@ def emparejar_global(
                 candidatos.append((minutos, float(distancia), int(m_ids[i]), int(v_ids[j])))
                 if len(candidatos) > max_candidatos:
                     raise ValueError(
-                        "Demasiados candidatos para el modo interactivo. "
-                        "Reducí el radio, la ventana temporal o el recorte."
+                        "Too many candidates for interactive mode. "
+                        "Reduce the radius, the time window or the selection."
                     )
     usados_m, usados_v, salida = set(), set(), []
     for minutos, distancia, i, j in sorted(candidatos):

@@ -26,18 +26,18 @@ def observaciones():
 class TestSensibilidad(unittest.TestCase):
     def test_coincidencia_cambia_con_la_escala(self):
         t = comparar_resoluciones(observaciones(), 2026)
-        valores = list(t["Celdas-día con ambos"])
+        valores = list(t["Cell-days with both"])
         self.assertEqual(valores, [1, 1, 1, 2])
-        self.assertEqual(list(t["Días con coincidencia"]), [1, 1, 1, 1])
+        self.assertEqual(list(t["Days with coincidence"]), [1, 1, 1, 1])
 
     def test_filtro_anual_no_mezcla_dias_iguales(self):
         t = comparar_resoluciones(observaciones(), 2025)
-        self.assertEqual(t["Celdas-día con ambos"].tolist(), [1, 1, 1, 1])
-        self.assertEqual(t["Meses con ambas familias"].tolist(), [1, 1, 1, 1])
+        self.assertEqual(t["Cell-days with both"].tolist(), [1, 1, 1, 1])
+        self.assertEqual(t["Months with both families"].tolist(), [1, 1, 1, 1])
 
     def test_sin_registros_no_equivale_a_cobertura(self):
         t = comparar_resoluciones(observaciones(), 2011)
-        self.assertTrue((t["Celdas-día con ambos"] == 0).all())
+        self.assertTrue((t["Cell-days with both"] == 0).all())
         d = diagnostico_comparabilidad(pd.DataFrame())
         self.assertFalse(d["cobertura_satelital_verificada"])
         self.assertFalse(d["serie_armonizada_validada"])
@@ -56,10 +56,10 @@ class TestSensibilidad(unittest.TestCase):
     def test_presencia_no_infiere_meses_no_importados(self):
         meses = presencia_mensual(observaciones())
         self.assertEqual(len(meses), 3)
-        self.assertEqual(int(meses["Ambas presentes"].sum()), 2)
-        febrero = meses[meses["Mes UTC"] == "2026-02"].iloc[0]
+        self.assertEqual(int(meses["Both present"].sum()), 2)
+        febrero = meses[meses["UTC month"] == "2026-02"].iloc[0]
         self.assertEqual(int(febrero["MODIS"]), 0)
-        self.assertFalse(bool(febrero["Ambas presentes"]))
+        self.assertFalse(bool(febrero["Both present"]))
 
     def test_duplicados_no_aumentan_celdas_dia(self):
         datos = pd.concat([observaciones(), observaciones().iloc[:2]], ignore_index=True)
@@ -72,7 +72,7 @@ class TestSensibilidad(unittest.TestCase):
             {"fecha": "2026-01-15", "latitude": -33, "longitude": -56, "instrumento": "MODIS"},
             {"fecha": "2026-01-16", "latitude": -33, "longitude": -56, "instrumento": "VIIRS"},
         ])
-        self.assertTrue((comparar_resoluciones(data)["Celdas-día con ambos"] == 0).all())
+        self.assertTrue((comparar_resoluciones(data)["Cell-days with both"] == 0).all())
 
     def test_rechaza_resolucion_invalida_y_columnas_ausentes(self):
         with self.assertRaises(ValueError):

@@ -31,7 +31,7 @@ class PremiumLandingReferenceTests(unittest.TestCase):
         self.assertIn('Path(base) / "assets" / "bg_portada.webp"',self.visual)
         self.assertIn('Path(base) / "assets" / "ignis_hero_premium.svg"',self.visual)
         self.assertIn('_home_background_image(hero_path, asset_uri, "hero")',self.visual)
-        self.assertIn("La escena espacial es ilustrativa",self.visual)
+        self.assertIn("The space scene is illustrative",self.visual)
 
     def test_three_buttons_keep_callbacks(self):
         for key in ["hero_to_history","hero_to_dashboard","hero_to_upload"]:
@@ -59,7 +59,7 @@ class PremiumLandingReferenceTests(unittest.TestCase):
             "ignis-home-section-title",
         ]:
             self.assertIn(class_name,self.visual)
-        self.assertIn("IGNIS UY<br><span>Histórico</span>",self.visual)
+        self.assertIn("IGNIS UY<br><span>Historical</span>",self.visual)
         self.assertIn("NASA Space Apps",self.visual)
         self.assertIn("ema.fau.mil.uy",self.visual)
         self.assertIn("min-height:421px",self.visual)

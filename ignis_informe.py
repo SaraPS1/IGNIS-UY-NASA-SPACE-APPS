@@ -1,5 +1,5 @@
 
-"""Generador del informe científico IGNIS UY. No modifica datos ni la lógica de ingestión."""
+"""IGNIS UY scientific report generator. It does not modify data or the ingestion logic."""
 import io, json, calendar
 from pathlib import Path
 from datetime import datetime, timezone
@@ -22,7 +22,7 @@ from PIL import Image as PILImage
 from ignis_coincidencias import emparejar, resumir_pares
 
 BASE=Path(__file__).resolve().parent
-MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December']
 CMAP=LinearSegmentedColormap.from_list('ignis',['#42206a','#8440a9','#dc4b95','#ff975a','#ffe36c'])
 BG='#081425'; PANEL='#11203b'; PANEL2='#172949'; WHITE='#eef4ff'; SOFT='#b8c9ee'; CYAN='#67d6ff'; VIOLET='#d9c7ff'
 
@@ -71,10 +71,10 @@ def compress_periods(df):
             start=prev=year; sig=signature; continue
         if year==prev+1 and signature==sig:
             prev=year; continue
-        periods.append({'Periodo':f'{start}–{prev}' if start!=prev else str(start),'Configuración instrumental':sig})
+        periods.append({'Period':f'{start}–{prev}' if start!=prev else str(start),'Instrument configuration':sig})
         start=prev=year; sig=signature
     if start is not None:
-        periods.append({'Periodo':f'{start}–{prev}' if start!=prev else str(start),'Configuración instrumental':sig})
+        periods.append({'Period':f'{start}–{prev}' if start!=prev else str(start),'Instrument configuration':sig})
     return periods
 
 
@@ -127,9 +127,9 @@ def calendar_figure(df):
     ax.set_xticks(range(0,27,2),years[::2],fontsize=7,color=WHITE)
     ax.set_yticks(range(12),[x[:3] for x in MONTHS],fontsize=8,color=WHITE)
     ax.tick_params(length=0,colors=WHITE)
-    ax.set_title('Calendario histórico de registros por mes (archivos incorporados)',fontsize=11,pad=10,color=WHITE)
+    ax.set_title('Historical calendar of records by month (included files)',fontsize=11,pad=10,color=WHITE)
     for spine in ax.spines.values(): spine.set_color('#35527b')
-    cbar=fig.colorbar(image,ax=ax,shrink=.8,label='Registros')
+    cbar=fig.colorbar(image,ax=ax,shrink=.8,label='Records')
     cbar.ax.yaxis.label.set_color(WHITE); cbar.ax.tick_params(colors=WHITE)
     fig.tight_layout()
     return plot_buffer(fig)
@@ -153,7 +153,7 @@ def daily_calendar_figure(year, ano):
         ax.set_xlim(0, 7); ax.set_ylim(7.0, -.7); ax.axis('off')
         ax.set_facecolor(BG)
         ax.set_title(f'{MONTHS[month-1]} {ano}', loc='left', fontsize=11, fontweight='bold', color=WHITE, pad=5)
-        for j, name in enumerate(['L', 'M', 'X', 'J', 'V', 'S', 'D']):
+        for j, name in enumerate(['M', 'T', 'W', 'T', 'F', 'S', 'S']):
             ax.text(j+.5, .35, name, ha='center', va='center', fontsize=8, color=SOFT)
         weeks = calendar.Calendar(firstweekday=0).monthdatescalendar(int(ano), int(month))
         for wi, week in enumerate(weeks):
@@ -183,12 +183,12 @@ def trend_figure(df):
         agg.index=agg.index.astype(int).astype(str)
         palette=['#5d7fe6','#ff7e96','#9d74e5','#f1bf66'][:len(agg.columns)]
         agg.plot.bar(ax=ax,width=.75,rot=45,color=palette)
-    ax.set_ylabel('Registros FIRMS',color=WHITE)
-    ax.set_xlabel('Año presente en archivos',color=WHITE)
+    ax.set_ylabel('FIRMS records',color=WHITE)
+    ax.set_xlabel('Year present in files',color=WHITE)
     ax.grid(axis='y',alpha=.18,color='#5677a5')
     ax.legend(fontsize=7,loc='upper left',facecolor=BG,edgecolor='#35527b',labelcolor=WHITE)
     ax.tick_params(colors=WHITE,labelsize=7)
-    ax.set_title('Conteo anual por familia instrumental (no normalizado)',fontsize=10,color=WHITE)
+    ax.set_title('Annual count by instrument family (not normalized)',fontsize=10,color=WHITE)
     for spine in ax.spines.values(): spine.set_color('#35527b')
     fig.tight_layout()
     return plot_buffer(fig)
@@ -215,10 +215,10 @@ def map_figure(df):
     ax.plot(border[:,0],border[:,1],color='#a5cfff',lw=1.5,zorder=4)
     for name,lon,lat in [('Artigas',-56.0,-30.45),('Durazno',-56.52,-33.22),('Canelones',-56.28,-34.55),('Maldonado',-54.95,-34.73),('Rocha',-54.32,-34.12)]:
         ax.text(lon,lat,name,color='white',fontsize=7,bbox=dict(facecolor='#14142f',alpha=.65,edgecolor='none',pad=2))
-    ax.set(xlim=(-58.85,-52.65),ylim=(-35.45,-29.75),xlabel='Longitud',ylabel='Latitud')
+    ax.set(xlim=(-58.85,-52.65),ylim=(-35.45,-29.75),xlabel='Longitude',ylabel='Latitude')
     ax.tick_params(colors=WHITE,labelsize=7)
     for spine in ax.spines.values(): spine.set_color('#35527b')
-    cbar=fig.colorbar(img,ax=ax,shrink=.7,label='Densidad visual relativa (no calibrada)')
+    cbar=fig.colorbar(img,ax=ax,shrink=.7,label='Relative visual density (not calibrated)')
     cbar.ax.yaxis.label.set_color(WHITE); cbar.ax.tick_params(colors=WHITE)
     fig.tight_layout()
     return plot_buffer(fig)
@@ -239,7 +239,7 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
     df=ensure_time_cols(datos.copy())
     year=df[df.anio==ano].copy()
     out=io.BytesIO()
-    doc=SimpleDocTemplate(out,pagesize=A4,leftMargin=1.55*cm,rightMargin=1.55*cm,topMargin=1.45*cm,bottomMargin=1.55*cm,title='IGNIS UY - Informe científico de actividad térmica',author='Proyecto IGNIS UY')
+    doc=SimpleDocTemplate(out,pagesize=A4,leftMargin=1.55*cm,rightMargin=1.55*cm,topMargin=1.45*cm,bottomMargin=1.55*cm,title='IGNIS UY - Scientific report on thermal activity',author='IGNIS UY Project')
     S=getSampleStyleSheet()
     S.add(ParagraphStyle(name='PaperT',parent=S['Title'],fontName='Helvetica-Bold',fontSize=20,leading=24,textColor=colors.HexColor(WHITE),alignment=TA_CENTER,spaceAfter=6))
     S.add(ParagraphStyle(name='PaperSub',parent=S['Normal'],alignment=TA_CENTER,fontSize=10,leading=13,textColor=colors.HexColor(SOFT),spaceAfter=8))
@@ -253,7 +253,7 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
 
     left=image_asset('logo_ignis_informe.png',2.3*cm) or image_asset('logo_ignis.png',2.3*cm)
     right=image_asset('logo_nasa_informe.png',2.1*cm) or image_asset('logo_nasa.png',2.1*cm)
-    header_center=Paragraph('IGNIS UY<br/><font size="10" color="#b8c9ee">Proyecto de investigación · NASA Space Apps Challenge 2026</font>',S['PaperT'])
+    header_center=Paragraph('IGNIS UY<br/><font size="10" color="#b8c9ee">Research project · NASA Space Apps Challenge 2026</font>',S['PaperT'])
     if left and right:
         t=Table([[left,header_center,right]],colWidths=[3.2*cm,10.1*cm,2.7*cm],hAlign='CENTER')
         t.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'MIDDLE'),('ALIGN',(0,0),(0,0),'LEFT'),('ALIGN',(2,0),(2,0),'RIGHT'),('BOTTOMPADDING',(0,0),(-1,-1),8)]))
@@ -261,8 +261,8 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
     else:
         story.append(header_center)
     story.extend([
-        P('Análisis histórico de actividad térmica en Uruguay','PaperT'),
-        P('NASA FIRMS · Instrumentos MODIS y VIIRS · Informe técnico exploratorio','PaperSub')
+        P('Historical analysis of thermal activity in Uruguay','PaperT'),
+        P('NASA FIRMS · MODIS and VIIRS instruments · Exploratory technical report','PaperSub')
     ])
 
     hero=BASE/'hero_espacio.jpg'
@@ -270,8 +270,8 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
         story.extend([RLImage(str(hero), width=16.3*cm, height=3.1*cm), Spacer(1,0.15*cm)])
 
     meta=Table([
-        [P(f'<b>Año seleccionado:</b> {ano}'), P(f'<b>Recorte:</b> {escape(region)}')],
-        [P(f'<b>Sensores activos:</b> {escape(", ".join(sensores))}'), P('Fecha de emisión (UTC): '+datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M'))]
+        [P(f'<b>Selected year:</b> {ano}'), P(f'<b>Area:</b> {escape(region)}')],
+        [P(f'<b>Active sensors:</b> {escape(", ".join(sensores))}'), P('Issue date (UTC): '+datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M'))]
     ], colWidths=[8.0*cm,8.0*cm])
     meta.setStyle(TableStyle([
         ('BACKGROUND',(0,0),(-1,-1),colors.HexColor(PANEL)),
@@ -281,16 +281,16 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
         ('TOPPADDING',(0,0),(-1,-1),7),('BOTTOMPADDING',(0,0),(-1,-1),7),
     ]))
     story.extend([meta, Spacer(1,0.12*cm)])
-    story.append(P('<b>Resumen.</b> Este documento sintetiza exclusivamente las observaciones satelitales incorporadas al Maestro IGNIS. Las detecciones son anomalías térmicas, no incendios confirmados; no representan superficies quemadas ni una tasa de incendios. La comparación MODIS–VIIRS es exploratoria y no constituye una serie calibrada.'))
+    story.append(P('<b>Summary.</b> This document summarizes exclusively the satellite observations included in the IGNIS Master. Detections are thermal anomalies, not confirmed fires; they do not represent burned areas or a fire rate. The MODIS–VIIRS comparison is exploratory and does not constitute a calibrated series.'))
 
-    story.append(P('1. Objetivo y alcance','PaperH'))
-    story.append(P('Describir la distribución temporal y geográfica de las detecciones en el recorte elegido; contextualizar el año seleccionado frente al material histórico cargado; identificar señales estadísticas preliminares, explicar el estado actual de la armonización MODIS–VIIRS y documentar las principales limitaciones del sistema.'))
+    story.append(P('1. Objective and scope','PaperH'))
+    story.append(P('Describe the temporal and geographic distribution of detections in the chosen area; put the selected year in context against the loaded historical material; identify preliminary statistical signals, explain the current state of MODIS–VIIRS harmonization and document the main limitations of the system.'))
 
-    story.append(P('2. Resultados del año seleccionado','PaperH'))
-    rows=[['Indicador','Resultado'],['Registros del año',str(len(year))],['Días con registros',str(year.dia.nunique())],['Familias instrumentales',', '.join(sorted(map(str,year.instrumento.unique()))) or 'Sin registros']]
-    rows.append(['Mes de máximo registro',MONTHS[int(year.groupby('mes').size().idxmax())-1] if len(year) else 'No disponible'])
+    story.append(P('2. Results for the selected year','PaperH'))
+    rows=[['Indicator','Result'],['Records in the year',str(len(year))],['Days with records',str(year.dia.nunique())],['Instrument families',', '.join(sorted(map(str,year.instrumento.unique()))) or 'No records']]
+    rows.append(['Month with most records',MONTHS[int(year.groupby('mes').size().idxmax())-1] if len(year) else 'Not available'])
     for k,v in sorted(year.groupby('instrumento').size().to_dict().items()):
-        rows.append([f'Registros {k}',str(v)])
+        rows.append([f'Records {k}',str(v)])
     table=Table(rows,colWidths=[8.2*cm,8.1*cm],repeatRows=1,hAlign='LEFT')
     table.setStyle(TableStyle([
         ('BACKGROUND',(0,0),(-1,0),colors.HexColor('#183153')),
@@ -302,48 +302,48 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
     ]))
     story.extend([table, Spacer(1,0.12*cm)])
 
-    story.append(P('3. Calendario diario y estacionalidad','PaperH'))
+    story.append(P('3. Daily calendar and seasonality','PaperH'))
     monthly=year.groupby('mes').size().to_dict()
     if monthly:
-        story.append(P('<b>Meses con registros incorporados:</b> ' + ' · '.join(f'{MONTHS[int(m)-1]}: {n}' for m,n in sorted(monthly.items()))))
+        story.append(P('<b>Months with included records:</b> ' + ' · '.join(f'{MONTHS[int(m)-1]}: {n}' for m,n in sorted(monthly.items()))))
     else:
-        story.append(P('El año seleccionado no contiene registros en los archivos incorporados.'))
-    story.append(P('Los meses no listados no tienen observaciones en los archivos cargados. Esto no demuestra ausencia de actividad térmica ni cobertura satelital completa.','PaperBodySoft'))
+        story.append(P('The selected year contains no records in the included files.'))
+    story.append(P('Months not listed have no observations in the uploaded files. This does not prove the absence of thermal activity or complete satellite coverage.','PaperBodySoft'))
     visual=daily_calendar_figure(year,ano)
     if visual:
         rows_months=max(1,(len(set(pd.to_datetime(year["dia"],errors='coerce').dropna().dt.month))+2)//3)
         story.extend([
             RLImage(visual,width=16.0*cm,height=(2.35 * rows_months + .45)*16.0/10.2*cm),
-            P('Calendario diario. En cada casillero coloreado, el número inferior indica observaciones FIRMS del día. Casilleros oscuros: sin registros en el material cargado; no equivalen a días sin incendios.','PaperCaption')
+            P('Daily calendar. In each colored cell, the lower number indicates FIRMS observations for that day. Dark cells: no records in the uploaded material; they are not equivalent to days without fires.','PaperCaption')
         ])
     if len(df):
-        story.extend([RLImage(calendar_figure(df),width=16.0*cm,height=5.45*cm),P('Figura 1. Distribución histórica mensual de los registros cargados. Los casilleros vacíos no certifican ausencia de actividad ni cobertura completa.','PaperCaption')])
+        story.extend([RLImage(calendar_figure(df),width=16.0*cm,height=5.45*cm),P('Figure 1. Historical monthly distribution of the uploaded records. Empty cells do not certify the absence of activity or complete coverage.','PaperCaption')])
 
-    story.append(P('4. Contexto histórico y comparación entre sensores','PaperH'))
-    story.append(P(f'El histórico cargado contiene {len(df):,} observaciones únicas distribuidas en {df.anio.nunique()} años con registros. Los recuentos no están normalizados por cobertura, revisitas orbitales o sensibilidad instrumental.'))
+    story.append(P('4. Historical context and comparison between sensors','PaperH'))
+    story.append(P(f'The loaded history contains {len(df):,} unique observations spread across {df.anio.nunique()} years with records. Counts are not normalized by coverage, orbital revisits or instrument sensitivity.'))
     if len(df):
-        story.extend([RLImage(trend_figure(df),width=16*cm,height=5.2*cm),P('Figura 2. Cantidad de observaciones por año e instrumento. No debe interpretarse como tendencia climática o incidencia de incendios.','PaperCaption')])
+        story.extend([RLImage(trend_figure(df),width=16*cm,height=5.2*cm),P('Figure 2. Number of observations per year and instrument. It should not be interpreted as a climate trend or fire incidence.','PaperCaption')])
 
-    story.append(P('5. Mapa térmico de Uruguay — año seleccionado','PaperH'))
+    story.append(P('5. Thermal map of Uruguay — selected year','PaperH'))
     map_data=map_figure(year) if len(year) else None
     if map_data:
-        story.extend([RLImage(map_data,width=15.8*cm,height=10.1*cm),P('Figura 3. Distribución espacial exclusiva del año seleccionado. Contorno general de referencia: no es densidad calibrada, incendio confirmado ni superficie quemada.','PaperCaption')])
+        story.extend([RLImage(map_data,width=15.8*cm,height=10.1*cm),P('Figure 3. Spatial distribution exclusively for the selected year. General reference outline: it is not calibrated density, a confirmed fire or burned area.','PaperCaption')])
     else:
-        story.append(P('No hay coordenadas válidas del año seleccionado para elaborar el mapa. No se sustituyen por datos de otros años.'))
+        story.append(P('There are no valid coordinates for the selected year to build the map. They are not replaced with data from other years.'))
 
-    story.append(P('6. Armonización MODIS–VIIRS y alertas exploratorias','PaperH'))
+    story.append(P('6. MODIS–VIIRS harmonization and exploratory alerts','PaperH'))
 
     armonia=resumen_armonizacion(df, ano)
     instruments=set(map(str,df.instrumento.astype(str).unique()))
     has_modis=any(k.upper().startswith('MODIS') for k in instruments)
     has_viirs=any(k.upper().startswith('VIIRS') for k in instruments)
     if has_modis and has_viirs:
-        story.append(P('Coexistencia instrumental comprobada en el Maestro IGNIS. Esto permite una lectura histórica más rica, pero todavía <b>no</b> habilita mezclar recuentos MODIS y VIIRS como si fueran equivalentes físicos directos.'))
+        story.append(P('Instrument coexistence verified in the IGNIS Master. This allows a richer historical reading, but it still does <b>not</b> allow mixing MODIS and VIIRS counts as if they were direct physical equivalents.'))
         if armonia['overlap_years']:
-            story.append(P('Años con coexistencia entre familias instrumentales en el recorte: ' + ', '.join(str(y) for y in armonia['overlap_years']) + '.'))
+            story.append(P('Years with coexistence between instrument families in the area: ' + ', '.join(str(y) for y in armonia['overlap_years']) + '.'))
         periods=armonia.get('periods',[])
         if periods:
-            per_rows=[['Período','Configuración instrumental']] + [[p['Periodo'],p['Configuración instrumental']] for p in periods[:8]]
+            per_rows=[['Period','Instrument configuration']] + [[p['Period'],p['Instrument configuration']] for p in periods[:8]]
             pt=Table(per_rows,colWidths=[3.2*cm,12.6*cm],repeatRows=1)
             pt.setStyle(TableStyle([
                 ('BACKGROUND',(0,0),(-1,0),colors.HexColor('#183153')),('TEXTCOLOR',(0,0),(-1,0),colors.white),
@@ -353,9 +353,9 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
             ]))
             story.extend([pt, Spacer(1,0.10*cm)])
         if not armonia['coincident_cells'].empty:
-            cc=armonia['coincident_cells'].copy(); cc['Mes']=cc['mes'].map(lambda m: MONTHS[int(m)-1]); cc=cc[['Mes','celdas_coincidentes']]
-            story.append(P(f'Coincidencias espacio-temporales exploratorias para {ano}: se detectaron {int(cc["celdas_coincidentes"].sum())} celdas geográficas aproximadas con presencia de MODIS y VIIRS en el mismo día UTC.'))
-            cc_rows=[['Mes','Celdas coincidentes']] + cc.values.tolist()
+            cc=armonia['coincident_cells'].copy(); cc['Month']=cc['mes'].map(lambda m: MONTHS[int(m)-1]); cc=cc[['Month','celdas_coincidentes']]
+            story.append(P(f'Exploratory spatio-temporal coincidences for {ano}: {int(cc["celdas_coincidentes"].sum())} approximate geographic cells were detected with MODIS and VIIRS presence on the same UTC day.'))
+            cc_rows=[['Month','Coincident cells']] + cc.values.tolist()
             ct=Table(cc_rows,colWidths=[6.5*cm,9.0*cm],repeatRows=1)
             ct.setStyle(TableStyle([
                 ('BACKGROUND',(0,0),(-1,0),colors.HexColor('#183153')),('TEXTCOLOR',(0,0),(-1,0),colors.white),
@@ -365,35 +365,35 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
             ]))
             story.extend([ct, Spacer(1,0.08*cm)])
         else:
-            story.append(P(f'Para el año {ano} no se detectaron coincidencias exploratorias MODIS–VIIRS con el criterio implementado (mismo día UTC y misma celda espacial aproximada). Esto no demuestra ausencia física del fenómeno ni invalida la serie.'))
-        story.append(P('Metodología piloto de armonización: coincidencia por día UTC y por celda espacial aproximada de 0.20° (uso exploratorio). El objetivo es relacionar continuidad histórica, no sumar sensores ni calibrar cobertura efectiva.','PaperBodySoft'))
+            story.append(P(f'For {ano} no exploratory MODIS–VIIRS coincidences were detected with the implemented criterion (same UTC day and same approximate spatial cell). This does not prove the physical absence of the phenomenon or invalidate the series.'))
+        story.append(P('Pilot harmonization methodology: coincidence by UTC day and by approximate 0.20° spatial cell (exploratory use). The goal is to relate historical continuity, not to add sensors or calibrate effective coverage.','PaperBodySoft'))
     else:
-        story.append(P('Los archivos disponibles no contienen simultáneamente las familias MODIS y VIIRS en el recorte seleccionado. No hay comparación interinstrumental disponible para armonización.'))
+        story.append(P('The available files do not simultaneously contain the MODIS and VIIRS families in the selected area. No inter-instrument comparison is available for harmonization.'))
 
-    story.append(P('Prueba complementaria de proximidad entre instrumentos','PaperH'))
+    story.append(P('Complementary proximity test between instruments','PaperH'))
     pares=emparejar(df,ano,radio_km=5.0,ventana_min=30)
-    story.append(P('Se aplica un segundo criterio independiente: registros en el mismo día UTC, separados por no más de 5 km y 30 minutos, mediante emparejamiento uno a uno por pareja instrumental. La aproximación geográfica utiliza una Tierra esférica. Este procedimiento no establece igualdad de radiancia, equivalencia de resolución o identidad de incendio.'))
-    story.append(P(f'Para el año {ano} se obtuvieron <b>{len(pares)} pares candidatos</b> en <b>{pares.fecha_utc.nunique() if len(pares) else 0} días</b>. Este número no debe sumarse a los recuentos de observaciones ni a las celdas de coincidencia anteriores.'))
+    story.append(P('A second, independent criterion is applied: records on the same UTC day, separated by no more than 5 km and 30 minutes, using one-to-one matching per instrument pair. The geographic approximation uses a spherical Earth. This procedure does not establish radiance equality, resolution equivalence or fire identity.'))
+    story.append(P(f'For {ano}, <b>{len(pares)} candidate pairs</b> were obtained across <b>{pares.fecha_utc.nunique() if len(pares) else 0} days</b>. This number must not be added to the observation counts or to the coincidence cells above.'))
     resumen=resumir_pares(pares)
     if len(resumen):
-        rows=[['Mes','Instrumentos','Pares','Dist. mediana','Δt mediana']]
+        rows=[['Month','Instruments','Pairs','Median dist.','Median Δt']]
         for _,r in resumen.head(15).iterrows():
-            rows.append([str(r['Mes']),str(r['Par instrumental']),str(int(r.Pares)),f'{r["Distancia mediana (km)"]:.2f} km',f'{r["Diferencia mediana (min)"]:.1f} min'])
+            rows.append([str(r['Month']),str(r['Instrument pair']),str(int(r.Pairs)),f'{r["Median distance (km)"]:.2f} km',f'{r["Median difference (min)"]:.1f} min'])
         t2=Table(rows,colWidths=[2.0*cm,6.3*cm,1.6*cm,3.0*cm,3.0*cm],repeatRows=1)
         t2.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor('#183153')),('BACKGROUND',(0,1),(-1,-1),colors.HexColor(PANEL)),('TEXTCOLOR',(0,0),(-1,-1),colors.HexColor(WHITE)),('GRID',(0,0),(-1,-1),.3,colors.HexColor('#2e4d76')),('FONTSIZE',(0,0),(-1,-1),7),('TOPPADDING',(0,0),(-1,-1),5),('BOTTOMPADDING',(0,0),(-1,-1),5)]))
         story.extend([t2,Spacer(1,0.1*cm)])
-    story.append(P('Limitación: el emparejamiento es una asociación espacio-temporal de registros. Para afirmar armonización radiométrica o estadística se necesita calibración entre productos, evaluación de sesgos, cobertura y validación con fuentes independientes.','PaperBodySoft'))
+    story.append(P('Limitation: pairing is a spatio-temporal association of records. Claiming radiometric or statistical harmonization requires calibration between products, bias assessment, coverage and validation with independent sources.','PaperBodySoft'))
 
-    story.append(P('7. Actividad inusual y trazabilidad documental','PaperH'))
+    story.append(P('7. Unusual activity and documentary traceability','PaperH'))
     candidates=[]
     if alertas_func is not None:
         for sensor in sorted(df.instrumento.unique()):
             candidates.extend(alertas_func(df,sensor))
-    found=[x for x in candidates if int(x['Año'])==ano]
-    story.append(P(f'En el histórico completo se identificaron {len(candidates)} candidatos estadísticos exploratorios; {len(found)} corresponden al año {ano}. No son alertas operativas ni incendios confirmados.'))
-    story.append(P('Criterio piloto: por instrumento y mes, al menos 5 registros y por lo menos el doble de la mediana de 3 o más años distintos con registros comparables. Sin normalización por cobertura satelital: úsese únicamente como señal preliminar.','PaperBodySoft'))
+    found=[x for x in candidates if int(x['Year'])==ano]
+    story.append(P(f'Across the full history, {len(candidates)} exploratory statistical candidates were identified; {len(found)} correspond to {ano}. They are not operational alerts or confirmed fires.'))
+    story.append(P('Pilot criterion: per instrument and month, at least 5 records and at least twice the median of 3 or more different years with comparable records. No normalization by satellite coverage: use only as a preliminary signal.','PaperBodySoft'))
     if found:
-        r=[['Mes','Instrumento','Registros','Mediana','Índice']] + [[MONTHS[int(x['Mes'])-1][:3],str(x['Sensor']),str(x['Detecciones']),str(x['Mediana otros años']),str(x['Índice frente a mediana'])] for x in found[:16]]
+        r=[['Month','Instrument','Records','Median','Ratio']] + [[MONTHS[int(x['Month'])-1][:3],str(x['Sensor']),str(x['Detections']),str(x['Median other years']),str(x['Ratio to median'])] for x in found[:16]]
         tb=Table(r,colWidths=[2.1*cm,4.8*cm,2.6*cm,3.2*cm,3.3*cm],repeatRows=1)
         tb.setStyle(TableStyle([
             ('BACKGROUND',(0,0),(-1,0),colors.HexColor('#183153')),('TEXTCOLOR',(0,0),(-1,0),colors.white),
@@ -401,14 +401,14 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
             ('GRID',(0,0),(-1,-1),.35,colors.HexColor('#2e4d76')),('FONTSIZE',(0,0),(-1,-1),8),('TOPPADDING',(0,0),(-1,-1),5),('BOTTOMPADDING',(0,0),(-1,-1),5)
         ]))
         story.extend([tb, Spacer(1,0.1*cm)])
-    story.append(P('La biblioteca documental incluida en el proyecto contiene expedientes de 2023; estos no se atribuyen automáticamente a otros años, lugares o registros FIRMS. Para establecer trazabilidad factual es necesario documentar fuentes independientes, fechas y coincidencia espacial.'))
+    story.append(P('The documentary library included in the project contains case files from 2023; these are not automatically attributed to other years, places or FIRMS records. Establishing factual traceability requires documenting independent sources, dates and spatial coincidence.'))
 
-    story.append(P('8. Procedencia, reproducibilidad y limitaciones','PaperH'))
-    story.append(P('Fuente primaria: archivos NASA FIRMS suministrados por el usuario y registros normalizados almacenados en el Maestro IGNIS. El Maestro se exporta manualmente y debe conservarse junto con los ZIP originales. El PDF se genera a partir del estado cargado en la sesión y los filtros activos.'))
-    story.append(P('Limitaciones principales: cobertura temporal no certificada; resolución y sensibilidad diferentes por instrumento; revisitas orbitales no normalizadas; artefactos del contorno de referencia; y detecciones no verificadas como incendios. Los espacios vacíos en calendario y mapas significan ausencia de registros <i>en los archivos incorporados</i>.'))
-    story.append(P('<b>Uso previsto:</b> informe técnico de investigación y base documental para el equipo IGNIS UY; no constituye un producto operativo de alerta ni una certificación de incendios.'))
+    story.append(P('8. Provenance, reproducibility and limitations','PaperH'))
+    story.append(P('Primary source: NASA FIRMS files supplied by the user and normalized records stored in the IGNIS Master. The Master is exported manually and must be kept together with the original ZIP files. The PDF is generated from the state loaded in the session and the active filters.'))
+    story.append(P('Main limitations: uncertified temporal coverage; different resolution and sensitivity per instrument; orbital revisits not normalized; artifacts of the reference outline; and detections not verified as fires. Empty spaces in the calendar and maps mean an absence of records <i>in the included files</i>.'))
+    story.append(P('<b>Intended use:</b> technical research report and documentary basis for the IGNIS UY team; it is not an operational alert product or a fire certification.'))
 
-    # Conclusión sustentada en todo el Maestro, separando registros de incidencias.
+    # Conclusion grounded in the whole Master, separating records from incidents.
     total=int(len(df))
     n_years=int(df.anio.nunique()) if len(df) else 0
     n_sensors=int(df.instrumento.nunique()) if len(df) else 0
@@ -417,32 +417,32 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
     last_year=years_sorted[-1] if years_sorted else ano
     n_current=len(year)
     n_candidates=len(candidates)
-    story.append(P('9. Conclusiones del histórico completo','PaperH'))
+    story.append(P('9. Conclusions from the full history','PaperH'))
     story.append(P(
-        f'El Maestro IGNIS incorpora <b>{total:,} observaciones satelitales únicas</b> en '
-        f'<b>{n_years} años con registros ({first_year}–{last_year})</b> y '
-        f'<b>{n_sensors} familias instrumentales</b>. Esta base permite describir la distribución '
-        f'temporal y espacial de los registros aportados, documentar períodos de coexistencia de sensores '
-        f'y señalar meses estadísticamente inusuales para una revisión posterior. '
-        f'El año seleccionado ({ano}) contiene {n_current} registros; es una parte de la serie, '
-        f'no la conclusión completa del proyecto.'
+        f'The IGNIS Master includes <b>{total:,} unique satellite observations</b> across '
+        f'<b>{n_years} years with records ({first_year}–{last_year})</b> and '
+        f'<b>{n_sensors} instrument families</b>. This base allows describing the temporal '
+        f'and spatial distribution of the supplied records, documenting periods of sensor coexistence '
+        f'and flagging statistically unusual months for later review. '
+        f'The selected year ({ano}) contains {n_current} records; it is one part of the series, '
+        f'not the complete conclusion of the project.'
     ))
     story.append(P(
-        f'En el conjunto histórico se identificaron <b>{n_candidates} candidatos exploratorios</b> '
-        f'con el criterio mensual adoptado, de los cuales <b>{len(found)}</b> corresponden a {ano}. '
-        'Asimismo, las coincidencias MODIS–VIIRS por día y celda, y los pares con proximidad '
-        'geográfica y horaria, constituyen relaciones observacionales reproducibles, '
-        'no detecciones de un mismo incendio verificadas. No se suman observaciones de '
-        'instrumentos distintos como si fueran eventos únicos.'
+        f'Across the historical set, <b>{n_candidates} exploratory candidates</b> were identified '
+        f'with the adopted monthly criterion, of which <b>{len(found)}</b> correspond to {ano}. '
+        'Likewise, the MODIS–VIIRS coincidences by day and cell, and the pairs with geographic '
+        'and temporal proximity, constitute reproducible observational relationships, '
+        'not verified detections of the same fire. Observations from different '
+        'instruments are not added as if they were single events.'
     ))
     story.append(P(
-        '<b>Conclusión científica:</b> IGNIS demuestra la viabilidad de integrar, explorar y '
-        'documentar observaciones FIRMS de distintos instrumentos en una interfaz única, '
-        'con límites de interpretación explícitos. El histórico no permite inferir por sí solo '
-        'un aumento o disminución de incendios ni una tendencia climática, debido a la '
-        'cobertura temporal no verificada, diferencias instrumentales y falta de normalización. '
-        'Una evolución futura requiere evaluación de cobertura, validación con fuentes externas '
-        'y calibración interinstrumental antes de derivar conclusiones cuantitativas.'
+        '<b>Scientific conclusion:</b> IGNIS demonstrates the feasibility of integrating, exploring and '
+        'documenting FIRMS observations from different instruments in a single interface, '
+        'with explicit interpretation limits. The history alone does not allow inferring '
+        'an increase or decrease in fires or a climate trend, due to the '
+        'unverified temporal coverage, instrument differences and lack of normalization. '
+        'A future evolution requires coverage assessment, validation with external sources '
+        'and inter-instrument calibration before deriving quantitative conclusions.'
     ))
 
 
@@ -451,13 +451,13 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
         w,h=A4
         canvas.setFillColor(colors.HexColor(BG))
         canvas.rect(0,0,w,h,fill=1,stroke=0)
-        # El hero se inserta una sola vez en el contenido: sin segundo fondo en portada.
+        # The hero is inserted only once in the content: no second background on the cover.
         canvas.setStrokeColor(colors.HexColor('#2c4770'))
         canvas.line(1.55*cm,1.15*cm,w-1.55*cm,1.15*cm)
         canvas.setFont('Helvetica',7)
         canvas.setFillColor(colors.HexColor(SOFT))
-        canvas.drawString(1.55*cm,0.86*cm,'IGNIS UY | Informe técnico exploratorio · NASA FIRMS')
-        canvas.drawRightString(w-1.55*cm,0.86*cm,f'Página {document.page}')
+        canvas.drawString(1.55*cm,0.86*cm,'IGNIS UY | Exploratory technical report · NASA FIRMS')
+        canvas.drawRightString(w-1.55*cm,0.86*cm,f'Page {document.page}')
         canvas.restoreState()
 
     doc.build(story,onFirstPage=lambda c,d: draw_bg(c,d,True),onLaterPages=lambda c,d: draw_bg(c,d,False))

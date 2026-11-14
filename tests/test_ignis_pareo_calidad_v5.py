@@ -120,7 +120,7 @@ class TestCalidad(unittest.TestCase):
     def test_ausencia_no_equivale_a_cobertura(self):
         a = auditar_datos(pd.DataFrame())
         self.assertFalse(a["cobertura_verificada"])
-        self.assertIn("no se puede inferir cobertura",lectura_diagnostica(a)[0])
+        self.assertIn("coverage or absence of thermal activity cannot be inferred",lectura_diagnostica(a)[0])
 
     def test_filas_invalidas_y_repetidas(self):
         a = pd.DataFrame([
@@ -140,9 +140,9 @@ class TestCalidad(unittest.TestCase):
         ])
         tabla = inventario_mensual(a,2026)
         self.assertEqual(len(tabla),24)
-        febrero = tabla[tabla["Mes UTC"]=="2026-02"]
-        self.assertTrue((febrero["Estado de datos"]=="SIN REGISTROS IMPORTADOS").all())
-        self.assertTrue((tabla["Cobertura orbital verificada"]=="NO").all())
+        febrero = tabla[tabla["UTC month"]=="2026-02"]
+        self.assertTrue((febrero["Data status"]=="NO IMPORTED RECORDS").all())
+        self.assertTrue((tabla["Orbital coverage verified"]=="NO").all())
 
 
 class TestImportacionNASA(unittest.TestCase):

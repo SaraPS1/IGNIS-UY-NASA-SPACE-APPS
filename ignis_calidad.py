@@ -1,7 +1,7 @@
-"""Auditoría de calidad FIRMS sin inventar cobertura satelital.
+"""FIRMS quality audit without inventing satellite coverage.
 
-Días con DETECCIONES no son días OBSERVADOS. Las advertencias ayudan a
-evaluar la suficiencia del Maestro antes de calibrar MODIS y VIIRS.
+Days with DETECTIONS are not OBSERVED days. The warnings help assess
+whether the Master file is sufficient before calibrating MODIS and VIIRS.
 """
 from __future__ import annotations
 
@@ -46,15 +46,15 @@ def auditar_datos(datos: pd.DataFrame | None) -> dict:
 
 
 def inventario_mensual(datos: pd.DataFrame | None, ano: int) -> pd.DataFrame:
-    """Una fila por mes y sensor presente en el recorte.
+    """One row per month and sensor present in the selection.
 
-    Los meses sin filas se señalan 'SIN REGISTROS IMPORTADOS' y nunca se
-    interpretan como 'cobertura completa sin detecciones'.
+    Months without rows are flagged 'NO IMPORTED RECORDS' and are never
+    interpreted as 'complete coverage without detections'.
     """
     columnas = [
-        "Mes UTC", "Instrumento", "Observaciones importadas",
-        "Días con detecciones", "Horarios válidos", "FRP disponible",
-        "Estado de datos", "Cobertura orbital verificada",
+        "UTC month", "Instrument", "Imported observations",
+        "Days with detections", "Valid times", "FRP available",
+        "Data status", "Orbital coverage verified",
     ]
     if datos is None or datos.empty or not {"fecha","instrumento"}.issubset(datos):
         return pd.DataFrame(columns=columnas)
@@ -89,10 +89,10 @@ def inventario_mensual(datos: pd.DataFrame | None, ano: int) -> pd.DataFrame:
             if indice in resumen.index:
                 a = resumen.loc[indice]
                 n,d,h,f = map(int,[a.observaciones,a.dias,a.horarios,a.frp])
-                estado="CON DETECCIONES IMPORTADAS"
+                estado="WITH IMPORTED DETECTIONS"
             else:
                 n=d=h=f=0
-                estado="SIN REGISTROS IMPORTADOS"
+                estado="NO IMPORTED RECORDS"
             filas.append([
                 f"{int(ano)}-{mes:02d}", sensor,n,d,h,f,estado,"NO",
             ])
@@ -103,17 +103,17 @@ def lectura_diagnostica(auditoria: dict) -> list[str]:
     avisos = []
     n = int(auditoria["filas"])
     if not n:
-        return ["Sin registros importados: no se puede inferir cobertura ni ausencia de actividad térmica."]
+        return ["No imported records: coverage or absence of thermal activity cannot be inferred."]
     for etiqueta,campo in (
-        ("coordenadas","coordenadas_validas"),
-        ("fechas","fechas_validas"),
-        ("horarios UTC","horarios_validos"),
-        ("familia instrumental","instrumentos_reconocidos"),
+        ("coordinates","coordenadas_validas"),
+        ("dates","fechas_validas"),
+        ("UTC times","horarios_validos"),
+        ("instrument family","instrumentos_reconocidos"),
     ):
         faltan = n - int(auditoria[campo])
         if faltan:
-            avisos.append(f"{faltan:,} de {n:,} registros sin {etiqueta} válida.")
+            avisos.append(f"{faltan:,} of {n:,} records without valid {etiqueta}.")
     if auditoria["ids_repetidos"]:
-        avisos.append(f"Hay {auditoria['ids_repetidos']:,} IDs repetidos en esta tabla.")
-    avisos.append("No se han verificado oportunidades de observación, nubosidad ni cobertura instrumental.")
+        avisos.append(f"There are {auditoria['ids_repetidos']:,} repeated IDs in this table.")
+    avisos.append("Observation opportunities, cloud cover and instrument coverage have not been verified.")
     return avisos

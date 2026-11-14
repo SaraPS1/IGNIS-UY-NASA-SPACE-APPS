@@ -22,7 +22,7 @@ SATELLITE_CATALOG = [
         "name": "Terra (MODIS)",
         "sensor": "MODIS",
         "instrument": "MODIS",
-        "orbit": "Órbita polar sincrónica solar",
+        "orbit": "Sun-synchronous polar orbit",
         "source": "CelesTrak / NASA / MODIS",
         "color": "#5ec8ff",
         "catalog": "25994",
@@ -31,7 +31,7 @@ SATELLITE_CATALOG = [
         "name": "Aqua (MODIS)",
         "sensor": "MODIS",
         "instrument": "MODIS",
-        "orbit": "Órbita polar sincrónica solar",
+        "orbit": "Sun-synchronous polar orbit",
         "source": "CelesTrak / NASA / MODIS",
         "color": "#7ad0ff",
         "catalog": "27424",
@@ -40,7 +40,7 @@ SATELLITE_CATALOG = [
         "name": "Suomi-NPP (VIIRS)",
         "sensor": "VIIRS",
         "instrument": "VIIRS S-NPP",
-        "orbit": "Órbita polar",
+        "orbit": "Polar orbit",
         "source": "CelesTrak / NOAA / VIIRS",
         "color": "#ffc857",
         "catalog": "37849",
@@ -49,7 +49,7 @@ SATELLITE_CATALOG = [
         "name": "NOAA-20 (VIIRS)",
         "sensor": "VIIRS",
         "instrument": "VIIRS NOAA-20",
-        "orbit": "Órbita polar",
+        "orbit": "Polar orbit",
         "source": "CelesTrak / NOAA / VIIRS",
         "color": "#8fe3a5",
         "catalog": "43013",
@@ -58,7 +58,7 @@ SATELLITE_CATALOG = [
         "name": "NOAA-21 (VIIRS)",
         "sensor": "VIIRS",
         "instrument": "VIIRS NOAA-21",
-        "orbit": "Órbita polar",
+        "orbit": "Polar orbit",
         "source": "CelesTrak / NOAA / VIIRS",
         "color": "#d7a4ff",
         "catalog": "54234",
@@ -70,7 +70,7 @@ MAX_HOTSPOTS_3D = 1500
 
 
 def _uruguay_outline() -> List[List[float]]:
-    """Contorno [lon, lat] desde uruguay_contorno.geojson (vacío si falta)."""
+    """[lon, lat] outline from uruguay_contorno.geojson (empty if missing)."""
     try:
         from pathlib import Path
         path = Path(__file__).resolve().parent / "uruguay_contorno.geojson"
@@ -102,7 +102,7 @@ def _normalize_fire_frame(df: Optional[pd.DataFrame]) -> pd.DataFrame:
 
 
 def _parse_tle_pair(raw_text: str) -> Optional[tuple]:
-    """Acepta TLE estándar de 2 líneas o 3LE con una línea de nombre."""
+    """Accepts standard 2-line TLE or 3LE with a name line."""
     lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
     line1 = next((line for line in lines if line.startswith("1 ") and len(line) >= 60), None)
     line2 = next((line for line in lines if line.startswith("2 ") and len(line) >= 60), None)
@@ -144,7 +144,7 @@ def _generate_orbit_positions_from_tle(tle_text: str, steps: int = 80) -> List[D
     try:
         ref_dt = datetime.now(timezone.utc)
         for idx in range(steps):
-            # Un tramo orbital de 105 minutos, no 24 h unidos por una sola línea.
+            # A 105-minute orbital segment, not 24 h joined by a single line.
             offset_minutes = idx * 105.0 / max(steps - 1, 1)
             sample_dt = ref_dt + timedelta(minutes=offset_minutes)
             jd_float = _utc_to_jd_utc(sample_dt)
@@ -189,14 +189,14 @@ def _generate_simulated_orbit(name: str, steps: int = 80) -> List[Dict[str, floa
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def _build_satellite_payload(use_live_tle: bool = False) -> List[Dict[str, Any]]:
-    """Renderiza inmediatamente en modo ilustrativo; TLE actuales bajo demanda.
+    """Renders immediately in illustrative mode; current TLE on demand.
 
-    Los TLE consultados NO reconstruyen la fecha histórica de los puntos FIRMS.
+    The queried TLE do NOT reconstruct the historical date of the FIRMS points.
     """
     fetched: Dict[str, Optional[str]] = {}
     if use_live_tle:
-        # Cinco peticiones independientes a CelesTrak en paralelo.
-        # El modo predeterminado evita cualquier espera de red.
+        # Five independent requests to CelesTrak in parallel.
+        # The default mode avoids any network wait.
         with ThreadPoolExecutor(max_workers=5) as executor:
             results = list(executor.map(
                 _fetch_celestrak_tle,
@@ -236,7 +236,7 @@ def _build_hotspot_payload(frame: pd.DataFrame, selected_date: Optional[datetime
     if satellite_filter and satellite_filter != "Todos":
         hotspot_frame = hotspot_frame[hotspot_frame["satellite"].str.contains(satellite_filter, case=False, na=False)]
     if len(hotspot_frame) > MAX_HOTSPOTS_3D:
-        # Con tope, se conservan los de mayor FRP (no los más antiguos).
+        # When capped, the highest-FRP ones are kept (not the oldest).
         hotspot_frame = hotspot_frame.assign(
             _frp_orden=pd.to_numeric(hotspot_frame.get("frp"), errors="coerce").fillna(0)
         ).nlargest(MAX_HOTSPOTS_3D, "_frp_orden")
@@ -344,23 +344,23 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
       </head>
       <body>
         <div id="globe-shell">
-          <div id="ignis-globe-status">Preparando globo 3D...</div>
+          <div id="ignis-globe-status">Preparing 3D globe...</div>
           <div class="ignis-globe-watermark">
-            IGNIS UY <span>· EXPLORADOR 3D</span>
+            IGNIS UY <span>· 3D EXPLORER</span>
           </div>
-          <div class="ignis-globe-help">Arrastrar para rotar · Rueda para acercar · Pasar el cursor sobre una columna</div>
+          <div class="ignis-globe-help">Drag to rotate · Scroll to zoom · Hover over a column</div>
           <div id="ignis-tip"></div>
           <div id="ignis-legend">
-            <b>Potencia radiativa (FRP)</b><br>
+            <b>Fire radiative power (FRP)</b><br>
             <i style="background:#f7b267"></i>&lt; 25 MW<br>
             <i style="background:#ffd166"></i>25–70 MW<br>
             <i style="background:#ff9f43"></i>70–150 MW<br>
             <i style="background:#ff5d73"></i>&gt; 150 MW<br>
-            Altura de la columna ∝ FRP
+            Column height ∝ FRP
           </div>
           <div id="ignis-orbit-ctl">
-            <button id="ignis-play" type="button">⏸ Pausa</button>
-            <select id="ignis-speed" aria-label="Velocidad orbital">
+            <button id="ignis-play" type="button">⏸ Pause</button>
+            <select id="ignis-speed" aria-label="Orbital speed">
               <option value="1">×1</option>
               <option value="3" selected>×3</option>
               <option value="8">×8</option>
@@ -394,16 +394,16 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
 
           try {{
             if (!window.WebGLRenderingContext) {{
-              throw new Error('WebGL no disponible en este navegador.');
+              throw new Error('WebGL is not available in this browser.');
             }}
             if (!root || !shell) {{
-              throw new Error('No existe el contenedor de la vista 3D.');
+              throw new Error('The 3D view container does not exist.');
             }}
             if (root.clientWidth < 50 || root.clientHeight < 50) {{
-              throw new Error('El contenedor 3D tiene dimensiones inválidas.');
+              throw new Error('The 3D container has invalid dimensions.');
             }}
 
-            setStatus('Cargando cartografía...');
+            setStatus('Loading cartography...');
             const scene = new THREE.Scene();
             scene.background = new THREE.Color(0x020812);
 
@@ -451,7 +451,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           const earthGroup = new THREE.Group();
           scene.add(earthGroup);
 
-          // Earth day/night. earth_normal_2048.jpg es un mapa de relieve, NO luces nocturnas.
+          // Earth day/night. earth_normal_2048.jpg is a relief map, NOT night lights.
           const textureLoader = new THREE.TextureLoader();
           textureLoader.setCrossOrigin('anonymous');
           const textureBase = 'https://threejs.org/examples/textures/planets/';
@@ -469,8 +469,8 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             dayMap: {{value:solidTex([30,83,128])}},
             nightMap: {{value:solidTex([2,4,10])}},
             sunDirection: {{value:sunLight.position.clone().normalize()}},
-            mode: {{value:earthView === 'Blue Marble (día)' ? 1 :
-                    earthView === 'Black Marble (noche)' ? 2 : 0}}
+            mode: {{value:earthView === 'Blue Marble (day)' ? 1 :
+                    earthView === 'Black Marble (night)' ? 2 : 0}}
           }};
           const earth = new THREE.Mesh(
             new THREE.SphereGeometry(2.2, 128, 128),
@@ -509,9 +509,9 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
               image.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
               globeUniforms[key].value=image;
               textureCount++;
-              if(textureCount === 2) setStatus('3D listo · Blue/Black Marble');
+              if(textureCount === 2) setStatus('3D ready · Blue/Black Marble');
             }},undefined,() => {{
-              setStatus('3D disponible · textura sin cargar (revisar red)','error');
+              setStatus('3D available · texture not loaded (check network)','error');
             }});
           }}
           loadGlobeTexture(blueMarbleUrl,'dayMap');
@@ -571,8 +571,8 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             earthGroup.add(outlineLine);
           }}
 
-          // Anillos esquemáticos, SOLO cuando CelesTrak/SGP4 no aporta trayectoria.
-          // No son órbitas verificadas ni posiciones de la fecha histórica FIRMS.
+          // Schematic rings, ONLY when CelesTrak/SGP4 provides no trajectory.
+          // They are not verified orbits or positions for the historical FIRMS date.
           function schematicOrbit(index) {{
             const r = 2.55;
             const inclination = 98 * Math.PI / 180;
@@ -641,7 +641,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
                 else tleOrbits++;
               }}
               if (showSatellites && points.length) {{
-                // En modo ilustrativo las posiciones se distribuyen: NO son posiciones reales.
+                // In illustrative mode positions are spread out: they are NOT real positions.
                 const markerIndex=schematic
                   ? Math.floor(points.length*((index*.18+.07)%1))
                   : 0;
@@ -665,7 +665,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
 
           let hotspotMesh = null;
           if (showHotspots && payload.hotspots && payload.hotspots.length) {{
-            // Una sola InstancedMesh: columnas apoyadas en la superficie, altura ∝ FRP.
+            // A single InstancedMesh: columns resting on the surface, height ∝ FRP.
             const items = payload.hotspots;
             const columnGeometry = new THREE.CylinderGeometry(0.008, 0.014, 1, 6, 1, false);
             columnGeometry.translate(0, 0.5, 0);
@@ -691,7 +691,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             earthGroup.add(hotspotMesh);
           }}
 
-          // Tooltip: se ignoran columnas ocultas detrás de la Tierra.
+          // Tooltip: columns hidden behind the Earth are ignored.
           const tip = document.getElementById('ignis-tip');
           const raycaster = new THREE.Raycaster();
           const pointer = new THREE.Vector2();
@@ -709,7 +709,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
               tip.textContent = [
                 (p.sensor || 'Sensor ?') + ' · ' + (p.satellite || ''),
                 'FRP: ' + (Number(p.frp) || 0).toFixed(1) + ' MW',
-                'Confianza: ' + (p.confidence || '—'),
+                'Confidence: ' + (p.confidence || '—'),
                 (p.date || '').replace('T', ' ').slice(0, 16) + ' UTC',
                 p.lat.toFixed(3) + ', ' + p.lon.toFixed(3)
               ].join('\\n');
@@ -748,7 +748,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             renderer.render(scene, camera);
           }}, 180);
 
-          setStatus('Cargando texturas Blue/Black Marble…');
+          setStatus('Loading Blue/Black Marble textures…');
 
           let playing = true;
           let orbitSpeed = 3;
@@ -762,7 +762,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           }}
           playButton.addEventListener('click', () => {{
             playing = !playing;
-            playButton.textContent = playing ? '⏸ Pausa' : '▶ Reproducir';
+            playButton.textContent = playing ? '⏸ Pause' : '▶ Play';
           }});
           speedSelect.addEventListener('change', () => {{ orbitSpeed = Number(speedSelect.value) || 1; }});
 
@@ -775,8 +775,8 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
               m.label.position.y += .10;
             }});
             orbitClock.textContent = anyTle
-              ? 'Simulación: +' + Math.round(orbitT * 105) + ' min desde la consulta de TLE'
-              : 'Movimiento esquemático';
+              ? 'Simulation: +' + Math.round(orbitT * 105) + ' min since the TLE query'
+              : 'Schematic motion';
           }}
 
           function animate() {{
@@ -785,26 +785,26 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
               orbitT = (orbitT + 0.00035 * orbitSpeed) % 1;
             }}
             updateMovers();
-            // Rotar la cámara y no la textura: las detecciones permanecen georreferenciadas.
+            // Rotate the camera, not the texture: detections stay georeferenced.
             controls.update();
             renderer.render(scene, camera);
           }}
           animate();
           const orbitStatus = (showOrbits && illustrativeOrbits > 0)
-            ? ' · órbitas ilustrativas ('+illustrativeOrbits+')'
-            : (showOrbits && tleOrbits > 0 ? ' · TLE actuales' : '');
+            ? ' · illustrative orbits ('+illustrativeOrbits+')'
+            : (showOrbits && tleOrbits > 0 ? ' · current TLE' : '');
           const shownHotspots = (payload.hotspots || []).length;
           const totalHotspots = Number(payload.hotspots_total) || shownHotspots;
           const hotspotNote = (showHotspots && totalHotspots > shownHotspots)
-            ? ' · focos: ' + shownHotspots + ' de ' + totalHotspots + ' (mayor FRP)'
-            : (showHotspots && shownHotspots ? ' · focos: ' + shownHotspots : '');
-          setStatus('3D listo'+orbitStatus+hotspotNote);
+            ? ' · hotspots: ' + shownHotspots + ' of ' + totalHotspots + ' (highest FRP)'
+            : (showHotspots && shownHotspots ? ' · hotspots: ' + shownHotspots : '');
+          setStatus('3D ready'+orbitStatus+hotspotNote);
           }} catch (error) {{
             console.error('IGNIS 3D error:', error);
-            const message = error && error.message ? error.message : 'Error no identificado al preparar la vista 3D.';
-            setStatus('Error 3D: ' + message, 'error');
+            const message = error && error.message ? error.message : 'Unidentified error while preparing the 3D view.';
+            setStatus('3D error: ' + message, 'error');
             if (root) {{
-              root.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:2rem;color:#fce5e5;text-align:center;font:14px Arial,sans-serif;background:linear-gradient(180deg,#0b1220,#090d18);">No se pudo inicializar la vista 3D. Revisa la compatibilidad WebGL del navegador o vuelve a cargar la página.</div>';
+              root.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:2rem;color:#fce5e5;text-align:center;font:14px Arial,sans-serif;background:linear-gradient(180deg,#0b1220,#090d18);">The 3D view could not be initialized. Check the browser WebGL compatibility or reload the page.</div>';
             }}
           }}
         </script>
@@ -814,7 +814,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
 
 
 def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
-    """Espacio inmersivo: globo protagonista, controles laterales y fecha inferior."""
+    """Immersive space: the globe takes center stage, side controls and date below."""
     st.markdown("""
     <style>
     .ignis-space-kicker{font-size:.76rem;font-weight:800;letter-spacing:.13em;
@@ -826,90 +826,90 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
       font-size:.81rem;color:#c6deec;line-height:1.55}
     .ignis-orbit-guide strong{color:#f2fbff}
     </style>
-    <div class="ignis-space-kicker">Explorador geoespacial · NASA FIRMS</div>
-    <div class="ignis-space-subtitle">Navegá alrededor de la Tierra, compará
-    las observaciones MODIS–VIIRS y explorá trayectorias satelitales.
-    Las órbitas ilustrativas no representan pasadas históricas reales.</div>
+    <div class="ignis-space-kicker">Geospatial explorer · NASA FIRMS</div>
+    <div class="ignis-space-subtitle">Navigate around the Earth, compare
+    MODIS–VIIRS observations and explore satellite trajectories.
+    Illustrative orbits do not represent real historical overpasses.</div>
     """, unsafe_allow_html=True)
 
     frame = _normalize_fire_frame(df)
     date_options = sorted(pd.to_datetime(frame["fecha"], utc=True).dt.date.unique())
 
-    # La columna principal reserva el espacio del globo ANTES de mostrar
-    # la línea temporal. El iframe se rellena luego de leer los filtros.
+    # The main column reserves the globe space BEFORE showing the
+    # timeline. The iframe is filled after reading the filters.
     controls_col, globe_col = st.columns([1, 3.1], gap="medium")
     with globe_col:
         globe_slot = st.empty()
         with st.container(border=True):
-            st.caption("LÍNEA TEMPORAL · OBSERVACIONES FIRMS")
+            st.caption("TIMELINE · FIRMS OBSERVATIONS")
             if date_options:
                 selected_date = st.select_slider(
-                    "Fecha de observación", options=date_options,
+                    "Observation date", options=date_options,
                     value=date_options[-1], key="ignis_space_date",
                 )
             else:
                 selected_date = None
-                st.caption("Sin fechas cargadas. El globo puede explorarse sin registros.")
-            st.caption("La fecha cambia los focos térmicos, no los TLE actuales.")
+                st.caption("No dates loaded. The globe can be explored without records.")
+            st.caption("The date changes the thermal hotspots, not the current TLE.")
 
     with controls_col:
         with st.container(border=True):
-            st.markdown("#### 🛰️ Explorador orbital")
-            st.caption("Configurá las capas del globo.")
+            st.markdown("#### 🛰️ Orbital explorer")
+            st.caption("Configure the globe layers.")
             selected_region = st.selectbox(
-                "Enfoque geográfico",
+                "Geographic focus",
                 options=["uruguay", "south_america", "global", "selected"],
                 index=0, key="ignis_space_region",
                 format_func=lambda item: {
                     "uruguay": "🇺🇾 Uruguay",
-                    "south_america": "🌎 Sudamérica",
-                    "global": "🌍 Tierra completa",
-                    "selected": "📍 Zona seleccionada",
+                    "south_america": "🌎 South America",
+                    "global": "🌍 Whole Earth",
+                    "selected": "📍 Selected area",
                 }.get(item, item),
             )
-            options = ["Todos"] + sorted(
+            options = ["All"] + sorted(
                 frame["satellite"].dropna().astype(str).unique().tolist()
             )
             selected_satellite = st.selectbox(
-                "Filtrar observaciones", options=options, index=0,
+                "Filter observations", options=options, index=0,
                 key="ignis_space_satellite",
             )
-            st.caption("CAPAS VISIBLES")
+            st.caption("VISIBLE LAYERS")
             show_satellites = st.checkbox(
-                "Satélites", value=True, key="ignis_space_show_satellites")
+                "Satellites", value=True, key="ignis_space_show_satellites")
             show_orbits = st.checkbox(
-                "Órbitas", value=True, key="ignis_space_show_orbits")
+                "Orbits", value=True, key="ignis_space_show_orbits")
             show_hotspots = st.checkbox(
-                "Focos térmicos", value=True, key="ignis_space_show_hotspots")
+                "Thermal hotspots", value=True, key="ignis_space_show_hotspots")
             show_bounds = st.checkbox(
-                "Límites geográficos", value=True, key="ignis_space_show_bounds")
+                "Geographic boundaries", value=True, key="ignis_space_show_bounds")
             show_clouds = st.checkbox(
-                "Nubes tenues", value=True, key="ignis_space_show_clouds")
+                "Faint clouds", value=True, key="ignis_space_show_clouds")
             earth_visualization = st.selectbox(
-                "Visualización terrestre",
-                ["Blue Marble + Black Marble", "Blue Marble (día)", "Black Marble (noche)"],
+                "Earth visualization",
+                ["Blue Marble + Black Marble", "Blue Marble (day)", "Black Marble (night)"],
                 index=0, key="ignis_space_earth_style",
-                help="Composiciones estáticas, no imágenes de la Tierra en tiempo real.",
+                help="Static compositions, not real-time images of the Earth.",
             )
             orbit_mode = st.radio(
-                "Fuente de trayectorias",
-                ["Esquemas ilustrativos", "TLE actuales"],
+                "Trajectory source",
+                ["Illustrative schematics", "Current TLE"],
                 index=0, key="ignis_orbit_source",
-                help="Los TLE actuales no reconstruyen órbitas en fechas históricas FIRMS.",
+                help="Current TLE do not reconstruct orbits on historical FIRMS dates.",
             )
         with st.container(border=True):
-            st.caption("DATOS CARGADOS EN ESTA SESIÓN")
+            st.caption("DATA LOADED IN THIS SESSION")
             q1, q2 = st.columns(2, gap="small")
-            q1.metric("Registros", f"{len(frame):,}" if len(frame) else "—")
-            q2.metric("Fechas", len(date_options))
+            q1.metric("Records", f"{len(frame):,}" if len(frame) else "—")
+            q2.metric("Dates", len(date_options))
             q3, q4 = st.columns(2, gap="small")
-            q3.metric("Sensores", frame["instrumento"].nunique() if len(frame) else "—")
-            q4.metric("Modo orbital", "TLE" if orbit_mode == "TLE actuales" else "Esquema")
+            q3.metric("Sensors", frame["instrumento"].nunique() if len(frame) else "—")
+            q4.metric("Orbit mode", "TLE" if orbit_mode == "Current TLE" else "Schematic")
         st.markdown(
-            '<div class="ignis-orbit-guide"><strong>Cómo interpretar las líneas</strong>'
-            '<p>— Continuas: trayectoria calculada con TLE reciente, cuando esté disponible.'
-            '<p>┄ Punteadas: visualización ilustrativa, no una órbita validada.'
-            '<p>Los puntos naranjas representan anomalías térmicas, no incendios confirmados.'
+            '<div class="ignis-orbit-guide"><strong>How to read the lines</strong>'
+            '<p>— Solid: trajectory computed from a recent TLE, when available.'
+            '<p>┄ Dotted: illustrative visualization, not a validated orbit.'
+            '<p>Orange dots represent thermal anomalies, not confirmed fires.'
             '</div>', unsafe_allow_html=True,
         )
 
@@ -921,7 +921,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         ]
     else:
         filtered_frame = filtered_frame.iloc[0:0]
-    if selected_satellite != "Todos":
+    if selected_satellite != "All":
         filtered_frame = filtered_frame[
             filtered_frame["satellite"].str.contains(
                 selected_satellite, case=False, na=False)
@@ -931,11 +931,11 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         satellite_filter=selected_satellite,
     )
 
-    # La carga de TLE se hace por solicitud explícita. El modo normal no accede
-    # a CelesTrak y el globo abre sin depender de esa red externa.
-    use_live_tle = orbit_mode == "TLE actuales"
+    # TLE loading happens only on explicit request. The normal mode does not
+    # access CelesTrak and the globe opens without depending on that network.
+    use_live_tle = orbit_mode == "Current TLE"
     if use_live_tle:
-        with st.spinner("Cargando TLE actuales de CelesTrak…"):
+        with st.spinner("Loading current TLE from CelesTrak…"):
             satellites = _build_satellite_payload(use_live_tle=True)
     else:
         satellites = _build_satellite_payload(use_live_tle=False)
@@ -960,21 +960,21 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
     with globe_col:
         count = len(filtered_frame)
         st.caption(
-            f"**{count:,} observaciones térmicas** para la fecha y sensor seleccionados. "
-            "Modo orbital: TLE actuales si se solicitaron, de lo contrario esquemas "
-            "ilustrativos. El globo permite arrastrar para rotar y desplazar la rueda "
-            "para acercar."
+            f"**{count:,} thermal observations** for the selected date and sensor. "
+            "Orbit mode: current TLE if requested, otherwise illustrative "
+            "schematics. Drag the globe to rotate and scroll "
+            "to zoom."
         )
         if not frame.empty and frame["frp"].notna().any():
-            with st.expander("Ver registros de la fecha seleccionada", expanded=False):
+            with st.expander("View records for the selected date", expanded=False):
                 fields = ["fecha", "latitude", "longitude", "instrumento",
                           "satellite", "frp", "confidence"]
                 st.dataframe(filtered_frame[fields], use_container_width=True,
                              hide_index=True, height=260)
 
     st.caption(
-        "Blue Marble y luces nocturnas: visualizaciones estáticas, no imágenes "
-        "en directo ni de la fecha seleccionada. Las trayectorias TLE son "
-        "aproximaciones actuales y no corresponden a las fechas históricas FIRMS. "
-        "Las trayectorias punteadas son esquemáticas. IGNIS no emite alertas oficiales."
+        "Blue Marble and night lights: static visualizations, not live images "
+        "or images of the selected date. TLE trajectories are "
+        "current approximations and do not correspond to the historical FIRMS dates. "
+        "Dotted trajectories are schematic. IGNIS does not issue official alerts."
     )

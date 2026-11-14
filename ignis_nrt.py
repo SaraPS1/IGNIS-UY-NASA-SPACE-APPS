@@ -1,7 +1,7 @@
-"""IGNIS UY: consulta opcional y liviana de detecciones recientes NASA FIRMS.
+"""IGNIS UY: optional, lightweight query of recent NASA FIRMS detections.
 
-NO altera ni importa al Maestro IGNIS. Las detecciones no confirman incendios.
-La consulta de red ocurre EXCLUSIVAMENTE al pulsar el botón del formulario.
+It does NOT alter or import into the IGNIS Master. Detections do not confirm fires.
+The network request happens ONLY when the form button is pressed.
 """
 
 from __future__ import annotations
@@ -26,16 +26,16 @@ FUENTES = {
     "VIIRS NOAA-21": "VIIRS_NOAA21_NRT",
     "MODIS Terra/Aqua": "MODIS_NRT",
 }
-# Misma caja geográfica aproximada usada en el dashboard histórico.
-BBOX_URUGUAY = "-58.6,-35.2,-53.0,-30.0"  # oeste,sur,este,norte
+# Same approximate bounding box used in the historical dashboard.
+BBOX_URUGUAY = "-58.6,-35.2,-53.0,-30.0"  # west,south,east,north
 LIMITE_BYTES = 4_000_000
 
 
 def _clave_nasa():
-    """La clave se obtiene del gestor seguro de Streamlit; nunca del repositorio.
+    """The key comes from Streamlit's secure secrets manager; never from the repository.
 
-    Acepta ambos nombres para mantener compatibilidad con la configuración
-    existente del resto del dashboard (FIRMS_MAP_KEY) y con la nueva API NRT.
+    Both names are accepted to stay compatible with the existing dashboard
+    configuration (FIRMS_MAP_KEY) and with the new NRT API.
     """
     for nombre in ("NASA_FIRMS_MAP_KEY", "FIRMS_MAP_KEY"):
         try:
@@ -53,9 +53,9 @@ def _clave_nasa():
 
 @st.cache_data(ttl=900, max_entries=16, show_spinner=False)
 def _pedir_sensor(clave: str, producto: str, dias: int):
-    """Una sola descarga por sensor, como máximo una vez cada 15 min por caché.
+    """A single download per sensor, at most once every 15 min thanks to the cache.
 
-    No se devuelve la URL en excepciones: contiene la clave privada MAP_KEY.
+    The URL is never returned in exceptions: it contains the private MAP_KEY.
     """
     url = ("https://firms.modaps.eosdis.nasa.gov/api/area/csv/"
            f"{clave}/{producto}/{BBOX_URUGUAY}/{dias}")
@@ -64,17 +64,17 @@ def _pedir_sensor(clave: str, producto: str, dias: int):
         with urlopen(request, timeout=12) as respuesta:
             contenido = respuesta.read(LIMITE_BYTES + 1)
             if len(contenido) > LIMITE_BYTES:
-                return pd.DataFrame(), "Respuesta demasiado grande para el modo liviano"
+                return pd.DataFrame(), "Response too large for lightweight mode"
     except HTTPError as error:
-        return pd.DataFrame(), f"NASA FIRMS respondió HTTP {error.code}"
+        return pd.DataFrame(), f"NASA FIRMS responded HTTP {error.code}"
     except (URLError, TimeoutError, OSError):
-        return pd.DataFrame(), "No se pudo establecer comunicación con NASA FIRMS"
+        return pd.DataFrame(), "Could not establish communication with NASA FIRMS"
     try:
         dataframe = pd.read_csv(io.BytesIO(contenido), low_memory=False)
         dataframe.columns = [str(col).strip().lower() for col in dataframe.columns]
         requeridas = {"latitude", "longitude", "acq_date", "acq_time"}
         if not requeridas.issubset(dataframe):
-            return pd.DataFrame(), "Formato de respuesta inesperado"
+            return pd.DataFrame(), "Unexpected response format"
         dataframe["latitude"] = pd.to_numeric(dataframe["latitude"], errors="coerce")
         dataframe["longitude"] = pd.to_numeric(dataframe["longitude"], errors="coerce")
         dataframe = dataframe.dropna(subset=["latitude", "longitude"]).copy()
@@ -82,7 +82,7 @@ def _pedir_sensor(clave: str, producto: str, dias: int):
             dataframe.latitude.between(-35.2, -30.0)
             & dataframe.longitude.between(-58.6, -53.0)
         ].copy()
-        # acq_time FIRMS se expresa HHMM en UTC.
+        # FIRMS acq_time is expressed as HHMM in UTC.
         hora = (dataframe["acq_time"].astype(str).str.replace(r"\.0$", "", regex=True)
                 .str.zfill(4).str.slice(0, 2) + ":" +
                 dataframe["acq_time"].astype(str).str.replace(r"\.0$", "", regex=True)
@@ -99,11 +99,11 @@ def _pedir_sensor(clave: str, producto: str, dias: int):
                 columnas.append(adicional)
         return dataframe[columnas].copy(), None
     except (ValueError, TypeError, pd.errors.ParserError, pd.errors.EmptyDataError):
-        return pd.DataFrame(), "NASA respondió datos que no pudieron interpretarse"
+        return pd.DataFrame(), "NASA responded with data that could not be parsed"
 
 
 def _consulta(clave: str, fuentes: list[str], dias: int):
-    """Dos o tres peticiones acotadas; no descarga todo el planeta."""
+    """Two or three bounded requests; it does not download the whole planet."""
     tablas, incidencias = [], []
     with ThreadPoolExecutor(max_workers=min(3, len(fuentes))) as ejecutor:
         trabajos = {ejecutor.submit(_pedir_sensor, clave, FUENTES[nombre], dias): nombre for nombre in fuentes}
@@ -112,7 +112,7 @@ def _consulta(clave: str, fuentes: list[str], dias: int):
             try:
                 df, error = trabajo.result()
             except Exception:
-                df, error = pd.DataFrame(), "Error inesperado durante la consulta"
+                df, error = pd.DataFrame(), "Unexpected error during the query"
             if error:
                 incidencias.append(f"{nombre}: {error}")
             elif not df.empty:
@@ -126,7 +126,7 @@ def _consulta(clave: str, fuentes: list[str], dias: int):
 
 
 def _mapa_liviano(df: pd.DataFrame):
-    """Gráfico liviano y sin teselas de terceros, con contorno existente de Uruguay."""
+    """Lightweight chart without third-party tiles, using the existing Uruguay outline."""
     figura = go.Figure()
     geojson = Path(__file__).resolve().parent / "uruguay_contorno.geojson"
     if geojson.exists():
@@ -138,56 +138,56 @@ def _mapa_liviano(df: pd.DataFrame):
             figura.add_trace(go.Scatter(
                 x=[p[0] for p in anillo], y=[p[1] for p in anillo],
                 fill="toself", fillcolor="rgba(52,38,105,0.4)",
-                line=dict(color="#9bc7ff", width=2), name="Uruguay (aprox.)",
+                line=dict(color="#9bc7ff", width=2), name="Uruguay (approx.)",
                 hoverinfo="skip"
             ))
         except (ValueError, KeyError, IndexError, TypeError):
             pass
     colores = {"VIIRS NOAA-20": "#5de1ff", "VIIRS NOAA-21": "#ffc668", "MODIS Terra/Aqua": "#d2a4ff"}
     for nombre, subconjunto in df.groupby("producto", sort=True):
-        muestra = subconjunto.iloc[:1200]  # límite visual: nunca exceder 3600 puntos
+        muestra = subconjunto.iloc[:1200]  # visual limit: never exceed 3600 points
         figura.add_trace(go.Scattergl(
             x=muestra["longitude"], y=muestra["latitude"],
             mode="markers", name=nombre,
             marker=dict(size=8, opacity=0.8, color=colores.get(nombre, "#ddd")),
-            customdata=muestra["adquisicion_utc"].dt.strftime("%Y-%m-%d %H:%M UTC").fillna("Sin hora"),
-            hovertemplate="%{customdata}<br>Latitud: %{y:.4f}<br>Longitud: %{x:.4f}<extra>"+nombre+"</extra>"
+            customdata=muestra["adquisicion_utc"].dt.strftime("%Y-%m-%d %H:%M UTC").fillna("No time"),
+            hovertemplate="%{customdata}<br>Latitude: %{y:.4f}<br>Longitude: %{x:.4f}<extra>"+nombre+"</extra>"
         ))
     figura.update_layout(
         height=460, template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="#0b1230", margin=dict(l=12, r=12, t=20, b=15),
         legend=dict(orientation="h", y=1.05, x=0),
-        xaxis=dict(title="Longitud", range=[-58.9, -52.8], gridcolor="rgba(170,190,235,.15)"),
-        yaxis=dict(title="Latitud", range=[-35.5, -29.75], scaleanchor="x", scaleratio=1,
+        xaxis=dict(title="Longitude", range=[-58.9, -52.8], gridcolor="rgba(170,190,235,.15)"),
+        yaxis=dict(title="Latitude", range=[-35.5, -29.75], scaleanchor="x", scaleratio=1,
                    gridcolor="rgba(170,190,235,.15)")
     )
     st.plotly_chart(figura, use_container_width=True)
 
 
 def mostrar_monitoreo_nrt():
-    st.subheader("🛰️ Monitoreo satelital reciente · NASA FIRMS")
-    st.caption("Consulta bajo demanda. Este módulo NO modifica los datos históricos ni el Maestro IGNIS.")
-    st.info("NASA publica anomalías térmicas con cierta demora; no es una transmisión satelital continua ni un sistema de emergencia.")
+    st.subheader("🛰️ Recent satellite monitoring · NASA FIRMS")
+    st.caption("On-demand query. This module does NOT modify the historical data or the IGNIS Master.")
+    st.info("NASA publishes thermal anomalies with some delay; this is not a continuous satellite feed or an emergency system.")
     clave = _clave_nasa()
     if not clave:
-        st.warning("Para activar las consultas, configurá NASA_FIRMS_MAP_KEY o FIRMS_MAP_KEY en los Secrets de la aplicación Streamlit (no en GitHub).")
-        st.markdown("Solicitar clave gratuita: https://firms.modaps.eosdis.nasa.gov/api/map_key/")
+        st.warning("To enable queries, configure NASA_FIRMS_MAP_KEY or FIRMS_MAP_KEY in the Streamlit app Secrets (not on GitHub).")
+        st.markdown("Request a free key: https://firms.modaps.eosdis.nasa.gov/api/map_key/")
 
     with st.form("ignis_nrt_consulta_form"):
         a, b = st.columns([2, 1])
         with a:
             seleccion = st.multiselect(
-                "Satélites a consultar", list(FUENTES),
+                "Satellites to query", list(FUENTES),
                 default=["VIIRS NOAA-20", "VIIRS NOAA-21"],
-                help="Cada fuente es un producto separado; no se suman como incendios."
+                help="Each source is a separate product; they are not added up as fires."
             )
         with b:
-            dias = st.selectbox("Período reciente (UTC)", [1, 2, 3], index=1,
-                                 format_func=lambda x: f"Últimos {x} día(s) calendario")
-        enviar = st.form_submit_button("🔎 Consultar NASA FIRMS", disabled=(not clave or not seleccion), type="primary")
+            dias = st.selectbox("Recent period (UTC)", [1, 2, 3], index=1,
+                                 format_func=lambda x: f"Last {x} calendar day(s)")
+        enviar = st.form_submit_button("🔎 Query NASA FIRMS", disabled=(not clave or not seleccion), type="primary")
 
     if enviar:
-        with st.spinner("Consultando fuentes recientes de NASA FIRMS..."):
+        with st.spinner("Querying recent NASA FIRMS sources..."):
             datos, incidencias = _consulta(clave, seleccion, dias)
         st.session_state["ignis_nrt_ultimo"] = {
             "datos": datos, "incidencias": incidencias, "fuentes": seleccion,
@@ -195,50 +195,50 @@ def mostrar_monitoreo_nrt():
         }
     estado = st.session_state.get("ignis_nrt_ultimo")
     if estado is None:
-        st.caption("Sin consultas realizadas en esta sesión. La plataforma histórica funciona normalmente.")
+        st.caption("No queries made in this session. The historical platform works normally.")
         return
 
-    st.caption(f"Consulta solicitada: {estado['fecha_consulta']} · Fuentes: {', '.join(estado['fuentes'])} · Ventana: {estado['dias']} día(s) UTC. Caché de 15 minutos.")
+    st.caption(f"Query requested: {estado['fecha_consulta']} · Sources: {', '.join(estado['fuentes'])} · Window: {estado['dias']} UTC day(s). 15-minute cache.")
     for incidencia in estado["incidencias"]:
         st.warning(incidencia)
     datos = estado["datos"]
     if datos.empty:
-        st.info("No hay detecciones en las respuestas consultadas para el recorte de Uruguay, o las fuentes no pudieron responder. Esto NO demuestra ausencia de incendios.")
+        st.info("There are no detections in the queried responses for the Uruguay area, or the sources could not respond. This does NOT prove the absence of fires.")
         return
 
     x, y, z = st.columns(3)
-    x.metric("Observaciones recientes disponibles", f"{len(datos):,}")
-    y.metric("Fuentes con detecciones", datos["producto"].nunique())
-    z.metric("Última adquisición disponible (UTC)",
-             datos["adquisicion_utc"].max().strftime("%d/%m %H:%M") if datos["adquisicion_utc"].notna().any() else "Sin hora")
-    st.markdown("#### Ubicación de las detecciones recibidas")
+    x.metric("Recent observations available", f"{len(datos):,}")
+    y.metric("Sources with detections", datos["producto"].nunique())
+    z.metric("Latest acquisition available (UTC)",
+             datos["adquisicion_utc"].max().strftime("%d/%m %H:%M") if datos["adquisicion_utc"].notna().any() else "No time")
+    st.markdown("#### Location of the received detections")
     _mapa_liviano(datos)
-    # Acceso contextual a imágenes NASA, sin agregar solicitudes externas en la app.
+    # Contextual access to NASA imagery, without adding external requests in the app.
     visibles = datos.dropna(subset=["adquisicion_utc", "latitude", "longitude"]).copy()
     if not visibles.empty:
         mas_reciente = visibles.sort_values("adquisicion_utc", ascending=False).iloc[0]
         try:
             st.link_button(
-                "Abrir última observación en NASA Worldview",
+                "Open latest observation in NASA Worldview",
                 enlace_worldview(
                     mas_reciente["adquisicion_utc"],
                     mas_reciente["latitude"],
                     mas_reciente["longitude"],
                 ),
             )
-            st.caption("Worldview abre fecha y área aproximadas; activá las capas satelitales de interés. No constituye verificación de incendio.")
+            st.caption("Worldview opens an approximate date and area; turn on the satellite layers of interest. It is not a fire verification.")
         except (ValueError, TypeError):
             pass
-    st.caption("Recorte aproximado rectangular: puede incluir áreas fuera de Uruguay. Puntos limitados a 1200 por fuente en el mapa; la tabla y el CSV conservan todos los registros devueltos.")
-    st.markdown("#### Detecciones por fuente (no incendios únicos)")
-    recuentos = datos.groupby("producto").size().reset_index(name="observaciones")
+    st.caption("Approximate rectangular area: it may include areas outside Uruguay. Points limited to 1200 per source on the map; the table and the CSV keep every returned record.")
+    st.markdown("#### Detections by source (not unique fires)")
+    recuentos = datos.groupby("producto").size().reset_index(name="observations").rename(columns={"producto": "source"})
     st.dataframe(recuentos, use_container_width=True, hide_index=True)
-    st.markdown("#### Registros recientes")
+    st.markdown("#### Recent records")
     tabla = datos.head(400).copy()
     tabla["adquisicion_utc"] = tabla["adquisicion_utc"].dt.strftime("%Y-%m-%d %H:%M UTC")
     st.dataframe(tabla, use_container_width=True, hide_index=True, height=260)
     exportar = datos.copy()
     exportar["adquisicion_utc"] = exportar["adquisicion_utc"].dt.strftime("%Y-%m-%d %H:%M UTC")
-    st.download_button("⬇️ Descargar consulta reciente CSV", exportar.to_csv(index=False).encode("utf-8-sig"),
+    st.download_button("⬇️ Download recent query CSV", exportar.to_csv(index=False).encode("utf-8-sig"),
                        file_name="IGNIS_FIRMS_consulta_reciente.csv", mime="text/csv")
-    st.warning("Detección térmica ≠ incendio confirmado. No inferir superficie quemada, severidad, cobertura completa ni cantidad de incendios sumando sensores. Para emergencias se deben usar canales oficiales.")
+    st.warning("Thermal detection ≠ confirmed fire. Do not infer burned area, severity, complete coverage or the number of fires by adding sensors. For emergencies use official channels.")

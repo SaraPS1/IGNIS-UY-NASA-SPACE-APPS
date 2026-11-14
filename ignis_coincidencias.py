@@ -1,5 +1,5 @@
-"""IGNIS V3.7: pares exploratorios entre MODIS y VIIRS.
-No calibra sensibilidad, cobertura ni FRP; no confirma un mismo incendio.
+"""IGNIS V3.7: exploratory pairs between MODIS and VIIRS.
+It does not calibrate sensitivity, coverage or FRP; it does not confirm the same fire.
 """
 import numpy as np
 import pandas as pd
@@ -20,12 +20,12 @@ def _xyz(lat,lon):
     return np.column_stack([np.cos(a)*np.cos(b),np.cos(a)*np.sin(b),np.sin(a)])
 
 def emparejar(df, ano=None, radio_km=5.0, ventana_min=30):
-    """Un par como máximo por observación dentro de cada comparación MODIS-VIIRS.
-    Opera en UTC y cada día, con distancia geodésica aproximada (cuerda terrestre).
-    La coincidencia no implica equivalencia instrumental ni evento compartido.
+    """At most one pair per observation within each MODIS-VIIRS comparison.
+    Operates in UTC and per day, with approximate geodesic distance (Earth chord).
+    Coincidence does not imply instrument equivalence or a shared event.
     """
-    if not 0 < float(radio_km) <= 50: raise ValueError('radio_km entre 0 y 50')
-    if not 0 <= int(ventana_min) <= 1440: raise ValueError('ventana_min entre 0 y 1440')
+    if not 0 < float(radio_km) <= 50: raise ValueError('radio_km must be between 0 and 50')
+    if not 0 <= int(ventana_min) <= 1440: raise ValueError('ventana_min must be between 0 and 1440')
     if df is None or df.empty: return pd.DataFrame(columns=COLUMNAS)
     z=df.copy()
     z['fecha_utc']=pd.to_datetime(z['fecha'],utc=True,errors='coerce').dt.strftime('%Y-%m-%d')
@@ -38,14 +38,14 @@ def emparejar(df, ano=None, radio_km=5.0, ventana_min=30):
     if z.empty:return pd.DataFrame(columns=COLUMNAS)
     z['familia']=np.where(z.instrumento.astype(str).str.upper().str.startswith('MODIS'),'MODIS','VIIRS')
     records=[]
-    # Deduplicación no transitiva: MODIS--VIIRS S-NPP y MODIS--VIIRS NOAA-20 por separado.
+    # Non-transitive deduplication: MODIS--VIIRS S-NPP and MODIS--VIIRS NOAA-20 separately.
     for day, g in z.groupby('fecha_utc',sort=True):
         ma=g[g.familia=='MODIS']; vb=g[g.familia=='VIIRS']
         if ma.empty or vb.empty:continue
         for nombre,vi in vb.groupby('instrumento',sort=True):
             a=ma.reset_index(drop=True); b=vi.reset_index(drop=True)
             xyz1=_xyz(a.latitude.to_numpy(),a.longitude.to_numpy()); xyz2=_xyz(b.latitude.to_numpy(),b.longitude.to_numpy())
-            # Radio angular -> distancia euclídea de cuerda sobre esfera unitaria.
+            # Angular radius -> Euclidean chord distance on the unit sphere.
             chord=2*np.sin(float(radio_km)/(2*6371.0088))
             pairs=cKDTree(xyz1).query_ball_tree(cKDTree(xyz2),r=chord)
             options=[]
@@ -64,6 +64,6 @@ def emparejar(df, ano=None, radio_km=5.0, ventana_min=30):
     return pd.DataFrame(records,columns=COLUMNAS)
 
 def resumir_pares(pares):
-    if pares.empty:return pd.DataFrame(columns=['Mes','Par instrumental','Pares','Distancia mediana (km)','Diferencia mediana (min)'])
-    z=pares.copy(); z['Mes']=pd.to_datetime(z.fecha_utc).dt.strftime('%Y-%m');z['Par instrumental']=z.modis+' / '+z.viirs
-    return z.groupby(['Mes','Par instrumental']).agg(Pares=('distancia_km','size'),**{'Distancia mediana (km)':('distancia_km','median'),'Diferencia mediana (min)':('diferencia_min','median')}).reset_index().round(2)
+    if pares.empty:return pd.DataFrame(columns=['Month','Instrument pair','Pairs','Median distance (km)','Median difference (min)'])
+    z=pares.copy(); z['Month']=pd.to_datetime(z.fecha_utc).dt.strftime('%Y-%m');z['Instrument pair']=z.modis+' / '+z.viirs
+    return z.groupby(['Month','Instrument pair']).agg(Pairs=('distancia_km','size'),**{'Median distance (km)':('distancia_km','median'),'Median difference (min)':('diferencia_min','median')}).reset_index().round(2)

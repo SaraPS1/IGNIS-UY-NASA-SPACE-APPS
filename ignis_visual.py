@@ -1,7 +1,7 @@
-"""Componentes de presentación de IGNIS UY.
+"""IGNIS UY presentation components.
 
-Solo cambia la UI. No altera importación de datos, armonización,
-correspondencia de observaciones ni métricas científicas.
+UI only. It does not alter data import, harmonization,
+observation matching or scientific metrics.
 """
 import json
 from html import escape
@@ -27,7 +27,7 @@ def apply_visual_theme():
       box-sizing:border-box;
       padding: .9rem clamp(.6rem,1.15vw,1.35rem) 2.6rem!important;
     }
-    /* Sidebar premium: marca compacta + navegación tipo producto. */
+    /* Premium sidebar: compact brand + product-style navigation. */
     section[data-testid="stSidebar"] {
       background:linear-gradient(175deg,#0b1b2e 0%,#0b182a 55%,#0a1424 100%)!important;
       border-right:1px solid #30516a;
@@ -66,8 +66,8 @@ def apply_visual_theme():
       padding:17px 7px 9px;margin-top:8px;
       color:#85a8bf;font-weight:800;letter-spacing:.13em;font-size:.64rem;
     }
-    /* Los radio buttons siguen siendo accesibles, pero su indicador
-       nativo no se muestra; la selección se representa mediante una línea. */
+    /* Radio buttons remain accessible, but their native indicator is
+       hidden; the selection is represented by a line. */
     section[data-testid="stSidebar"] div[role="radiogroup"]{
       display:flex;flex-direction:column;gap:2px;
     }
@@ -274,7 +274,7 @@ def apply_visual_theme():
 
 
 def _reference_styles():
-    """Ajustes visuales de la maqueta seleccionada: no modifica los datos."""
+    """Visual tweaks for the selected mockup: it does not modify data."""
     from urllib.parse import quote
     css = r"""<style>
     .stApp{--ignis-aqua:#35e4ee;background:radial-gradient(ellipse at 50% 0%,#071c30,#04111e 70%)!important}
@@ -430,8 +430,8 @@ def _reference_styles():
     section[data-testid="stSidebar"] div[role="radiogroup"] label:focus-within{
       outline:2px solid #33ddec!important;outline-offset:2px!important;
     }
-    /* Reemplaza los controles radio por navegación real con 15 botones:
-       iconos específicos y sin círculos de selección. */
+    /* Replaces the radio controls with real navigation using 15 buttons:
+       specific icons and no selection circles. */
     section[data-testid="stSidebar"] div[class*="st-key-ignis_nav_"] button{
       position:relative!important;display:flex!important;align-items:center!important;
       justify-content:flex-start!important;gap:9px!important;
@@ -482,8 +482,8 @@ def _reference_styles():
     .ignis-ui-hero{
       min-height:423px!important;background-position:center center!important;
     }
-    /* Los fondos de portada se cargan localmente en render_project_home. */
-    /* Chip/icono de sección: HUD discreto, no más tarjetas infladas. */
+    /* Home backgrounds are loaded locally in render_project_home. */
+    /* Section chip/icon: discreet HUD, no more inflated cards. */
     .ignis-ui-card{min-height:205px!important}
     .ignis-ui-topbar{background:rgba(2,13,25,.98)!important}
     @media(max-width:900px){.ignis-ui-hero{min-height:385px!important;padding:27px!important}.ignis-ui-hero h1{font-size:clamp(2.7rem,8vw,4rem)!important}}
@@ -512,7 +512,7 @@ def _reference_styles():
                'stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
                + shape + '</svg>')
         url = quote(svg, safe="")
-        # Estilo por clave estable: no depende del DOM interno de Streamlit.
+        # Styling by stable key: it does not depend on Streamlit internal DOM.
         selector = (f'section[data-testid="stSidebar"] '
                     f'div.st-key-ignis_nav_{i - 1:02d} button::before')
         icons.append(f'<style>{selector}{{-webkit-mask-image:url("data:image/svg+xml,{url}");'
@@ -557,7 +557,7 @@ def _header(kicker, title, subtitle):
 def _empty_uruguay_outline(base, key):
     file = Path(base) / "uruguay_contorno.geojson"
     if not file.exists():
-        st.info("El contorno de Uruguay no está disponible en este despliegue.")
+        st.info("The Uruguay outline is not available in this deployment.")
         return
     geometry = json.loads(file.read_text(encoding="utf-8"))["features"][0]["geometry"]
     coords = geometry["coordinates"] if geometry["type"] == "Polygon" else geometry["coordinates"][0]
@@ -605,21 +605,21 @@ def _home_background_image(path, asset_uri, role):
 
 
 def render_project_home(base, asset_uri, pages, navigate):
-    """Portada institucional A: maqueta aprobada con SVG de alta resolución."""
+    """Institutional landing page A: approved mockup with high-resolution SVG."""
     logo = Path(base) / "logo_ignis.png"
-    logo_markup = (f'<img src="{asset_uri(logo)}" alt="Logo IGNIS UY">'
+    logo_markup = (f'<img src="{asset_uri(logo)}" alt="IGNIS UY logo">'
                    if logo.exists() else "◈")
     st.markdown(
         '<div class="ignis-ui-topbar"><div class="ignis-ui-wordmark">'
-        f'{logo_markup}<div>IGNIS UY<small>Histórico · Uruguay</small></div></div>'
+        f'{logo_markup}<div>IGNIS UY<small>Historical · Uruguay</small></div></div>'
         '<div class="ignis-ui-links">'
         '<a href="https://ema.fau.mil.uy/" target="_blank" rel="noopener noreferrer">EMA ↗</a>'
         '<a href="https://www.spaceappschallenge.org/2026/" target="_blank" '
         'rel="noopener noreferrer">NASA Space Apps ↗</a></div></div>',
         unsafe_allow_html=True,
     )
-    # Prioridad real: WebP aprobado -> SVG local -> JPG heredado.
-    # El CSS se agrega al mismo elemento, no a otro bloque de st.markdown.
+    # Actual priority: approved WebP -> local SVG -> legacy JPG.
+    # The CSS is added to the same element, not to another st.markdown block.
     hero_candidates = [
         Path(base) / "assets" / "bg_portada.webp",
         Path(base) / "assets" / "ignis_hero_premium.svg",
@@ -631,45 +631,45 @@ def render_project_home(base, asset_uri, pages, navigate):
         '<div class="ignis-ui-hero">'
         + hero_image +
         '<div class="ignis-ui-kicker">'
-        'Análisis satelital de actividad térmica en Uruguay</div>'
-        '<h1>IGNIS UY<br><span>Histórico</span></h1>'
-        '<p>Explorá observaciones NASA FIRMS de los sensores MODIS y VIIRS, '
-        'compará períodos históricos y consultá evidencia documental para '
-        'interpretar la actividad térmica del territorio uruguayo.</p>'
+        'Satellite analysis of thermal activity in Uruguay</div>'
+        '<h1>IGNIS UY<br><span>Historical</span></h1>'
+        '<p>Explore NASA FIRMS observations from the MODIS and VIIRS sensors, '
+        'compare historical periods and check documentary evidence to '
+        'interpret thermal activity across Uruguayan territory.</p>'
         '<div class="ignis-ui-hero-facts">'
         '<span>' + _feature_icon("sat") + 'MODIS + VIIRS</span>'
-        '<span>' + _feature_icon("calendar") + 'Estudio histórico 2000–2026</span>'
-        '<span>' + _feature_icon("location") + 'Enfoque geoespacial</span>'
+        '<span>' + _feature_icon("calendar") + 'Historical study 2000–2026</span>'
+        '<span>' + _feature_icon("location") + 'Geospatial approach</span>'
         '</div></div>',
         unsafe_allow_html=True,
     )
     left, center, right = st.columns([1.08, 1, 1], gap="medium")
     with left:
-        st.button("Explorar histórico", type="primary", use_container_width=True,
+        st.button("Explore history", type="primary", use_container_width=True,
                   key="hero_to_history", on_click=navigate, args=(pages[4],))
     with center:
-        st.button("Centro de control", use_container_width=True,
+        st.button("Control center", use_container_width=True,
                   key="hero_to_dashboard", on_click=navigate, args=(pages[1],))
     with right:
-        st.button("Cargar datos", use_container_width=True,
+        st.button("Upload data", use_container_width=True,
                   key="hero_to_upload", on_click=navigate, args=(pages[2],))
     st.markdown(
-        '<h2 class="ignis-home-section-title">Qué podés hacer en IGNIS</h2>',
+        '<h2 class="ignis-home-section-title">What you can do in IGNIS</h2>',
         unsafe_allow_html=True,
     )
     cards = [
         ("sat", "ignis-ui-card--heat", "bg_observaciones.webp",
-         "Observaciones satelitales",
-         "Explorá los registros originales y las diferencias entre los "
-         "instrumentos MODIS y VIIRS."),
+         "Satellite observations",
+         "Explore the original records and the differences between the "
+         "MODIS and VIIRS instruments."),
         ("map", "ignis-ui-card--atlas", "bg_atlas.webp",
-         "Atlas científico",
-         "Localizá actividad térmica por región, fecha y sensor en los "
-         "mapas del estudio."),
+         "Scientific atlas",
+         "Locate thermal activity by region, date and sensor on the "
+         "study maps."),
         ("shield", "ignis-ui-card--trace", "bg_trazabilidad.webp",
-         "Trazabilidad",
-         "Contrastá episodios con informes y fuentes externas, sin asumir "
-         "que una detección confirma un incendio."),
+         "Traceability",
+         "Cross-check episodes against reports and external sources, without "
+         "assuming that a detection confirms a fire."),
     ]
     for col, (icon, variant, filename, title, description) in zip(
         st.columns(3, gap="medium"), cards
@@ -689,27 +689,27 @@ def render_project_home(base, asset_uri, pages, navigate):
                 unsafe_allow_html=True,
             )
     st.caption(
-        "Investigación independiente en el contexto de NASA Space Apps "
-        "Challenge 2026. La escena espacial es ilustrativa. Los fondos "
-        "son ilustraciones digitales, no fotografías satelitales fechadas "
-        "ni validaciones de incendios. Las anomalías térmicas no equivalen "
-        "a incendios confirmados; la armonización sigue siendo experimental "
-        "y la cobertura depende de los archivos suministrados."
+        "Independent research in the context of the NASA Space Apps "
+        "Challenge 2026. The space scene is illustrative. The backgrounds "
+        "are digital illustrations, not dated satellite photographs "
+        "or fire validations. Thermal anomalies are not equivalent "
+        "to confirmed fires; harmonization remains experimental "
+        "and coverage depends on the supplied files."
     )
 
 
 def render_control_center(combined,sample,selected,base,map_fn,pages,navigate):
-    _header("Panel general · Uruguay","Centro de control",
-            "Monitoreo exploratorio y análisis histórico de observaciones NASA FIRMS.")
+    _header("Overview · Uruguay","Control center",
+            "Exploratory monitoring and historical analysis of NASA FIRMS observations.")
     if isinstance(combined,pd.DataFrame) and not combined.empty and not sample.empty:
         view=sample[sample.anio==selected] if selected is not None else sample
     else:
         view=pd.DataFrame()
     cards=[
-        ("Detecciones visibles",f"{len(view):,}" if not view.empty else "Sin datos"),
-        ("Años con registros",str(sample.anio.nunique()) if not sample.empty else "—"),
-        ("Sensores presentes",str(view.instrumento.nunique()) if not view.empty else "—"),
-        ("Año seleccionado",str(selected) if selected is not None else "—"),
+        ("Visible detections",f"{len(view):,}" if not view.empty else "No data"),
+        ("Years with records",str(sample.anio.nunique()) if not sample.empty else "—"),
+        ("Sensors present",str(view.instrumento.nunique()) if not view.empty else "—"),
+        ("Selected year",str(selected) if selected is not None else "—"),
     ]
     for column,(title,value) in zip(st.columns(4,gap="small"),cards):
         column.metric(title,value)
@@ -717,18 +717,18 @@ def render_control_center(combined,sample,selected,base,map_fn,pages,navigate):
     left,right=st.columns([1.9,1],gap="medium")
     with left:
         with st.container(border=True):
-            st.markdown("#### 🗺️ Actividad térmica · Uruguay")
+            st.markdown("#### 🗺️ Thermal activity · Uruguay")
             if not view.empty:
                 map_fn(view,"ignis_control_map")
             else:
-                st.caption("Importá registros para visualizar las detecciones.")
+                st.caption("Import records to display the detections.")
                 _empty_uruguay_outline(base,"ignis_control_empty")
     with right:
         with st.container(border=True):
-            st.markdown("#### 📡 Instrumentos")
+            st.markdown("#### 📡 Instruments")
             if view.empty:
-                st.info("No hay observaciones en esta selección.")
-                st.button("📂 Importar datos",type="primary",
+                st.info("There are no observations in this selection.")
+                st.button("📂 Import data",type="primary",
                           use_container_width=True,key="control_upload",
                           on_click=navigate,args=(pages[2],))
             else:
@@ -738,83 +738,83 @@ def render_control_center(combined,sample,selected,base,map_fn,pages,navigate):
                     marker_color="#44d1e4"))
                 fig.update_layout(height=245,margin=dict(l=12,r=12,t=15,b=28),
                     paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#dceffa"),xaxis_title="Registros")
+                    font=dict(color="#dceffa"),xaxis_title="Records")
                 st.plotly_chart(fig,use_container_width=True,key="ignis_control_sensors")
-                st.caption("Cantidad de detecciones por instrumento; no son incendios únicos.")
+                st.caption("Number of detections per instrument; they are not unique fires.")
         with st.container(border=True):
-            st.markdown("#### 🛡️ Validación externa")
-            st.caption("Evidencias históricas y referencias originales para revisar posibles episodios.")
-            st.button("Consultar fuentes",use_container_width=True,key="control_evidence",
+            st.markdown("#### 🛡️ External validation")
+            st.caption("Historical evidence and original references to review possible episodes.")
+            st.button("Check sources",use_container_width=True,key="control_evidence",
                       on_click=navigate,args=(pages[7],))
         with st.container(border=True):
-            st.markdown("#### 📚 Otras herramientas")
-            st.button("Atlas científico",use_container_width=True,key="control_atlas",
+            st.markdown("#### 📚 Other tools")
+            st.button("Scientific atlas",use_container_width=True,key="control_atlas",
                       on_click=navigate,args=(pages[6],))
-            st.button("Armonización MODIS–VIIRS",use_container_width=True,
+            st.button("MODIS–VIIRS harmonization",use_container_width=True,
                       key="control_harmonization",on_click=navigate,args=(pages[5],))
     if not view.empty:
-        st.markdown("#### 📈 Evolución mensual del año seleccionado")
+        st.markdown("#### 📈 Monthly evolution of the selected year")
         months=view.groupby("mes").size().sort_index()
         fig=go.Figure(go.Bar(
             x=months.index.tolist(),y=months.values.tolist(),
-            marker=dict(color="#f28c52"),name="Detecciones"))
+            marker=dict(color="#f28c52"),name="Detections"))
         fig.update_layout(height=290,margin=dict(l=15,r=15,t=12,b=35),
             paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#e4f3ff"),xaxis=dict(title="Mes",dtick=1,range=[.5,12.5]),
-            yaxis_title="Registros")
+            font=dict(color="#e4f3ff"),xaxis=dict(title="Month",dtick=1,range=[.5,12.5]),
+            yaxis_title="Records")
         st.plotly_chart(fig,use_container_width=True,key="ignis_control_months")
-    st.caption("La ausencia de registros no significa ausencia de incendios ni confirma "
-               "cobertura satelital completa. Esta plataforma no emite alertas oficiales.")
+    st.caption("The absence of records does not mean the absence of fires, nor does it confirm "
+               "complete satellite coverage. This platform does not issue official alerts.")
 
 
 def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
-    _header("Atlas científico · Exploración espacial",
-            "Atlas de actividad térmica",
-            "Elegí una escala temporal y explorá las observaciones térmicas cargadas para Uruguay.")
+    _header("Scientific atlas · Spatial exploration",
+            "Thermal activity atlas",
+            "Choose a time scale and explore the thermal observations loaded for Uruguay.")
     if sample.empty:
-        st.info("Importá archivos ZIP/CSV o el Maestro IGNIS antes de explorar el atlas.")
+        st.info("Import ZIP/CSV files or the IGNIS Master before exploring the atlas.")
         left,right=st.columns([2,1],gap="medium")
         with left:
             _empty_uruguay_outline(base,"ignis_atlas_empty")
         with right:
-            st.markdown("#### Empezá por cargar datos")
-            st.button("📂 Ir a Carga de datos",type="primary",
+            st.markdown("#### Start by uploading data")
+            st.button("📂 Go to Data upload",type="primary",
                       use_container_width=True,key="atlas_upload",
                       on_click=navigate,args=(pages[2],))
         return
-    selector=st.radio("Período del mapa",
-                      ["Todo el histórico cargado","Año seleccionado"],
+    selector=st.radio("Map period",
+                      ["Entire loaded history","Selected year"],
                       horizontal=True,key="ignis_atlas_period")
-    mapped=sample if selector=="Todo el histórico cargado" else sample[sample.anio==selected]
+    mapped=sample if selector=="Entire loaded history" else sample[sample.anio==selected]
     a,b,c=st.columns(3)
-    a.metric("Detecciones en el recorte",f"{len(mapped):,}")
-    b.metric("Años con registros",str(mapped.anio.nunique()))
-    c.metric("Sensores presentes",str(mapped.instrumento.nunique()))
+    a.metric("Detections in the selection",f"{len(mapped):,}")
+    b.metric("Years with records",str(mapped.anio.nunique()))
+    c.metric("Sensors present",str(mapped.instrumento.nunique()))
     st.write("")
     map_col,tools_col=st.columns([2.15,1],gap="medium")
     with map_col:
         with st.container(border=True):
-            st.markdown("#### 🗺️ Distribución geográfica")
+            st.markdown("#### 🗺️ Geographic distribution")
             if not mapped.empty:
                 map_fn(mapped,"ignis_atlas_scientific")
             else:
-                st.info("No hay puntos para el período seleccionado.")
+                st.info("There are no points for the selected period.")
                 _empty_uruguay_outline(base,"ignis_atlas_selection_empty")
     with tools_col:
         with st.container(border=True):
-            st.markdown("#### 🧰 Herramientas")
-            st.button("🔄 Comparar MODIS–VIIRS",use_container_width=True,
+            st.markdown("#### 🧰 Tools")
+            st.button("🔄 Compare MODIS–VIIRS",use_container_width=True,
                       key="atlas_harmonization",on_click=navigate,args=(pages[5],))
-            st.button("🛡️ Fuentes externas",use_container_width=True,
+            st.button("🛡️ External sources",use_container_width=True,
                       key="atlas_sources",on_click=navigate,args=(pages[7],))
             if not mapped.empty:
                 available=[c for c in columns if c in mapped.columns]
                 csv=mapped[available].to_csv(index=False).encode("utf-8-sig")
-                st.download_button("⬇️ Descargar recorte CSV",csv,
+                st.download_button("⬇️ Download selection CSV",csv,
                     file_name="IGNIS_atlas_registros.csv",mime="text/csv",
                     use_container_width=True,key="atlas_download")
         with st.container(border=True):
-            st.markdown("#### 📊 Actividad por sensor")
+            st.markdown("#### 📊 Activity by sensor")
             if not mapped.empty:
                 counts=mapped.groupby("instrumento").size()
                 fig=go.Figure(go.Pie(labels=counts.index.astype(str),
@@ -825,9 +825,9 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
                     showlegend=True,legend=dict(orientation="h",y=-.12))
                 st.plotly_chart(fig,use_container_width=True,key="atlas_instrument_pie")
             else:
-                st.caption("No hay datos para comparar.")
+                st.caption("No data to compare.")
         with st.container(border=True):
-            st.markdown("#### 📈 Actividad por mes")
+            st.markdown("#### 📈 Activity by month")
             if not mapped.empty:
                 monthly=mapped.groupby("mes").size().sort_index()
                 fig=go.Figure(go.Scatter(
@@ -836,9 +836,9 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
                     marker=dict(size=7,color="#fd9356")))
                 fig.update_layout(height=220,margin=dict(l=8,r=8,t=12,b=25),
                     paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#dceeff"),xaxis=dict(dtick=1,title="Mes"))
+                    font=dict(color="#dceeff"),xaxis=dict(dtick=1,title="Month"))
                 st.plotly_chart(fig,use_container_width=True,key="atlas_month_line")
-    st.caption("Mapa estadístico basado en los registros FIRMS importados; "
-               "no utiliza imágenes satelitales como fondo. La densidad es ilustrativa "
-               "y no corresponde a hectáreas quemadas. Los meses sin registros "
-               "no demuestran ausencia de actividad.")
+    st.caption("Statistical map based on the imported FIRMS records; "
+               "it does not use satellite imagery as a background. Density is illustrative "
+               "and does not correspond to burned hectares. Months without records "
+               "do not prove the absence of activity.")

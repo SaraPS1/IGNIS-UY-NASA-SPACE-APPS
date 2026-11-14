@@ -1,5 +1,5 @@
-"""IGNIS UY Histórico v2.0 — prototipo de análisis reproducible NASA FIRMS.
-El archivo maestro se exporta y se vuelve a importar; Streamlit Cloud no ofrece persistencia local garantizada.
+"""IGNIS UY Historical v2.0 — reproducible NASA FIRMS analysis prototype.
+The master file is exported and re-imported; Streamlit Cloud does not guarantee local persistence.
 """
 import io, json, zipfile, hashlib, base64, os
 from datetime import datetime, timezone
@@ -29,13 +29,13 @@ from ignis_espacio import render_ignis_space_module
 from ignis_visual import (apply_visual_theme, render_project_home,
                           render_control_center, render_scientific_atlas)
 
-st.set_page_config(page_title='IGNIS UY | Histórico 2000–2026',page_icon='🛰️',layout='wide',initial_sidebar_state='expanded')
+st.set_page_config(page_title='IGNIS UY | Historical 2000–2026',page_icon='🛰️',layout='wide',initial_sidebar_state='expanded')
 BASE=Path(__file__).resolve().parent
 REGIONES={
- 'Uruguay (rectángulo aproximado)':(-35.2,-30.,-58.6,-53.),
+ 'Uruguay (approximate rectangle)':(-35.2,-30.,-58.6,-53.),
  'Durazno':(-33.460,-33.280,-56.750,-56.440),
  'Cerro del Toro (Maldonado)':(-34.880,-34.840,-55.280,-55.230),
- 'Treinta y Tres (zona Vergara)':(-32.985,-32.879,-54.069,-53.920),
+ 'Treinta y Tres (Vergara area)':(-32.985,-32.879,-54.069,-53.920),
  'Canelones (Atlántida/Salinas)':(-34.788,-34.724,-55.890,-55.810),
  'Lavalleja':(-34.116,-34.044,-54.940,-54.842),
  'Artigas':(-30.505,-30.443,-56.576,-56.499),
@@ -81,20 +81,20 @@ def parse_firms(blob, filename):
             with zipfile.ZipFile(io.BytesIO(blob)) as z:
                 entries=[(n,z.read(n)) for n in z.namelist() if n.lower().endswith('.csv') and not n.startswith('__MACOSX/')]
         else: entries=[(filename,blob)]
-    except Exception as e: return pd.DataFrame(columns=COLS),[f'{filename}: ZIP no válido ({e})'],[]
+    except Exception as e: return pd.DataFrame(columns=COLS),[f'{filename}: invalid ZIP ({e})'],[]
     for name,raw in entries:
         try:
             df=pd.read_csv(io.BytesIO(raw),low_memory=False)
             df.columns=[x.strip().lower() for x in df.columns]
             if not {'latitude','longitude','acq_date'}.issubset(df):
-                errors.append(f'{name}: falta latitude, longitude o acq_date');continue
+                errors.append(f'{name}: missing latitude, longitude or acq_date');continue
             sat=df.get('satellite',pd.Series('',index=df.index)).fillna('').astype(str).str.upper()
             instrumentos=clasificar_instrumentos(df,name)
             sin_identificar=int(instrumentos.isna().sum())
             if sin_identificar:
-                errors.append(f'{name}: {sin_identificar} filas sin instrumento verificable, omitidas.')
+                errors.append(f'{name}: {sin_identificar} rows without a verifiable instrument, skipped.')
             if instrumentos.notna().sum()==0:
-                errors.append(f'{name}: ninguna fila con MODIS/VIIRS reconocible.');continue
+                errors.append(f'{name}: no rows with a recognizable MODIS/VIIRS instrument.');continue
             out=pd.DataFrame(index=df.index)
             out['fecha']=pd.to_datetime(df.acq_date,utc=True,errors='coerce').dt.strftime('%Y-%m-%d')
             out['latitude']=pd.to_numeric(df.latitude,errors='coerce')
@@ -107,10 +107,10 @@ def parse_firms(blob, filename):
             out['fuente']=filename+' :: '+name
             out=out.dropna(subset=['fecha','latitude','longitude','instrumento'])
             out=out[out.latitude.between(-90,90)&out.longitude.between(-180,180)].copy()
-            # Mantener identidad estable entre cargas, sin usar el nombre del ZIP.
+            # Keep a stable identity across uploads, without using the ZIP name.
             identity=out[['fecha','latitude','longitude','instrumento','satellite','acq_time','frp','confidence']].fillna('').astype(str).agg('|'.join,axis=1)
             out['id_registro']=identity.map(lambda t:hashlib.sha256(t.encode()).hexdigest()[:24])
-            result.append(out[COLS]);sources.append({'archivo':filename,'csv':name,'sensor':', '.join(sorted(out.instrumento.unique())) if len(out) else 'Sin registros válidos','registros_validos':len(out),'primer_dia':out.fecha.min() if len(out) else '', 'ultimo_dia':out.fecha.max() if len(out) else '', 'sha256':hashlib.sha256(raw).hexdigest()})
+            result.append(out[COLS]);sources.append({'archivo':filename,'csv':name,'sensor':', '.join(sorted(out.instrumento.unique())) if len(out) else 'No valid records','registros_validos':len(out),'primer_dia':out.fecha.min() if len(out) else '', 'ultimo_dia':out.fecha.max() if len(out) else '', 'sha256':hashlib.sha256(raw).hexdigest()})
         except Exception as e: errors.append(f'{name}: error ({type(e).__name__}: {e})')
     return (pd.concat(result,ignore_index=True) if result else pd.DataFrame(columns=COLS)),errors,sources
 
@@ -136,27 +136,27 @@ def clave_firms():
 def descargar_firms(source, bbox, dias):
     clave=clave_firms()
     if not clave:
-        raise RuntimeError('Falta configurar FIRMS_MAP_KEY.')
+        raise RuntimeError('FIRMS_MAP_KEY is not configured.')
     oeste,sur,este,norte=bbox
     base='https://firms.modaps.eosdis.nasa.gov/api/area/csv'
     url=f'{base}/{clave}/{source}/{oeste},{sur},{este},{norte}/{int(dias)}'
     try:
         respuesta=requests.get(url,timeout=30)
     except requests.RequestException as error:
-        raise RuntimeError(f'No se pudo contactar NASA FIRMS ({type(error).__name__}).') from error
+        raise RuntimeError(f'Could not reach NASA FIRMS ({type(error).__name__}).') from error
     texto=respuesta.text.strip()
     if respuesta.status_code != 200 or texto.lower().startswith(('invalid','unauthorized')):
-        raise RuntimeError(f'NASA FIRMS rechazó la consulta ({respuesta.status_code}).')
+        raise RuntimeError(f'NASA FIRMS rejected the request ({respuesta.status_code}).')
     if not texto:
         return pd.DataFrame(columns=COLS)
     try:
         crudo=pd.read_csv(io.StringIO(texto),low_memory=False)
     except Exception as error:
-        raise RuntimeError(f'NASA FIRMS devolvió datos ilegibles ({type(error).__name__}).') from error
+        raise RuntimeError(f'NASA FIRMS returned unreadable data ({type(error).__name__}).') from error
     crudo.columns=[str(columna).strip().lower() for columna in crudo.columns]
     requeridas={'latitude','longitude','acq_date','acq_time'}
     if not requeridas.issubset(crudo.columns):
-        raise RuntimeError('NASA FIRMS devolvió un formato inesperado.')
+        raise RuntimeError('NASA FIRMS returned an unexpected format.')
     if source == 'MODIS_NRT':
         instrumento='MODIS'
     elif 'NOAA20' in source.upper() or 'NOAA-20' in source.upper():
@@ -185,7 +185,7 @@ def descargar_firms(source, bbox, dias):
 def leer_maestro(blob):
     try:
         with zipfile.ZipFile(io.BytesIO(blob)) as z:
-            if 'observaciones.csv' not in z.namelist():raise ValueError('Falta observaciones.csv')
+            if 'observaciones.csv' not in z.namelist():raise ValueError('observaciones.csv is missing')
             df=pd.read_csv(io.BytesIO(z.read('observaciones.csv')),dtype={'acq_time':str,'id_registro':str},low_memory=False)
             info=json.loads(z.read('manifest.json')) if 'manifest.json' in z.namelist() else {}
         return normalizar(df), info, None
@@ -193,7 +193,7 @@ def leer_maestro(blob):
 
 def crear_maestro(df):
     bio=io.BytesIO()
-    manifest={'proyecto':'IGNIS UY','version_formato':'2','registros':len(df),'advertencia':'Observaciones FIRMS, no incendios confirmados. Los ZIP no se conservan en este archivo.'}
+    manifest={'proyecto':'IGNIS UY','version_formato':'2','registros':len(df),'advertencia':'FIRMS observations, not confirmed fires. The ZIP files are not kept in this archive.'}
     with zipfile.ZipFile(bio,'w',compression=zipfile.ZIP_DEFLATED) as z:
         z.writestr('observaciones.csv',df.to_csv(index=False))
         z.writestr('manifest.json',json.dumps(manifest,ensure_ascii=False,indent=2))
@@ -209,15 +209,15 @@ def dotar_tiempo(df):
     return d
 
 def heatmap_mensual(df, nombre, clave):
-    if df.empty:st.info('Todavía no hay observaciones para este instrumento.');return
+    if df.empty:st.info('No observations for this instrument yet.');return
     counts=df.groupby(['anio','mes']).size().reset_index(name='total')
     years=range(2000,2027)
     matrix=counts.pivot(index='mes',columns='anio',values='total').reindex(index=range(1,13),columns=years)
     # NaN intentionally denotes no uploaded evidence for that month; never infer zero coverage.
-    fig=go.Figure(go.Heatmap(z=matrix.values,x=[str(y) for y in years],y=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'],colorscale=[[0,'#302355'],[.25,'#6240a4'],[.5,'#b944a5'],[.75,'#ef777b'],[1,'#ffdb68']],colorbar={'title':'Registros'},hovertemplate='Año %{x} · %{y}<br>Detecciones %{z}<extra></extra>',xgap=2,ygap=2))
+    fig=go.Figure(go.Heatmap(z=matrix.values,x=[str(y) for y in years],y=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],colorscale=[[0,'#302355'],[.25,'#6240a4'],[.5,'#b944a5'],[.75,'#ef777b'],[1,'#ffdb68']],colorbar={'title':'Records'},hovertemplate='Year %{x} · %{y}<br>Detections %{z}<extra></extra>',xgap=2,ygap=2))
     fig.update_layout(title=nombre,template='plotly_dark',paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',height=440,margin=dict(l=25,r=15,t=50,b=30),xaxis=dict(tickangle=-55),yaxis=dict(autorange='reversed'))
     st.plotly_chart(fig,use_container_width=True,key=clave)
-    st.caption('Celdas vacías = no hay detecciones en el material cargado; la cobertura efectiva del satélite no está verificada. No se interpretan automáticamente como cero actividad.')
+    st.caption('Empty cells = no detections in the uploaded material; effective satellite coverage is not verified. They are never interpreted automatically as zero activity.')
 
 def resumen_estacional(df, sensor):
     # Compare same month and instrument, across loaded calendar years; 3-year minimum.
@@ -229,7 +229,7 @@ def resumen_estacional(df, sensor):
         if len(historical)<3:continue
         med=float(historical.n.median())
         if r.n>=5 and r.n>=2*max(med,1):
-            warnings.append({'Año':int(r.anio),'Mes':int(r.mes),'Sensor':sensor,'Detecciones':int(r.n),'Mediana otros años':med,'Índice frente a mediana':round(r.n/max(med,1),2)})
+            warnings.append({'Year':int(r.anio),'Month':int(r.mes),'Sensor':sensor,'Detections':int(r.n),'Median other years':med,'Ratio to median':round(r.n/max(med,1),2)})
     return warnings
 
 
@@ -247,10 +247,10 @@ def periodos_sensor(df):
             start=prev=year;sig=signature;continue
         if year==prev+1 and signature==sig:
             prev=year;continue
-        periods.append({'Período':f'{start}–{prev}' if start!=prev else str(start),'Configuración instrumental':sig})
+        periods.append({'Period':f'{start}–{prev}' if start!=prev else str(start),'Instrument configuration':sig})
         start=prev=year;sig=signature
     if start is not None:
-        periods.append({'Período':f'{start}–{prev}' if start!=prev else str(start),'Configuración instrumental':sig})
+        periods.append({'Period':f'{start}–{prev}' if start!=prev else str(start),'Instrument configuration':sig})
     return periods
 
 def resumen_armonizacion(df, ano=None, grid_deg=0.20):
@@ -286,20 +286,20 @@ def resumen_armonizacion(df, ano=None, grid_deg=0.20):
     coinc_month=coinc.groupby(['anio','mes']).size().reset_index(name='celdas_coincidentes') if len(coinc) else pd.DataFrame(columns=['anio','mes','celdas_coincidentes'])
     table=monthly_presence[['anio','mes','MODIS','VIIRS']].copy() if len(monthly_presence) else pd.DataFrame(columns=['anio','mes','MODIS','VIIRS'])
     if len(table):
-        table['Mes']=table['mes'].map({1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'})
+        table['Month']=table['mes'].map({1:'January',2:'February',3:'March',4:'April',5:'May',6:'June',7:'July',8:'August',9:'September',10:'October',11:'November',12:'December'})
         table=table.merge(coinc_month[['mes','celdas_coincidentes']],on='mes',how='left').fillna({'celdas_coincidentes':0})
-        table=table[['Mes','MODIS','VIIRS','celdas_coincidentes']].rename(columns={'celdas_coincidentes':'Celdas coincidentes'})
-        table['Celdas coincidentes']=table['Celdas coincidentes'].astype(int)
+        table=table[['Month','MODIS','VIIRS','celdas_coincidentes']].rename(columns={'celdas_coincidentes':'Coincident cells'})
+        table['Coincident cells']=table['Coincident cells'].astype(int)
     return {'has_both':True,'overlap_years':overlap_years,'selected_overlap_months':int(len(monthly_presence)),'selected_coincident_cells':int(coinc_month['celdas_coincidentes'].sum()) if len(coinc_month) else 0,'periods':periods,'table':table,'coincidencias':coinc_month}
 
 def mapa_ignis(datos, clave='ignis_mapa'):
-    """Mapa local sin servidores de teselas: los puntos y la densidad vienen del Maestro."""
+    """Local map without tile servers: points and density come from the Master file."""
     import plotly.graph_objects as go
     import numpy as np
     from matplotlib.path import Path as MPath
     border_file=BASE/'uruguay_contorno.geojson'
     if not border_file.exists():
-        st.error('Falta uruguay_contorno.geojson en el repositorio.')
+        st.error('uruguay_contorno.geojson is missing from the repository.')
         return
     gj=json.loads(border_file.read_text(encoding='utf-8'))
     geom=gj['features'][0]['geometry']
@@ -308,7 +308,7 @@ def mapa_ignis(datos, clave='ignis_mapa'):
     clean=datos[['longitude','latitude']].apply(pd.to_numeric,errors='coerce').dropna()
     clean=clean[clean.longitude.between(-59,-52)&clean.latitude.between(-36,-29)]
     if clean.empty:
-        st.info('No hay coordenadas geográficas válidas para representar.')
+        st.info('No valid geographic coordinates to display.')
         return
     from scipy.ndimage import gaussian_filter
     x_edges=np.linspace(-58.8,-52.8,125)
@@ -322,17 +322,17 @@ def mapa_ignis(datos, clave='ignis_mapa'):
     density[~mask]=np.nan
     density[density<.06]=np.nan
     fig=go.Figure()
-    fig.add_trace(go.Scatter(x=coords[:,0],y=coords[:,1],fill='toself',fillcolor='rgba(58,37,115,0.38)',mode='lines',line=dict(color='#9bc7ff',width=2),name='Uruguay (contorno aproximado)',hoverinfo='skip'))
-    fig.add_trace(go.Heatmap(x=x,y=y,z=density,colorscale=[[0,'#42206a'],[.25,'#8440a9'],[.5,'#dc4b95'],[.75,'#ff975a'],[1,'#ffe36c']],opacity=.90,zsmooth='best',colorbar=dict(title='Densidad visual',tickfont=dict(color='white')),hovertemplate='Longitud: %{x:.2f}<br>Latitud: %{y:.2f}<br>Densidad visual: %{z:.2f}<extra></extra>'))
+    fig.add_trace(go.Scatter(x=coords[:,0],y=coords[:,1],fill='toself',fillcolor='rgba(58,37,115,0.38)',mode='lines',line=dict(color='#9bc7ff',width=2),name='Uruguay (approximate outline)',hoverinfo='skip'))
+    fig.add_trace(go.Heatmap(x=x,y=y,z=density,colorscale=[[0,'#42206a'],[.25,'#8440a9'],[.5,'#dc4b95'],[.75,'#ff975a'],[1,'#ffe36c']],opacity=.90,zsmooth='best',colorbar=dict(title='Visual density',tickfont=dict(color='white')),hovertemplate='Longitude: %{x:.2f}<br>Latitude: %{y:.2f}<br>Visual density: %{z:.2f}<extra></extra>'))
     plotpoints=clean.sample(min(len(clean),3000),random_state=42) if len(clean)>3000 else clean
-    fig.add_trace(go.Scattergl(x=plotpoints.longitude,y=plotpoints.latitude,mode='markers',marker=dict(size=4,color='#dff4ff',opacity=.55),name='Observaciones',hovertemplate='Longitud: %{x:.4f}<br>Latitud: %{y:.4f}<extra>Registro FIRMS</extra>'))
+    fig.add_trace(go.Scattergl(x=plotpoints.longitude,y=plotpoints.latitude,mode='markers',marker=dict(size=4,color='#dff4ff',opacity=.55),name='Observations',hovertemplate='Longitude: %{x:.4f}<br>Latitude: %{y:.4f}<extra>FIRMS record</extra>'))
     for name,lon,lat in [('Artigas',-56.0,-30.45),('Durazno',-56.52,-33.22),('Canelones',-56.28,-34.55),('Maldonado',-54.95,-34.73),('Rocha',-54.32,-34.12)]:
         fig.add_annotation(x=lon,y=lat,text=name,showarrow=False,font=dict(size=11,color='#f0eaff'),bgcolor='rgba(8,12,36,.65)',borderpad=3)
     fig.update_layout(height=600,margin=dict(l=10,r=18,t=28,b=15),paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='#0b1230',font=dict(color='#e8ecff'),legend=dict(orientation='h',y=1.02,x=0))
-    fig.update_xaxes(range=[-58.85,-52.65],title='Longitud',gridcolor='rgba(128,158,220,.13)',zeroline=False)
-    fig.update_yaxes(range=[-35.45,-29.75],title='Latitud',gridcolor='rgba(128,158,220,.13)',zeroline=False,scaleanchor='x',scaleratio=1)
+    fig.update_xaxes(range=[-58.85,-52.65],title='Longitude',gridcolor='rgba(128,158,220,.13)',zeroline=False)
+    fig.update_yaxes(range=[-35.45,-29.75],title='Latitude',gridcolor='rgba(128,158,220,.13)',zeroline=False,scaleanchor='x',scaleratio=1)
     st.plotly_chart(fig,use_container_width=True,key=clave)
-    st.caption('Densidad relativa ilustrativa calculada a partir de los puntos FIRMS cargados. Contorno nacional de Natural Earth (escala general): no delimita departamentos ni certifica fronteras. El mapa no representa incendios confirmados, superficies quemadas ni densidad ajustada por cobertura satelital.')
+    st.caption('Illustrative relative density computed from the uploaded FIRMS points. National outline from Natural Earth (general scale): it does not delimit departments or certify borders. The map does not represent confirmed fires, burned areas or density adjusted for satellite coverage.')
 
 SATELLITE_REFERENCE = [
     {'name':'Terra (MODIS)','instrument':'MODIS','sensor':'MODIS','orbit':'Sun-synchronous low Earth orbit','description':'Terra carries MODIS and provides morning overpasses. The orbital path shown here is illustrative and not a live ephemeris feed.','source':'NASA Earth Observing System / MODIS'},
@@ -359,32 +359,32 @@ from ignis_ask import responder_ignis
 
 
 def _ask_ignis_answer(datos, question):
-    """Compatibilidad: motor estadístico transparente, sin LLM externo."""
+    """Compatibility: transparent statistical engine, no external LLM."""
     return responder_ignis(datos, question)
 
 
 def render_ask_ignis(datos):
     st.markdown(
-        '<div class="ignis-ui-kicker">Exploración de datos · Español</div>',
+        '<div class="ignis-ui-kicker">Data exploration · English</div>',
         unsafe_allow_html=True,
     )
-    st.subheader('ASK IGNIS · Asistente de análisis')
+    st.subheader('ASK IGNIS · Analysis assistant')
     st.info(
-        'ASK IGNIS utiliza reglas estadísticas de Python/Pandas: '
-        'no está conectado a GPT, Gemini ni otra IA generativa. '
-        'Responde a partir de los datos cargados, sin inventar '
-        'incendios, fuentes externas o registros faltantes.'
+        'ASK IGNIS uses Python/Pandas statistical rules: '
+        'it is not connected to GPT, Gemini or any other generative AI. '
+        'It answers from the uploaded data, without inventing '
+        'fires, external sources or missing records.'
     )
     if 'ignis_chat_history' not in st.session_state:
         st.session_state['ignis_chat_history'] = []
 
     suggestion_questions = [
-        '¿Cuántas observaciones hay en Uruguay este mes?',
-        'Compará las detecciones MODIS y VIIRS.',
-        'Mostrá la evolución histórica por año.',
-        '¿Cuáles son los valores de FRP?',
+        'How many observations are there in Uruguay this month?',
+        'Compare MODIS and VIIRS detections.',
+        'Show the historical evolution by year.',
+        'What are the FRP values?',
     ]
-    st.caption('PREGUNTAS SUGERIDAS')
+    st.caption('SUGGESTED QUESTIONS')
     selected_question = None
     left, right = st.columns(2, gap="small")
     for idx, question in enumerate(suggestion_questions):
@@ -393,7 +393,7 @@ def render_ask_ignis(datos):
                 selected_question = question
 
     question_typed = st.chat_input(
-        'Preguntá en español por los registros FIRMS cargados…',
+        'Ask about the uploaded FIRMS records…',
         key='ignis_chat_input',
     )
     user_question = selected_question or question_typed
@@ -417,30 +417,30 @@ def render_ask_ignis(datos):
             with st.chat_message('assistant'):
                 st.write(message['content'])
                 if message.get('sources'):
-                    st.caption('Procedencia: ' + ', '.join(message['sources']))
+                    st.caption('Provenance: ' + ', '.join(message['sources']))
                 chart = message.get('chart')
                 if chart is not None and not chart.empty:
                     st.dataframe(chart, use_container_width=True, hide_index=True)
 
     if not st.session_state['ignis_chat_history']:
         st.caption(
-            'Empezá con una de las preguntas sugeridas o escribí la tuya. '
-            'Para consultar noticias o evidencias externas, usá '
-            '«Alertas y trazabilidad».'
+            'Start with one of the suggested questions or type your own. '
+            'To check news or external evidence, use '
+            '“Alerts and traceability”.'
         )
     if st.session_state['ignis_chat_history']:
-        if st.button('Limpiar conversación', key='ignis_clear_chat'):
+        if st.button('Clear conversation', key='ignis_clear_chat'):
             st.session_state['ignis_chat_history'] = []
             st.rerun()
 
     st.divider()
-    st.markdown('#### ¿Querés proponer una mejora o compartir una fuente?')
+    st.markdown('#### Want to propose an improvement or share a source?')
     st.caption(
-        'Enviá comentarios, noticias, reportes de errores o propuestas al '
-        'espacio de contribuciones del Team IGNIS.'
+        'Send comments, news, bug reports or proposals to the '
+        'Team IGNIS contributions space.'
     )
     st.button(
-        '💬 Ir a consultas y aportes',
+        '💬 Go to questions and contributions',
         use_container_width=True,
         key='ignis_ask_contact',
         on_click=_ignis_navigate_to,
@@ -453,10 +453,10 @@ def asset_uri(path, mime='image/png'):
     return f'data:{mime};base64,'+base64.b64encode(path.read_bytes()).decode('ascii')
 
 
-# ===== IGNIS UY / navegación estructural (nuevo dashboard) =====
+# ===== IGNIS UY / structural navigation (new dashboard) =====
 st.markdown("""<style>
-/* El ancho y padding principal se definen en ignis_visual.apply_visual_theme. */
-/* El diseño del panel lateral vive en ignis_visual.apply_visual_theme. */
+/* Main width and padding are defined in ignis_visual.apply_visual_theme. */
+/* The sidebar design lives in ignis_visual.apply_visual_theme. */
 [data-testid="stMetric"]{border-color:#3c657d!important;
     background:linear-gradient(130deg,#132d43,#172038)!important}
 .ignis-kicker{color:#45d5e1;font-size:.74rem;letter-spacing:.12em;
@@ -470,38 +470,38 @@ st.markdown("""<style>
 apply_visual_theme()
 
 NAV_PAGES = [
-    "✨ Inicio · Conocé IGNIS",
-    "🏠 Centro de control",
-    "📂 Carga de datos",
-    "📊 Resumen NASA por año",
-    "📚 Histórico 2000–2026",
-    "🔄 Armonización MODIS–VIIRS",
-    "🗺️ Mapa de Uruguay",
-    "⚠️ Alertas y trazabilidad",
-    "🗓️ Calendario final",
-    "📄 Informe PDF",
-    "🛰️ Monitoreo reciente",
-    "🌐 Espacio 3D y satélites",
+    "✨ Home · Meet IGNIS",
+    "🏠 Control center",
+    "📂 Data upload",
+    "📊 NASA summary by year",
+    "📚 Historical 2000–2026",
+    "🔄 MODIS–VIIRS harmonization",
+    "🗺️ Map of Uruguay",
+    "⚠️ Alerts and traceability",
+    "🗓️ Final calendar",
+    "📄 PDF report",
+    "🛰️ Recent monitoring",
+    "🌐 3D space and satellites",
     "🤖 ASK IGNIS",
-    "🌎 Fusión cielo–tierra",
-    "💬 Team IGNIS · Consultas y aportes",
+    "🌎 Sky–ground fusion",
+    "💬 Team IGNIS · Questions and contributions",
 ]
 
 def _ignis_navigate_to(section: str) -> None:
-    """El callback corre antes de reinstanciar el widget 'ignis_nav'."""
+    """The callback runs before the 'ignis_nav' widget is re-instantiated."""
     st.session_state["ignis_nav"] = section
 
 
-# El archivo cargado sobrevive a los cambios de sección en Streamlit.
+# The uploaded file survives section changes in Streamlit.
 combined=st.session_state.get("combined",pd.DataFrame(columns=COLS))
 if not isinstance(combined,pd.DataFrame):
     combined=pd.DataFrame(columns=COLS)
 
 with st.sidebar:
-    # Cabecera institucional consistente con el diseño del resto de IGNIS.
+    # Institutional header consistent with the rest of the IGNIS design.
     logo_src = asset_uri(BASE / "logo_ignis.png") if (BASE / "logo_ignis.png").exists() else ""
     logo_markup = (
-        f'<img src="{logo_src}" alt="Logo IGNIS UY" />'
+        f'<img src="{logo_src}" alt="IGNIS UY logo" />'
         if logo_src else '<span class="ignis-side-logo-fallback">◈</span>'
     )
     st.markdown(
@@ -509,16 +509,16 @@ with st.sidebar:
         f'<div class="ignis-side-logo">{logo_markup}</div>'
         '<div class="ignis-side-brand-copy">'
         '<strong>IGNIS <span>UY</span></strong>'
-        '<small>HISTÓRICO · URUGUAY</small>'
+        '<small>HISTORICAL · URUGUAY</small>'
         '</div></div>'
         '<div class="ignis-side-project">NASA FIRMS <span>·</span> MODIS + VIIRS</div>',
         unsafe_allow_html=True,
     )
-    st.markdown('<div class="ignis-side-section-title">NAVEGACIÓN</div>',
+    st.markdown('<div class="ignis-side-section-title">NAVIGATION</div>',
                 unsafe_allow_html=True)
-    # El botón de cada sección tiene una clave única. No dependemos de la
-    # estructura interna de st.radio ni de nth-child: se eliminan las casitas
-    # duplicadas y los controles circulares visibles.
+    # Each section button has a unique key. We do not depend on the internal
+    # structure of st.radio or on nth-child: this removes the duplicated
+    # house icons and the visible radio controls.
     st.session_state.setdefault("ignis_nav", NAV_PAGES[0])
     if st.session_state["ignis_nav"] not in NAV_PAGES:
         _ignis_navigate_to(NAV_PAGES[0])
@@ -533,13 +533,13 @@ with st.sidebar:
             on_click=_ignis_navigate_to,
             args=(section,),
         )
-    st.markdown('<div class="ignis-side-section-title">FILTROS DE ANÁLISIS</div>',
+    st.markdown('<div class="ignis-side-section-title">ANALYSIS FILTERS</div>',
                 unsafe_allow_html=True)
     if not combined.empty:
-        region = st.selectbox("Región / caso", list(REGIONES), key="sidebar_region")
+        region = st.selectbox("Region / case", list(REGIONES), key="sidebar_region")
         sensors_available = sorted(combined.instrumento.dropna().astype(str).unique())
         sensors = st.multiselect(
-            "Sensores visibles", sensors_available, default=sensors_available,
+            "Visible sensors", sensors_available, default=sensors_available,
             key="sidebar_sensores",
         )
         st.session_state["region"] = region
@@ -547,22 +547,22 @@ with st.sidebar:
         st.markdown(
             f'<div class="ignis-side-data-status">'
             f'<span class="ignis-side-status-dot"></span>'
-            f'{len(combined):,} registros cargados</div>',
+            f'{len(combined):,} records loaded</div>',
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
             '<div class="ignis-side-empty">'
             '<span class="ignis-side-status-dot"></span>'
-            'Sin archivos cargados'
-            '<small>Importá un Maestro IGNIS o ZIP/CSV desde Carga de datos.</small>'
+            'No files loaded'
+            '<small>Import an IGNIS Master or ZIP/CSV from Data upload.</small>'
             '</div>',
             unsafe_allow_html=True,
         )
-    st.markdown('<div class="ignis-side-section-title">RECURSOS OFICIALES</div>',
+    st.markdown('<div class="ignis-side-section-title">OFFICIAL RESOURCES</div>',
                 unsafe_allow_html=True)
     st.link_button(
-        "✈️ Escuela Militar de Aeronáutica", "https://ema.fau.mil.uy/",
+        "✈️ Military Aeronautics School (EMA)", "https://ema.fau.mil.uy/",
         use_container_width=True,
     )
     st.link_button(
@@ -572,69 +572,69 @@ with st.sidebar:
     st.markdown(
         '<div class="ignis-side-footer">'
         '<span class="ignis-side-footer-accent"></span>'
-        'Plataforma de investigación geoespacial.'
-        '<br>Los focos térmicos no son incendios confirmados.'
-        '<br>Enlaces institucionales informativos; no implican aval.'
+        'Geospatial research platform.'
+        '<br>Thermal hotspots are not confirmed fires.'
+        '<br>Institutional links are informational; they do not imply endorsement.'
         '</div>',
         unsafe_allow_html=True,
     )
 
-# El Inicio, el Centro de control y el Atlas renderizan su cabecera específica.
+# Home, Control center and the Atlas render their own header.
 if current_section not in (NAV_PAGES[0], NAV_PAGES[1], NAV_PAGES[6], NAV_PAGES[14]):
     st.markdown(f"""<div class="ignis-topline"><div class="ignis-kicker">
-       IGNIS UY · Herramientas de investigación</div>
+       IGNIS UY · Research tools</div>
        <h1>{current_section.split(' ',1)[1]}</h1>
        </div>""", unsafe_allow_html=True)
 
 
-# A — Portada institucional con acceso a herramientas del proyecto.
+# A — Institutional landing page with access to project tools.
 if current_section == NAV_PAGES[0]:
     render_project_home(BASE, asset_uri, NAV_PAGES, _ignis_navigate_to)
 
 
 if current_section==NAV_PAGES[2]:
-    st.subheader('Incorporación al histórico')
-    st.write('Cargá ZIP/CSV FIRMS de una o varias temporadas o consultá las detecciones NRT más recientes. Para **guardar lo acumulado entre sesiones**, descargá el **Maestro IGNIS** actualizado y volvé a importarlo la próxima vez. Los datos **no se guardan automáticamente en la nube**.')
-    st.markdown('#### Datos en vivo')
-    dias_vivos=st.slider('Últimos días disponibles',1,10,3,key='dias_firms_vivos')
-    fuentes_vivas=st.multiselect('Fuentes NASA FIRMS',[
+    st.subheader('Adding to the historical record')
+    st.write('Upload FIRMS ZIP/CSV files for one or more seasons, or query the latest NRT detections. To **keep what you accumulate between sessions**, download the updated **IGNIS Master** and import it again next time. Data **is not saved automatically to the cloud**.')
+    st.markdown('#### Live data')
+    dias_vivos=st.slider('Most recent days available',1,10,3,key='dias_firms_vivos')
+    fuentes_vivas=st.multiselect('NASA FIRMS sources',[
         ('MODIS_NRT','MODIS Aqua/Terra'),
         ('VIIRS_SNPP_NRT','VIIRS S-NPP'),
         ('VIIRS_NOAA20_NRT','VIIRS NOAA-20'),
         ('VIIRS_NOAA21_NRT','VIIRS NOAA-21'),
     ],format_func=lambda opcion:opcion[1],default=[('MODIS_NRT','MODIS Aqua/Terra'),('VIIRS_NOAA21_NRT','VIIRS NOAA-21')],key='fuentes_firms_vivas')
     vivos=pd.DataFrame(columns=COLS)
-    if st.button('Actualizar datos en vivo de Uruguay',type='primary'):
+    if st.button('Refresh live data for Uruguay',type='primary'):
         consultas=[]
-        sur,norte,oeste,este=REGIONES['Uruguay (rectángulo aproximado)']
+        sur,norte,oeste,este=REGIONES['Uruguay (approximate rectangle)']
         bbox=(oeste,sur,este,norte)
         for source,_ in fuentes_vivas:
             try:
                 consultas.append(descargar_firms(source,bbox,dias_vivos))
-                st.toast(f'{source}: consulta completada')
+                st.toast(f'{source}: query completed')
             except Exception as error:
                 st.error(str(error))
         if consultas:
             vivos=normalizar(pd.concat(consultas,ignore_index=True))
             st.session_state['ignis_firms_vivos']=vivos
-            st.success(f'Datos NRT incorporados: {len(vivos):,} detecciones.')
+            st.success(f'NRT data added: {len(vivos):,} detections.')
     elif 'ignis_firms_vivos' in st.session_state:
         vivos=normalizar(st.session_state['ignis_firms_vivos'])
-        st.caption(f'Última actualización NRT disponible en esta sesión: {len(vivos):,} detecciones.')
-    st.caption('La consulta NRT de FIRMS requiere una FIRMS MAP_KEY configurada en Secrets. Puede cubrir hasta 10 días; el historial completo sigue dependiendo de archivos históricos.')
+        st.caption(f'Latest NRT update available in this session: {len(vivos):,} detections.')
+    st.caption('The FIRMS NRT query requires a FIRMS MAP_KEY configured in Secrets. It can cover up to 10 days; the full history still depends on historical files.')
 
-    st.markdown('#### Archivos históricos')
+    st.markdown('#### Historical files')
     master_blob = st.session_state.get('ignis_master_blob')
     raw_session = st.session_state.get('ignis_raws', [])
 
-    master = st.file_uploader('1 · Maestro IGNIS anterior (opcional, archivo ZIP exportado por esta aplicación)',type=['zip'],key='master')
+    master = st.file_uploader('1 · Previous IGNIS Master (optional, ZIP file exported by this application)',type=['zip'],key='master')
     if master is not None:
         master_blob = master.getvalue()
         st.session_state['ignis_master_blob'] = master_blob
     elif master_blob is not None:
         master = _StoredUpload('maestro_guardado.zip', master_blob)
 
-    rawfiles = st.file_uploader('2 · Nuevos ZIP o CSV NASA FIRMS (varios simultáneamente)',type=['zip','csv'],accept_multiple_files=True,key='raws')
+    rawfiles = st.file_uploader('2 · New NASA FIRMS ZIP or CSV files (several at once)',type=['zip','csv'],accept_multiple_files=True,key='raws')
     if rawfiles:
         raw_session = [(a.name, a.getvalue()) for a in rawfiles]
         st.session_state['ignis_raws'] = raw_session
@@ -644,8 +644,8 @@ if current_section==NAV_PAGES[2]:
     base=pd.DataFrame(columns=COLS)
     if master:
         base,meta,error=leer_maestro(master.getvalue())
-        if error:st.error('No se pudo importar el maestro: '+error)
-        else:st.success(f'Maestro recuperado: {len(base):,} registros')
+        if error:st.error('Could not import the master file: '+error)
+        else:st.success(f'Master file recovered: {len(base):,} records')
     inputs=[];inventory=[];problems=[]
     for a in (rawfiles or []):
         new,issues,sources=parse_firms(a.getvalue(),a.name)
@@ -658,17 +658,17 @@ if current_section==NAV_PAGES[2]:
     st.session_state['ignis_combined'] = combined
     for problem in problems:st.warning(problem)
     aa,bb,cc,dd=st.columns(4)
-    aa.metric('Registros del maestro anterior',f'{len(base):,}')
-    bb.metric('Observaciones nuevas, netas',f'{max(len(combined)-len(base),0):,}')
-    cc.metric('Datos NRT incorporados',f'{len(vivos):,}')
-    dd.metric('Registros acumulados, sin duplicados',f'{len(combined):,}')
-    if inventory:st.dataframe(pd.DataFrame(inventory),use_container_width=True,hide_index=True)
+    aa.metric('Records in previous master',f'{len(base):,}')
+    bb.metric('New observations, net',f'{max(len(combined)-len(base),0):,}')
+    cc.metric('NRT data added',f'{len(vivos):,}')
+    dd.metric('Accumulated records, deduplicated',f'{len(combined):,}')
+    if inventory:st.dataframe(pd.DataFrame(inventory).rename(columns={'archivo':'file','sensor':'sensor','registros_validos':'valid_records','primer_dia':'first_day','ultimo_dia':'last_day'}),use_container_width=True,hide_index=True)
     if len(combined):
-        st.download_button('⬇️ Descargar Maestro IGNIS actualizado (guardar para la próxima sesión)',crear_maestro(combined),file_name='IGNIS_MAESTRO_HISTORICO.zip',mime='application/zip',type='primary')
-        st.caption('Guarda este archivo en tu computadora. El ZIP maestro contiene observaciones normalizadas, no los ZIP NASA originales: conservá también los originales como respaldo documental.')
-    else:st.info('Para comenzar, cargá uno de los archivos MODIS de 2000. También podés importar un maestro ya construido.')
+        st.download_button('⬇️ Download updated IGNIS Master (keep it for the next session)',crear_maestro(combined),file_name='IGNIS_MAESTRO_HISTORICO.zip',mime='application/zip',type='primary')
+        st.caption('Save this file on your computer. The master ZIP contains normalized observations, not the original NASA ZIP files: keep the originals as well as documentary backup.')
+    else:st.info('To get started, upload one of the MODIS files from 2000. You can also import a previously built master file.')
 
-# Todas las páginas consumen el mismo conjunto de datos filtrados; mantener estado entre vistas.
+# Every page consumes the same filtered dataset; keep state between views.
 if 'combined' not in locals() or not isinstance(combined, pd.DataFrame):
     combined = st.session_state.get('combined', pd.DataFrame(columns=COLS))
 if 'combined' not in st.session_state:
@@ -682,205 +682,205 @@ if len(combined):
     years = sorted(sample.anio.dropna().astype(int).unique()) if len(sample) else []
     if years and st.session_state.get("ignis_selected_year") not in years:
         st.session_state["ignis_selected_year"]=years[-1]
-    selected=st.sidebar.selectbox("Año a inspeccionar",years,key="ignis_selected_year") if years else None
+    selected=st.sidebar.selectbox("Year to inspect",years,key="ignis_selected_year") if years else None
 else:
     sample = pd.DataFrame()
     selected = None
     reg = st.session_state.get('region', list(REGIONES)[0])
     sens = st.session_state.get('sensores', [])
 
-# C — Dashboard de monitoreo con datos de la selección compartida.
+# C — Monitoring dashboard using the shared selection.
 if current_section == NAV_PAGES[1]:
     render_control_center(combined, sample, selected, BASE, mapa_ignis,
                           NAV_PAGES, _ignis_navigate_to)
 
 
 if current_section==NAV_PAGES[3]:
-    st.subheader('Resumen del año seleccionado · lo esencial del desafío NASA')
-    if sample.empty:st.info('Cargá datos en la primera pestaña; elegí la región para generar el resumen.')
+    st.subheader('Selected year summary · the essentials of the NASA challenge')
+    if sample.empty:st.info('Upload data in the first tab and choose a region to generate the summary.')
     else:
         yr=sample[sample.anio==selected];a,b,c=st.columns(3)
-        a.metric(f'Detecciones {selected}',f'{len(yr):,}')
-        b.metric('Días con observaciones',yr.dia.nunique())
-        c.metric('Instrumentos detectados',yr.instrumento.nunique())
-        st.dataframe(yr.groupby(['mes','instrumento']).size().reset_index(name='registros').rename(columns={'mes':'Mes','instrumento':'Sensor'}),use_container_width=True,hide_index=True)
-        st.caption('Estos números se refieren al año calendario elegido y a los archivos suministrados. No son tasas de incendios ni datos normalizados por cobertura.')
-        st.download_button('Descargar CSV del año',yr[COLS].to_csv(index=False).encode('utf-8-sig'),file_name=f'IGNIS_{selected}_registros.csv')
+        a.metric(f'Detections {selected}',f'{len(yr):,}')
+        b.metric('Days with observations',yr.dia.nunique())
+        c.metric('Instruments detected',yr.instrumento.nunique())
+        st.dataframe(yr.groupby(['mes','instrumento']).size().reset_index(name='registros').rename(columns={'mes':'Month','instrumento':'Sensor','registros':'records'}),use_container_width=True,hide_index=True)
+        st.caption('These figures refer to the chosen calendar year and the supplied files. They are not fire rates or coverage-normalized data.')
+        st.download_button('Download CSV for the year',yr[COLS].to_csv(index=False).encode('utf-8-sig'),file_name=f'IGNIS_{selected}_registros.csv')
 
 if current_section==NAV_PAGES[4]:
-    st.subheader('Registro histórico acumulado')
-    if sample.empty:st.info('Importá el maestro o cargá ZIP de NASA FIRMS para visualizar el histórico.')
+    st.subheader('Cumulative historical record')
+    if sample.empty:st.info('Import the master file or upload NASA FIRMS ZIP files to view the history.')
     else:
-        x,y,z=st.columns(3);x.metric('Registros en el recorte',f'{len(sample):,}');y.metric('Años con registros',sample.anio.nunique());z.metric('Sensores presentes',sample.instrumento.nunique())
+        x,y,z=st.columns(3);x.metric('Records in the selection',f'{len(sample):,}');y.metric('Years with records',sample.anio.nunique());z.metric('Sensors present',sample.instrumento.nunique())
         sensors=sorted(sample.instrumento.unique())
         for i,sensor in enumerate(sensors):heatmap_mensual(sample[sample.instrumento==sensor],sensor,f'historico_mensual_{i}')
-        st.subheader('Temporadas estivales · diciembre anterior + enero/febrero')
+        st.subheader('Summer seasons · previous December + January/February')
         summer=sample[sample.mes.isin([12,1,2])]
         ss=summer.groupby(['temporada','instrumento']).size().reset_index(name='detecciones')
         if len(ss):
             ss['temporada_etiqueta']=ss['temporada'].astype(int).astype(str)
-            fig=px.bar(ss,x='temporada_etiqueta',y='detecciones',color='instrumento',barmode='group',template='plotly_dark',labels={'temporada_etiqueta':'Temporada estival','detecciones':'Registros'})
+            fig=px.bar(ss,x='temporada_etiqueta',y='detecciones',color='instrumento',barmode='group',template='plotly_dark',labels={'temporada_etiqueta':'Summer season','detecciones':'Records','instrumento':'Instrument'})
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig,use_container_width=True,key='temporadas_estivales')
-            st.dataframe(ss,use_container_width=True,hide_index=True)
-            st.download_button('Descargar resumen por temporada',ss.to_csv(index=False).encode('utf-8-sig'),file_name='IGNIS_temporadas.csv')
-        st.warning('La existencia de registros no garantiza cobertura completa. No se comparan directamente los recuentos MODIS y VIIRS ni se estima una tendencia climática validada.')
+            st.dataframe(ss.rename(columns={'temporada':'season','instrumento':'instrument','detecciones':'detections','temporada_etiqueta':'season_label'}),use_container_width=True,hide_index=True)
+            st.download_button('Download summary by season',ss.to_csv(index=False).encode('utf-8-sig'),file_name='IGNIS_temporadas.csv')
+        st.warning('The existence of records does not guarantee complete coverage. MODIS and VIIRS counts are not compared directly and no validated climate trend is estimated.')
 
 if current_section==NAV_PAGES[5]:
-    st.subheader('Armonización MODIS–VIIRS · módulo explicativo y comparativo')
-    if sample.empty:st.info('Cargá datos históricos y seleccioná región, sensores y año para abrir la armonización.')
+    st.subheader('MODIS–VIIRS harmonization · explanatory and comparative module')
+    if sample.empty:st.info('Upload historical data and select a region, sensors and year to open the harmonization.')
     else:
-        st.caption('Resultados instrumentales calculados desde el Maestro IGNIS. No se utiliza una infografía estática como evidencia.')
+        st.caption('Instrument results computed from the IGNIS Master. No static infographic is used as evidence.')
         armonia=resumen_armonizacion(sample,selected)
         if not armonia['has_both']:
-            st.info('Con la selección actual no coexistieron MODIS y VIIRS en el mismo recorte; por eso la armonización aún no puede evaluarse.')
+            st.info('With the current selection MODIS and VIIRS did not coexist in the same area, so harmonization cannot be evaluated yet.')
         else:
             a,b,c,d=st.columns(4)
-            a.metric('Años con coexistencia',len(armonia['overlap_years']))
-            b.metric(f'Meses comparables {selected}',armonia['selected_overlap_months'])
-            c.metric(f'Celdas coincidentes {selected}',armonia['selected_coincident_cells'])
-            d.metric('Instrumentos presentes',sample.instrumento.nunique())
-            st.markdown('##### Línea de tiempo de sensores')
+            a.metric('Years with coexistence',len(armonia['overlap_years']))
+            b.metric(f'Comparable months {selected}',armonia['selected_overlap_months'])
+            c.metric(f'Coincident cells {selected}',armonia['selected_coincident_cells'])
+            d.metric('Instruments present',sample.instrumento.nunique())
+            st.markdown('##### Sensor timeline')
             if armonia['periods']:st.dataframe(pd.DataFrame(armonia['periods']),use_container_width=True,hide_index=True)
             if not armonia['table'].empty:
-                st.markdown('##### Coincidencia exploratoria del año seleccionado')
+                st.markdown('##### Exploratory coincidence for the selected year')
                 st.dataframe(armonia['table'],use_container_width=True,hide_index=True)
-            else:st.info(f'En el año {selected} hay coexistencia general en el histórico, pero no meses comparables con MODIS y VIIRS simultáneos dentro del recorte activo.')
+            else:st.info(f'In {selected} there is overall coexistence in the history, but no comparable months with simultaneous MODIS and VIIRS within the active area.')
             q1,q2=st.columns(2)
             with q1:
-                st.markdown("""<div style='background:linear-gradient(135deg,rgba(10,88,126,.42),rgba(20,43,76,.72));border:1px solid #4ed8ff;border-radius:16px;padding:16px 18px;margin-top:8px'><h4 style='margin:0 0 10px 0;color:#74e2ff'>Qué sí permite ahora</h4><ul style='margin:0 0 0 18px'><li>Visualizar continuidad histórica</li><li>Identificar coexistencia de sensores</li><li>Comparar meses con presencia simultánea</li><li>Detectar coincidencias exploratorias MODIS–VIIRS</li><li>Documentar el estado del sistema en el PDF</li></ul></div>""",unsafe_allow_html=True)
+                st.markdown("""<div style='background:linear-gradient(135deg,rgba(10,88,126,.42),rgba(20,43,76,.72));border:1px solid #4ed8ff;border-radius:16px;padding:16px 18px;margin-top:8px'><h4 style='margin:0 0 10px 0;color:#74e2ff'>What it allows now</h4><ul style='margin:0 0 0 18px'><li>Visualize historical continuity</li><li>Identify sensor coexistence</li><li>Compare months with simultaneous presence</li><li>Detect exploratory MODIS–VIIRS coincidences</li><li>Document the system status in the PDF</li></ul></div>""",unsafe_allow_html=True)
             with q2:
-                st.markdown("""<div style='background:linear-gradient(135deg,rgba(82,34,106,.42),rgba(20,43,76,.72));border:1px solid #d58fff;border-radius:16px;padding:16px 18px;margin-top:8px'><h4 style='margin:0 0 10px 0;color:#efb8ff'>Qué no permite todavía</h4><ul style='margin:0 0 0 18px'><li>No sumar MODIS y VIIRS como incendios equivalentes</li><li>No confirmar incendios operativos</li><li>No estimar superficie quemada</li><li>No compensar cobertura satelital de forma cuantitativa</li><li>No reemplazar la validación científica final</li></ul></div>""",unsafe_allow_html=True)
-            st.caption('Metodología exploratoria aplicada en la app: misma región activa, mismo día UTC y misma celda espacial aproximada de 0.20°. Sirve para continuidad histórica, no para calibración definitiva.')
+                st.markdown("""<div style='background:linear-gradient(135deg,rgba(82,34,106,.42),rgba(20,43,76,.72));border:1px solid #d58fff;border-radius:16px;padding:16px 18px;margin-top:8px'><h4 style='margin:0 0 10px 0;color:#efb8ff'>What it does not allow yet</h4><ul style='margin:0 0 0 18px'><li>Adding MODIS and VIIRS as equivalent fires</li><li>Confirming operational fires</li><li>Estimating burned area</li><li>Compensating satellite coverage quantitatively</li><li>Replacing final scientific validation</li></ul></div>""",unsafe_allow_html=True)
+            st.caption('Exploratory methodology applied in the app: same active region, same UTC day and same approximate 0.20° spatial cell. Useful for historical continuity, not for definitive calibration.')
             st.divider()
-            st.markdown('#### Segunda prueba: proximidad geográfica y horaria (experimental)')
-            st.caption('Los resultados siguientes no sustituyen las celdas de 0,20°. Buscan pares cercanos con hora de adquisición disponible; no significan un mismo incendio.')
-            km=st.slider('Distancia máxima entre observaciones (km)',1,20,5,1,key='ignis_radio_km')
-            minutos=st.slider('Diferencia horaria máxima (minutos)',5,120,30,5,key='ignis_tiempo_min')
+            st.markdown('#### Second test: geographic and temporal proximity (experimental)')
+            st.caption('The following results do not replace the 0.20° cells. They look for nearby pairs with an available acquisition time; they do not mean the same fire.')
+            km=st.slider('Maximum distance between observations (km)',1,20,5,1,key='ignis_radio_km')
+            minutos=st.slider('Maximum time difference (minutes)',5,120,30,5,key='ignis_tiempo_min')
             pares=emparejar(sample,selected,km,minutos)
             p1,p2,p3=st.columns(3)
-            p1.metric('Pares instrumentales candidatos',len(pares))
-            p2.metric('Días con pares',pares.fecha_utc.nunique() if len(pares) else 0)
-            p3.metric('Distancia mediana',f'{pares.distancia_km.median():.2f} km' if len(pares) else 'Sin pares')
+            p1.metric('Candidate instrument pairs',len(pares))
+            p2.metric('Days with pairs',pares.fecha_utc.nunique() if len(pares) else 0)
+            p3.metric('Median distance',f'{pares.distancia_km.median():.2f} km' if len(pares) else 'No pairs')
             if len(pares):
                 st.dataframe(resumir_pares(pares),use_container_width=True,hide_index=True)
-                st.download_button('Descargar pares candidatos (CSV)',pares.to_csv(index=False).encode('utf-8-sig'),file_name=f'IGNIS_pares_{selected}.csv',mime='text/csv')
-                st.caption('Un registro puede participar en pares de distintos satélites VIIRS; los pares NO son incendios únicos. FRP se conserva, pero NO se compara como medida calibrada.')
-            else: st.info('No se encontraron pares dentro de estos umbrales. Podés ampliar los parámetros sin modificar los datos.')
+                st.download_button('Download candidate pairs (CSV)',pares.to_csv(index=False).encode('utf-8-sig'),file_name=f'IGNIS_pares_{selected}.csv',mime='text/csv')
+                st.caption('A record can take part in pairs from different VIIRS satellites; pairs are NOT unique fires. FRP is kept, but it is NOT compared as a calibrated measure.')
+            else: st.info('No pairs were found within these thresholds. You can widen the parameters without modifying the data.')
 
 
         st.divider()
-        with st.expander('Laboratorio de sensibilidad espacial · 0,05° a 0,40° (exploratorio)', expanded=False):
+        with st.expander('Spatial sensitivity lab · 0.05° to 0.40° (exploratory)', expanded=False):
             st.caption(
-                'Compara la misma regla celda-día a distintas escalas usando exclusivamente '
-                'el Maestro y los filtros activos. No calibra cobertura, FRP ni probabilidad de incendio.'
+                'Compares the same cell-day rule at different scales using only '
+                'the Master file and the active filters. It does not calibrate coverage, FRP or fire probability.'
             )
             comparabilidad = diagnostico_comparabilidad(sample)
             ca, cb, cc = st.columns(3)
-            ca.metric('Registros válidos cargados', f"{comparabilidad['registros']:,}")
-            cb.metric('Meses importados', comparabilidad['meses_importados'])
-            cc.metric('Meses con ambas familias', comparabilidad['meses_con_ambas_familias'])
+            ca.metric('Valid records loaded', f"{comparabilidad['registros']:,}")
+            cb.metric('Months imported', comparabilidad['meses_importados'])
+            cc.metric('Months with both families', comparabilidad['meses_con_ambas_familias'])
             tabla_sensibilidad = comparar_resoluciones(sample, ano=selected)
             st.dataframe(tabla_sensibilidad, use_container_width=True, hide_index=True)
             st.download_button(
-                'Descargar sensibilidad de cuadrícula (CSV)',
+                'Download grid sensitivity (CSV)',
                 tabla_sensibilidad.to_csv(index=False).encode('utf-8-sig'),
                 file_name=f'IGNIS_sensibilidad_cuadricula_{selected}.csv',
                 mime='text/csv',
                 key='ignis_sensibilidad_descarga',
             )
-            cuentas = tabla_sensibilidad['Celdas-día con ambos'].unique()
+            cuentas = tabla_sensibilidad['Cell-days with both'].unique()
             if len(cuentas) > 1:
-                st.info('La cantidad de coincidencias varía según la escala: la regla es sensible al tamaño de celda.')
+                st.info('The number of coincidences varies with scale: the rule is sensitive to cell size.')
             else:
-                st.info('En este recorte la cantidad de coincidencias no cambia entre las escalas probadas; esto no valida la regla ni su cobertura.')
+                st.info('In this area the number of coincidences does not change across the tested scales; this does not validate the rule or its coverage.')
             st.warning(
-                'Los ceros significan ausencia de detecciones en los archivos importados, '
-                'no que el satélite haya observado sin fuego. Estas cuentas NO son una serie calibrada. '
-                'Las oportunidades de observación instrumental todavía no están verificadas.'
+                'Zeros mean no detections in the imported files, '
+                'not that the satellite observed without fire. These counts are NOT a calibrated series. '
+                'Instrument observation opportunities are not verified yet.'
             )
 
 
         st.divider()
-        st.markdown('#### Auditoría científica del Maestro · calidad y disponibilidad')
-        st.caption('Este diagnóstico corresponde únicamente al recorte filtrado; los días sin detecciones importadas NO permiten inferir días observados sin fuego.')
+        st.markdown('#### Scientific audit of the Master · quality and availability')
+        st.caption('This diagnosis applies only to the filtered selection; days without imported detections do NOT allow inferring observed days without fire.')
         audit = auditar_datos(sample)
         aq1, aq2, aq3, aq4 = st.columns(4)
-        aq1.metric('Registros auditados', f"{audit['filas']:,}")
-        aq2.metric('Coordenadas válidas', f"{audit['coordenadas_validas']:,}")
-        aq3.metric('Hora UTC válida', f"{audit['horarios_validos']:,}")
-        aq4.metric('FRP disponible', f"{audit['frp_disponible']:,}")
+        aq1.metric('Records audited', f"{audit['filas']:,}")
+        aq2.metric('Valid coordinates', f"{audit['coordenadas_validas']:,}")
+        aq3.metric('Valid UTC time', f"{audit['horarios_validos']:,}")
+        aq4.metric('FRP available', f"{audit['frp_disponible']:,}")
         for aviso in lectura_diagnostica(audit):
             st.caption('• ' + aviso)
         if selected is not None:
             inventario = inventario_mensual(sample, int(selected))
-            with st.expander('Inventario mensual de fuentes · año seleccionado', expanded=False):
+            with st.expander('Monthly source inventory · selected year', expanded=False):
                 if inventario.empty:
-                    st.info('No hay meses importados con sensores reconocidos en este recorte.')
+                    st.info('No imported months with recognized sensors in this selection.')
                 else:
                     st.dataframe(inventario, use_container_width=True, hide_index=True)
                     st.download_button(
-                        'Descargar inventario (CSV)',
+                        'Download inventory (CSV)',
                         inventario.to_csv(index=False).encode('utf-8-sig'),
                         file_name=f'IGNIS_inventario_instrumentos_{selected}.csv',
                         mime='text/csv',
                         key='ignis_inventario_csv',
                     )
-                st.warning('Días con detecciones ≠ días de cobertura instrumental verificada. Los meses sin registros no prueban ausencia de incendios.')
-        with st.expander('Pareo V5 · parejas únicas y cruce de medianoche UTC (experimental)', expanded=False):
+                st.warning('Days with detections ≠ days of verified instrument coverage. Months without records do not prove the absence of fires.')
+        with st.expander('Pairing V5 · unique pairs and UTC midnight crossing (experimental)', expanded=False):
             st.write(
-                'A diferencia del método original por día UTC, esta alternativa permite coincidencias '
-                'a ambos lados de la medianoche y utiliza como máximo una vez cada observación '
-                'MODIS y VIIRS en el resultado completo.'
+                'Unlike the original per-UTC-day method, this alternative allows coincidences '
+                'on both sides of midnight and uses each MODIS and VIIRS observation '
+                'at most once in the full result.'
             )
-            pkm = st.slider('Pareo V5: distancia máxima (km)', 1, 20, 5, 1, key='ignis_v5_radio')
-            pmin = st.slider('Pareo V5: diferencia temporal máxima (min)', 5, 120, 30, 5, key='ignis_v5_minutos')
-            # Impedir mostrar parejas antiguas si cambia el Maestro aunque
-            # el nuevo archivo tenga exactamente la misma cantidad de filas.
+            pkm = st.slider('Pairing V5: maximum distance (km)', 1, 20, 5, 1, key='ignis_v5_radio')
+            pmin = st.slider('Pairing V5: maximum time difference (min)', 5, 120, 30, 5, key='ignis_v5_minutos')
+            # Prevent showing stale pairs if the Master changes even when
+            # the new file has exactly the same number of rows.
             columnas_firma = ["fecha", "latitude", "longitude", "instrumento", "acq_time"]
             huella_datos = int(pd.util.hash_pandas_object(
                 sample[columnas_firma].astype(str), index=False
             ).sum())
             firma = (str(selected), str(reg), tuple(sorted(map(str, sens))), len(sample), huella_datos, pkm, pmin)
-            if st.button('Calcular parejas únicas', key='ignis_v5_ejecutar_pareo', type='primary'):
+            if st.button('Compute unique pairs', key='ignis_v5_ejecutar_pareo', type='primary'):
                 try:
                     parejas = emparejar_global(sample, ano=selected, radio_km=pkm, ventana_min=pmin)
                     st.session_state['ignis_pareo_v5_resultado'] = {'firma': firma, 'tabla': parejas}
                 except (ValueError, TypeError) as error:
-                    st.error(f'No se pudo ejecutar el pareo V5: {error}')
+                    st.error(f'Could not run pairing V5: {error}')
             resultado = st.session_state.get('ignis_pareo_v5_resultado')
             if resultado and resultado['firma'] == firma:
                 parejas = resultado['tabla']
                 rp = resumen_global(parejas)
                 r1, r2, r3 = st.columns(3)
-                r1.metric('Pares únicos', rp['pares'])
-                r2.metric('Cruces de día UTC', rp['cruces_medianoche'])
-                r3.metric('Distancia mediana', f"{rp['distancia_mediana_km']:.2f} km" if rp['distancia_mediana_km'] is not None else 'Sin pares')
+                r1.metric('Unique pairs', rp['pares'])
+                r2.metric('UTC day crossings', rp['cruces_medianoche'])
+                r3.metric('Median distance', f"{rp['distancia_mediana_km']:.2f} km" if rp['distancia_mediana_km'] is not None else 'No pairs')
                 if len(parejas):
                     st.dataframe(parejas, use_container_width=True, hide_index=True)
                     st.download_button(
-                        'Descargar parejas V5 (CSV)',
+                        'Download V5 pairs (CSV)',
                         parejas.to_csv(index=False).encode('utf-8-sig'),
                         file_name=f'IGNIS_pares_unicos_{selected}.csv',
                         mime='text/csv',
                         key='ignis_v5_pares_csv',
                     )
                 else:
-                    st.info('No hay parejas que cumplan ambos umbrales con datos horarios válidos.')
+                    st.info('No pairs meet both thresholds with valid time data.')
             st.caption(
-                'El emparejamiento es voraz por diferencia horaria y distancia, '
-                'no una solución de asignación global de coste mínimo. '
-                'Pares candidatos no son incendios confirmados ni FRP calibrada.'
+                'Pairing is greedy by time difference and distance, '
+                'not a global minimum-cost assignment solution. '
+                'Candidate pairs are not confirmed fires or calibrated FRP.'
             )
 
 
-# B — Atlas científico con mapa dominante, filtros y análisis lateral.
+# B — Scientific atlas with a dominant map, filters and side analysis.
 if current_section == NAV_PAGES[6]:
     render_scientific_atlas(sample, selected, BASE, mapa_ignis, COLS,
                             NAV_PAGES, _ignis_navigate_to)
     if not sample.empty and selected is not None:
-        with st.expander('Verificar una observación en NASA Worldview · fecha y lugar', expanded=False):
-            st.caption('Abrí imágenes satelitales del mismo día y zona. El enlace no confirma incendios ni garantiza una imagen libre de nubes.')
+        with st.expander('Verify an observation in NASA Worldview · date and place', expanded=False):
+            st.caption('Open satellite imagery for the same day and area. The link does not confirm fires or guarantee a cloud-free image.')
             observables = sample[sample.anio == selected].copy()
             observables['latitud'] = pd.to_numeric(observables['latitude'], errors='coerce')
             observables['longitud'] = pd.to_numeric(observables['longitude'], errors='coerce')
@@ -889,14 +889,14 @@ if current_section == NAV_PAGES[6]:
                 observables.longitud.between(-180, 180)
             ].copy()
             if observables.empty:
-                st.info('Sin coordenadas válidas para este año.')
+                st.info('No valid coordinates for this year.')
             else:
                 dias = sorted(observables['fecha'].dropna().astype(str).unique(), reverse=True)
-                dia = st.selectbox('Día UTC', dias, key='ignis_worldview_dia')
+                dia = st.selectbox('UTC day', dias, key='ignis_worldview_dia')
                 del_dia = observables[observables['fecha'].astype(str) == dia].sort_values('instrumento').head(500).reset_index(drop=True)
                 if len(del_dia):
                     indice = st.selectbox(
-                        'Observación del día (máximo 500 registros mostrados)',
+                        'Observation of the day (at most 500 records shown)',
                         list(range(len(del_dia))),
                         format_func=lambda i: (
                             f"{del_dia.iloc[i]['instrumento']} · "
@@ -907,15 +907,15 @@ if current_section == NAV_PAGES[6]:
                     observacion = del_dia.iloc[indice]
                     try:
                         enlace = enlace_worldview(dia, observacion.latitud, observacion.longitud)
-                        st.link_button('Abrir fecha y lugar en NASA Worldview', enlace)
-                        st.caption(f"NASA Worldview · {dia} · {observacion.latitud:.4f}, {observacion.longitud:.4f}. Activá las capas térmicas deseadas dentro de Worldview.")
+                        st.link_button('Open date and place in NASA Worldview', enlace)
+                        st.caption(f"NASA Worldview · {dia} · {observacion.latitud:.4f}, {observacion.longitud:.4f}. Turn on the thermal layers you want inside Worldview.")
                     except (ValueError, TypeError) as error:
-                        st.warning(f'No se pudo construir el enlace de NASA Worldview: {error}')
+                        st.warning(f'Could not build the NASA Worldview link: {error}')
 
 
 
 if current_section==NAV_PAGES[7]:
-    st.subheader('⚠️ Panel de vigilancia histórica · señales para revisión')
+    st.subheader('⚠️ Historical watch panel · signals for review')
     st.markdown('''<style>
     .ignis-alerta{background:linear-gradient(110deg,#511c2b,#251629);border:2px solid #ff5265;border-radius:16px;padding:20px;margin:13px 0;box-shadow:0 0 20px rgba(255,57,86,.14)}
     .ignis-alerta h2{color:#ff7684!important;margin:0 0 7px 0;font-size:1.6rem;}
@@ -923,84 +923,84 @@ if current_section==NAV_PAGES[7]:
     .ignis-neutral{background:#14283e;border:1px solid #5b89af;border-radius:14px;padding:16px;margin:12px 0;}
     .ignis-neutral strong{color:#b7e5ff;font-size:1.1rem;}
     </style>''',unsafe_allow_html=True)
-    if sample.empty:st.info('Se requieren registros históricos para analizar condiciones inusuales.')
+    if sample.empty:st.info('Historical records are required to analyze unusual conditions.')
     else:
         alerts=[]
         for sensor in sorted(sample.instrumento.unique()):alerts+=resumen_estacional(sample,sensor)
-        alert_df=pd.DataFrame(alerts).sort_values(['Año','Mes'],ascending=False) if alerts else pd.DataFrame()
-        current=alert_df[alert_df['Año']==int(selected)].copy() if len(alert_df) and selected is not None else pd.DataFrame()
+        alert_df=pd.DataFrame(alerts).sort_values(['Year','Month'],ascending=False) if alerts else pd.DataFrame()
+        current=alert_df[alert_df['Year']==int(selected)].copy() if len(alert_df) and selected is not None else pd.DataFrame()
         m1,m2,m3=st.columns(3)
-        m1.metric('Candidatos históricos',int(len(alert_df)))
-        m2.metric(f'Candidatos {selected}',int(len(current)))
-        m3.metric('Sensores señalados',int(current['Sensor'].nunique()) if len(current) else 0)
+        m1.metric('Historical candidates',int(len(alert_df)))
+        m2.metric(f'Candidates {selected}',int(len(current)))
+        m3.metric('Flagged sensors',int(current['Sensor'].nunique()) if len(current) else 0)
         if len(current):
-            st.markdown(f'''<div class="ignis-alerta" role="status"><h2>🚨 ATENCIÓN · {len(current)} señales estadísticas en {selected}</h2><p>Meses con actividad inusual respecto a la referencia histórica del mismo sensor. <b>Revisión recomendada.</b> No implica incendios confirmados ni alerta operativa.</p></div>''',unsafe_allow_html=True)
-            current=current.copy(); current['Mes']=current['Mes'].map({1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'})
-            st.dataframe(current[['Mes','Sensor','Detecciones','Mediana otros años','Índice frente a mediana']],use_container_width=True,hide_index=True)
+            st.markdown(f'''<div class="ignis-alerta" role="status"><h2>🚨 ATTENTION · {len(current)} statistical signals in {selected}</h2><p>Months with unusual activity relative to the historical reference of the same sensor. <b>Review recommended.</b> This does not imply confirmed fires or an operational alert.</p></div>''',unsafe_allow_html=True)
+            current=current.copy(); current['Month']=current['Month'].map({1:'January',2:'February',3:'March',4:'April',5:'May',6:'June',7:'July',8:'August',9:'September',10:'October',11:'November',12:'December'})
+            st.dataframe(current[['Month','Sensor','Detections','Median other years','Ratio to median']],use_container_width=True,hide_index=True)
         elif len(alert_df):
-            st.markdown(f'''<div class="ignis-neutral" role="status"><strong>✅ {selected}: sin candidatos según el criterio piloto</strong><p>El histórico sí contiene <b>{len(alert_df)} señales estadísticas</b> para inspección. Esto no certifica ausencia de riesgo ni cobertura completa.</p></div>''',unsafe_allow_html=True)
-            st.markdown(f'#### 🚨 {len(alert_df)} señales históricas que merecen revisión')
-        else:st.info('No se identificaron candidatos con el criterio piloto, o faltan años comparables. Esto NO significa ausencia de riesgo.')
+            st.markdown(f'''<div class="ignis-neutral" role="status"><strong>✅ {selected}: no candidates under the pilot criterion</strong><p>The history does contain <b>{len(alert_df)} statistical signals</b> for inspection. This does not certify absence of risk or complete coverage.</p></div>''',unsafe_allow_html=True)
+            st.markdown(f'#### 🚨 {len(alert_df)} historical signals worth reviewing')
+        else:st.info('No candidates were identified with the pilot criterion, or comparable years are missing. This does NOT mean absence of risk.')
         if len(alert_df):
-            annual_alerts=alert_df.groupby('Año').size().reset_index(name='candidatos')
-            fig=px.bar(annual_alerts,x='Año',y='candidatos',template='plotly_dark',labels={'candidatos':'Candidatos exploratorios'})
+            annual_alerts=alert_df.groupby('Year').size().reset_index(name='candidatos')
+            fig=px.bar(annual_alerts,x='Year',y='candidatos',template='plotly_dark',labels={'candidatos':'Exploratory candidates'})
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',height=320,margin=dict(l=10,r=10,t=35,b=10))
             st.plotly_chart(fig,use_container_width=True,key='alertas_por_ano')
-            with st.expander('Ver histórico completo de alertas exploratorias'):
-                full=alert_df.copy(); full['Mes']=full['Mes'].map({1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'})
-                st.dataframe(full[['Año','Mes','Sensor','Detecciones','Mediana otros años','Índice frente a mediana']],use_container_width=True,hide_index=True)
-        st.caption('Criterio: mismo sensor y mes, al menos 3 otros años con detecciones, mínimo 5 registros y al menos 2 veces la mediana. SIN normalización por cobertura: úsese solo como señal preliminar.')
+            with st.expander('View full history of exploratory alerts'):
+                full=alert_df.copy(); full['Month']=full['Month'].map({1:'January',2:'February',3:'March',4:'April',5:'May',6:'June',7:'July',8:'August',9:'September',10:'October',11:'November',12:'December'})
+                st.dataframe(full[['Year','Month','Sensor','Detections','Median other years','Ratio to median']],use_container_width=True,hide_index=True)
+        st.caption('Criterion: same sensor and month, at least 3 other years with detections, minimum 5 records and at least 2× the median. NO coverage normalization: use only as a preliminary signal.')
     st.divider()
-    st.markdown('#### Trazabilidad documental del año seleccionado')
+    st.markdown('#### Documentary traceability for the selected year')
     if selected is None:
-        st.info('Seleccioná un año con registros para consultar la trazabilidad disponible.')
+        st.info('Select a year with records to check the available traceability.')
     else:
         from ignis_evidencias import mostrar_evidencias
         mostrar_evidencias(combined if len(combined) else None, int(selected))
 
 if current_section==NAV_PAGES[8]:
-    st.subheader('Calendario final de actividad térmica observada')
-    if sample.empty:st.info('El calendario aparecerá al cargar datos.')
+    st.subheader('Final calendar of observed thermal activity')
+    if sample.empty:st.info('The calendar will appear once data is loaded.')
     else:
-        st.write('Calendario histórico por meses y sensor. Incluye solamente los datos que incorporaste al maestro.')
+        st.write('Historical calendar by month and sensor. It includes only the data you added to the master file.')
         for i,sensor in enumerate(sorted(sample.instrumento.unique())):heatmap_mensual(sample[sample.instrumento==sensor],sensor,f'calendario_final_mensual_{i}')
         if selected is not None:
-            st.subheader(f'Calendario diario · {selected}')
+            st.subheader(f'Daily calendar · {selected}')
             daily=sample[sample.anio==selected].groupby(['dia','instrumento']).size().reset_index(name='detecciones')
-            st.dataframe(daily,use_container_width=True,hide_index=True)
-            st.download_button('Descargar calendario diario CSV',daily.to_csv(index=False).encode('utf-8-sig'),file_name=f'IGNIS_calendario_{selected}.csv')
-        st.caption('Para comparar un mes actual con su mediana histórica hacen falta meses con observaciones comparables, mismos instrumentos y una evaluación de cobertura. No se interpreta una ausencia de registros como ausencia de fuego.')
+            st.dataframe(daily.rename(columns={'dia':'day','instrumento':'instrument','detecciones':'detections'}),use_container_width=True,hide_index=True)
+            st.download_button('Download daily calendar CSV',daily.to_csv(index=False).encode('utf-8-sig'),file_name=f'IGNIS_calendario_{selected}.csv')
+        st.caption('Comparing a current month with its historical median requires months with comparable observations, the same instruments and a coverage assessment. An absence of records is not interpreted as an absence of fire.')
 
 
 # PDF document is generated exclusively from normalized uploaded data and the current filters.
 def construir_pdf(datos, ano, region, sensores):
-    # Se mantiene intacta la ingestion, el Maestro, los filtros y las alertas.
+    # Ingestion, the Master file, the filters and the alerts are left untouched.
     from ignis_informe import generar_informe_pdf
     return generar_informe_pdf(datos, ano, region, sensores, alertas_func=resumen_estacional)
 
 if current_section==NAV_PAGES[9]:
-    st.subheader('📄 Informe PDF — año seleccionado y contexto histórico')
-    st.write('Generá un informe reproducible utilizando **solamente** los datos que cargaste o recuperaste mediante el Maestro IGNIS. Incluye el recorte, el año y los sensores seleccionados, más el contexto histórico disponible.')
+    st.subheader('📄 PDF report — selected year and historical context')
+    st.write('Generate a reproducible report using **only** the data you uploaded or recovered through the IGNIS Master. It includes the selected area, year and sensors, plus the available historical context.')
     if sample.empty or selected is None:
-        st.info('Primero cargá ZIP/CSV en «Carga de datos». Después seleccioná región, sensores y año en los controles compartidos que aparecen debajo de esa pestaña.')
+        st.info('First upload ZIP/CSV files in “Data upload”. Then select region, sensors and year in the shared controls shown below that tab.')
     else:
         col_a,col_b,col_c=st.columns(3)
-        col_a.metric('Año seleccionado',str(selected))
-        col_b.metric('Detecciones en el año',f'{sum(sample.anio==selected):,}')
-        col_c.metric('Años históricos con registros',sample.anio.nunique())
-        st.caption(f'Recorte: {reg} · Instrumentos: {", ".join(sens)} · Histórico disponible: {sample.anio.min()}–{sample.anio.max()}.')
-        preview=st.checkbox('Mostrar vista previa del contenido del informe',value=False)
+        col_a.metric('Selected year',str(selected))
+        col_b.metric('Detections in the year',f'{sum(sample.anio==selected):,}')
+        col_c.metric('Historical years with records',sample.anio.nunique())
+        st.caption(f'Area: {reg} · Instruments: {", ".join(sens)} · Available history: {sample.anio.min()}–{sample.anio.max()}.')
+        preview=st.checkbox('Show a preview of the report contents',value=False)
         if preview:
-            st.markdown('**Secciones:** 1. Resumen anual · 2. Calendario diario y mensual · 3. Contexto histórico · 4. Mapa térmico · 5. Armonización MODIS–VIIRS · 6. Alertas exploratorias · 7. Trazabilidad documental · 8. Procedencia y limitaciones.')
-            st.dataframe(sample[sample.anio==selected].groupby(['mes','instrumento']).size().reset_index(name='detecciones'),use_container_width=True,hide_index=True)
+            st.markdown('**Sections:** 1. Annual summary · 2. Daily and monthly calendar · 3. Historical context · 4. Thermal map · 5. MODIS–VIIRS harmonization · 6. Exploratory alerts · 7. Documentary traceability · 8. Provenance and limitations.')
+            st.dataframe(sample[sample.anio==selected].groupby(['mes','instrumento']).size().reset_index(name='detections').rename(columns={'mes':'month','instrumento':'instrument'}),use_container_width=True,hide_index=True)
         try:
             archivo_pdf=construir_pdf(sample,int(selected),reg,sens)
-            st.download_button('⬇️ Generar y descargar informe PDF',data=archivo_pdf,file_name=f'IGNIS_{selected}_{reg.split(" (")[0].replace(" ","_")}_informe.pdf',mime='application/pdf',type='primary')
+            st.download_button('⬇️ Generate and download PDF report',data=archivo_pdf,file_name=f'IGNIS_{selected}_{reg.split(" (")[0].replace(" ","_")}_report.pdf',mime='application/pdf',type='primary')
         except Exception as e:
-            st.error(f'No pudo generarse el PDF: {type(e).__name__}: {e}')
-        st.warning('Informe exploratorio: los datos de distintas plataformas no están armonizados cuantitativamente; no corresponde interpretar el total conjunto como número de incendios.')
+            st.error(f'The PDF could not be generated: {type(e).__name__}: {e}')
+        st.warning('Exploratory report: data from different platforms are not quantitatively harmonized; the combined total should not be interpreted as a number of fires.')
 
-# Consulta opcional, aislada del Maestro y sin peticiones automáticas.
+# Optional query, isolated from the Master file and without automatic requests.
 if current_section==NAV_PAGES[10]:
     from ignis_nrt import mostrar_monitoreo_nrt
     mostrar_monitoreo_nrt()
@@ -1011,8 +1011,8 @@ if current_section==NAV_PAGES[11]:
 if current_section==NAV_PAGES[12]:
     render_ask_ignis(combined)
 
-# Nueva pestaña aislada: NASA FIRMS + Bomberos/PAIF + SINAE/MIRA.
-# Utiliza el Maestro normalizado `combined` existente y no lo modifica.
+# New isolated tab: NASA FIRMS + Firefighters/PAIF + SINAE/MIRA.
+# It uses the existing normalized Master `combined` and does not modify it.
 if current_section==NAV_PAGES[13]:
     from ignis_fusion_terrestre import mostrar_fusion_terrestre
     mostrar_fusion_terrestre(combined)
@@ -1023,4 +1023,4 @@ if current_section == NAV_PAGES[14]:
 
 
 st.divider()
-st.caption('IGNIS UY Histórico · prototipo de investigación · entradas NASA FIRMS · evidencia documental del equipo separada · respaldo manual del maestro obligatorio.')
+st.caption('IGNIS UY Historical · research prototype · NASA FIRMS inputs · team documentary evidence kept separate · manual backup of the master file required.')

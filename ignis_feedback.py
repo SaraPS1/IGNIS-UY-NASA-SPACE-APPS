@@ -1,7 +1,7 @@
-"""Canal público de contacto y aportes de Team IGNIS.
+"""Public contact and contributions channel for Team IGNIS.
 
-La app no almacena aportes en Streamlit ni los publica automáticamente.
-La publicación requiere que la persona confirme el Issue en GitHub.
+The app does not store contributions in Streamlit or publish them automatically.
+Publishing requires the person to confirm the Issue on GitHub.
 """
 from urllib.parse import urlencode
 import requests
@@ -28,18 +28,18 @@ def estado_issues():
 
 
 def preparar_aporte(categoria: str, titulo: str, descripcion: str, referencia: str = ""):
-    """Construye URL y borrador sin enviar nada ni gestionar credenciales."""
+    """Builds the URL and draft without sending anything or handling credentials."""
     titulo = " ".join(str(titulo).split())[:110]
     descripcion = str(descripcion).strip()[:1500]
     referencia = str(referencia or "").strip()[:350]
     mensaje = (
-        "## Tipo de aporte\n" + categoria +
-        "\n\n## Consulta o propuesta\n" + descripcion +
-        "\n\n## Fuente o referencia (opcional)\n" +
-        (referencia or "No proporcionada") +
-        "\n\n---\nPreparado desde IGNIS UY. "
-        "Las contribuciones quedan pendientes de revisión; "
-        "no confirman incendios ni validan automáticamente datos FIRMS."
+        "## Contribution type\n" + categoria +
+        "\n\n## Question or proposal\n" + descripcion +
+        "\n\n## Source or reference (optional)\n" +
+        (referencia or "Not provided") +
+        "\n\n---\nPrepared from IGNIS UY. "
+        "Contributions remain pending review; "
+        "they do not confirm fires or automatically validate FIRMS data."
     )
     parametros = urlencode({
         "title": f"[Team IGNIS] {categoria}: {titulo}",
@@ -50,109 +50,109 @@ def preparar_aporte(categoria: str, titulo: str, descripcion: str, referencia: s
 
 def mostrar_contacto_team():
     st.markdown(
-        '<div class="ignis-ui-kicker">Comunidad · Investigación abierta</div>',
+        '<div class="ignis-ui-kicker">Community · Open research</div>',
         unsafe_allow_html=True,
     )
-    st.title("Consultas y aportes al Team IGNIS")
+    st.title("Questions and contributions to Team IGNIS")
     st.write(
-        "Compartí sugerencias, preguntas, errores o referencias documentales. "
-        "Las noticias y testimonios son aportes pendientes de revisión, "
-        "no verificaciones automáticas de detecciones térmicas."
+        "Share suggestions, questions, bugs or documentary references. "
+        "News and testimonies are contributions pending review, "
+        "not automatic verifications of thermal detections."
     )
     issues = estado_issues()
     if issues is False:
         st.warning(
-            "GitHub Issues está desactivado. Para recibir contribuciones, "
-            "el equipo debe habilitarlo en GitHub → Settings → General "
-            "→ Features → Issues. Mientras tanto podés preparar un borrador."
+            "GitHub Issues is disabled. To receive contributions, "
+            "the team must enable it on GitHub → Settings → General "
+            "→ Features → Issues. In the meantime you can prepare a draft."
         )
     elif issues is None:
         st.info(
-            "No fue posible verificar si GitHub Issues está activo. "
-            "El borrador podrá descargarse, sin afirmar que se envió."
+            "It was not possible to verify whether GitHub Issues is active. "
+            "The draft can be downloaded, without claiming it was sent."
         )
     else:
         st.success(
-            "GitHub Issues está disponible: podés preparar tu aporte "
-            "y publicarlo desde tu cuenta de GitHub."
+            "GitHub Issues is available: you can prepare your contribution "
+            "and publish it from your GitHub account."
         )
 
     st.caption(
-        "Los Issues publicados son públicos. No incluyas contraseñas, claves API, "
-        "teléfonos, domicilios ni información personal de terceros. "
-        "Se necesita una cuenta de GitHub para publicar."
+        "Published Issues are public. Do not include passwords, API keys, "
+        "phone numbers, addresses or personal information about third parties. "
+        "A GitHub account is required to publish."
     )
     with st.form("team_ignis_aporte", clear_on_submit=False):
         tipo = st.selectbox(
-            "Tipo de aporte",
+            "Contribution type",
             [
-                "Consulta sobre datos",
-                "Fuente documental o noticia",
-                "Reportar un error",
-                "Sugerencia de mejora",
-                "Colaboración científica o técnica",
+                "Question about the data",
+                "Documentary source or news",
+                "Report a bug",
+                "Improvement suggestion",
+                "Scientific or technical collaboration",
             ],
         )
         asunto = st.text_input(
-            "Título breve", max_chars=110,
-            placeholder="Ej.: Fuente de incendio en Durazno, enero de 2022",
+            "Short title", max_chars=110,
+            placeholder="E.g.: Fire source in Durazno, January 2022",
         )
         detalle = st.text_area(
-            "Consulta o propuesta", max_chars=1500, height=180,
-            placeholder="Describí las fechas, coordenadas, evidencia o el error que encontraste.",
+            "Question or proposal", max_chars=1500, height=180,
+            placeholder="Describe the dates, coordinates, evidence or the bug you found.",
         )
         referencia = st.text_input(
-            "Enlace de referencia (opcional)", max_chars=350,
+            "Reference link (optional)", max_chars=350,
             placeholder="https://...",
         )
         confirmado = st.checkbox(
-            "Comprendo que el Issue será público y que todavía no se envió."
+            "I understand the Issue will be public and that it has not been sent yet."
         )
         preparar = st.form_submit_button(
-            "Preparar para GitHub", type="primary", use_container_width=True
+            "Prepare for GitHub", type="primary", use_container_width=True
         )
 
     if preparar:
         if len(asunto.strip()) < 8:
-            st.error("Escribí un título de al menos 8 caracteres.")
+            st.error("Write a title of at least 8 characters.")
         elif len(detalle.strip()) < 20:
-            st.error("Explicá el aporte con al menos 20 caracteres.")
+            st.error("Explain the contribution with at least 20 characters.")
         elif referencia.strip() and not referencia.strip().startswith(("https://", "http://")):
-            st.error("La referencia debe comenzar con https:// o http://.")
+            st.error("The reference must start with https:// or http://.")
         elif not confirmado:
-            st.error("Confirmá que comprendés la publicación pública.")
+            st.error("Confirm that you understand the publication is public.")
         else:
             url, borrador = preparar_aporte(tipo, asunto, detalle, referencia)
             st.session_state["ignis_team_draft"] = {"url": url, "body": borrador}
 
     draft = st.session_state.get("ignis_team_draft")
     if draft:
-        st.subheader("Borrador preparado")
-        st.caption("Todavía no se envió. Descargalo o, si Issues está activo, publicalo.")
-        with st.expander("Ver el contenido"):
+        st.subheader("Draft prepared")
+        st.caption("It has not been sent yet. Download it or, if Issues is active, publish it.")
+        with st.expander("View the content"):
             st.code(draft["body"], language="markdown")
         st.download_button(
-            "Descargar borrador (.md)", data=draft["body"].encode("utf-8"),
-            file_name="team_ignis_aporte.md", mime="text/markdown",
+            "Download draft (.md)", data=draft["body"].encode("utf-8"),
+            file_name="team_ignis_contribution.md", mime="text/markdown",
             use_container_width=True, key="team_draft_download",
         )
         if issues is True:
             st.link_button(
-                "Continuar y publicar en GitHub Issues",
+                "Continue and publish on GitHub Issues",
                 draft["url"], type="primary", use_container_width=True,
             )
             st.caption(
-                "GitHub requiere iniciar sesión y confirmar «Submit new issue». "
-                "IGNIS no puede comprobar aquí si lo publicaste."
+                "GitHub requires signing in and confirming “Submit new issue”. "
+                "IGNIS cannot check here whether you published it."
             )
         else:
             st.info(
-                "El enlace de publicación aparecerá cuando GitHub Issues "
-                "esté habilitado y su estado pueda comprobarse."
+                "The publish link will appear once GitHub Issues "
+                "is enabled and its status can be checked."
             )
 
     st.divider()
-    st.link_button("Ver repositorio IGNIS UY", REPO_URL, use_container_width=True)
+    st.link_button("View IGNIS UY repository", REPO_URL, use_container_width=True)
     st.caption(
-        "No garantizamos respuesta ni incorporación de fuentes sin revisión."
+        "We do not guarantee a reply or the inclusion of sources without review."
     )
