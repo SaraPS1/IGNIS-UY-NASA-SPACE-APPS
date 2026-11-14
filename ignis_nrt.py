@@ -158,8 +158,8 @@ def _mapa_liviano(df: pd.DataFrame):
         height=460, template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="#0b1230", margin=dict(l=12, r=12, t=20, b=15),
         legend=dict(orientation="h", y=1.05, x=0),
-        xaxis=dict(title="Longitud", range=[-58.9, -52.8], gridcolor="rgba(170,190,235,.15)"),
-        yaxis=dict(title="Latitud", range=[-35.5, -29.75], scaleanchor="x", scaleratio=1,
+        xaxis=dict(title="Longitude", range=[-58.9, -52.8], gridcolor="rgba(170,190,235,.15)"),
+        yaxis=dict(title="Latitude", range=[-35.5, -29.75], scaleanchor="x", scaleratio=1,
                    gridcolor="rgba(170,190,235,.15)")
     )
     st.plotly_chart(figura, use_container_width=True)

@@ -186,7 +186,7 @@ def parsear_hora(v: object) -> str | None:
 
 
 def fecha_hora(v: object, hora: object | None = None, origen_tz: str = "America/Montevideo") -> tuple[pd.Timestamp | pd.NaT, bool]:
-    """UTC + marca de fecha sin hora. No fabrica precisión horaria."""
+    """UTC + marca de date only. No fabrica precisión horaria."""
     if v is None or pd.isna(v) or not str(v).strip():
         return pd.NaT, True
     s = str(v).strip()
@@ -403,7 +403,7 @@ def buscar_asociaciones(fuentes: pd.DataFrame, candidatos: pd.DataFrame,
             "delta_min": (float(sub.iloc[0]["delta_min"])
                           if not fila_dia and not bool(sub.iloc[0]["solo_fecha"]) else np.nan),
             "precision": ("same-day match (time unknown)"
-                          if fila_dia or bool(sub.iloc[0]["solo_fecha"]) else "tiempo UTC"),
+                          if fila_dia or bool(sub.iloc[0]["solo_fecha"]) else "UTC time"),
             "ids": sub.id.astype(str).tolist()[:20],
             "instrumentos": ", ".join(sorted(sub.instrumento.unique())) if "instrumento" in sub else "",
         }
@@ -443,13 +443,13 @@ def fusionar(nasa: pd.DataFrame, bomberos: pd.DataFrame, sinae: pd.DataFrame,
         ns = match_s["n"] if match_s else 0
         es_s = (r["categoria"] == "SINAE_MIRA")
         if sat and (ns or (es_s and len(b)>0 and any(str(r["id"]) in v["ids"] for v in matches_sinae.values()))):
-            estado = "NASA + terrestre + SINAE (revisar)"
+            estado = "NASA + ground + SINAE (review)"
         elif sat:
-            estado = "NASA + " + ("SINAE (revisar)" if es_s else "terrestre (revisar)")
+            estado = "NASA + " + ("SINAE (review)" if es_s else "ground (review)")
         elif ns:
-            estado = "Terrestre + SINAE, sin FIRMS"
+            estado = "Ground + SINAE, no FIRMS match"
         else:
-            estado = "SINAE sin Nearby FIRMSno" if es_s else "Terrestre sin Nearby FIRMSno"
+            estado = "SINAE without a nearby FIRMS observation" if es_s else "Ground record without a nearby FIRMS observation"
         fuentes = {"SINAE/MIRA"} if es_s else {"Bomberos/PAIF"}
         if ns:
             fuentes.add("SINAE/MIRA")
@@ -462,7 +462,7 @@ def fusionar(nasa: pd.DataFrame, bomberos: pd.DataFrame, sinae: pd.DataFrame,
             "n_firms":int(sat["n"]) if sat else 0, "n_sinae":int(ns),
             "distancia_km":round(sat["dist_km"],2) if sat else np.nan,
             "minutos":round(sat["delta_min"],1) if sat and pd.notna(sat["delta_min"]) else np.nan,
-            "precision":sat["precision"] if sat else ("fecha sin hora" if r["solo_fecha"] else "con hora"),
+            "precision":sat["precision"] if sat else ("date only" if r["solo_fecha"] else "date and time"),
             "instrumentos":sat["instrumentos"] if sat else "",
             "detalle":str(r["detalle"]), "estado_origen":str(r["estado_origen"]),
             "simulado":"YES — DO NOT USE AS EVIDENCE" if bool(r.get("es_simulado",False)) else "No",
@@ -525,15 +525,15 @@ def dibujar_mapa(nasa: pd.DataFrame, bom: pd.DataFrame, sin: pd.DataFrame,
                              tooltip=f"{n} years with NASA FIRMS observations in a 0.2° cell").add_to(layer)
         layer.add_to(mapa)
     for df,color,title in ((bom,"#ffbe6d","Imported ground detection"),
-                           (sin,"#6bd2fa","Registro SINAE/MIRA cargado")):
+                           (sin,"#6bd2fa","Uploaded SINAE/MIRA record")):
         if df.empty:
             continue
         layer=folium.FeatureGroup(name=f"{title} ({len(df)})",show=True)
         for _, r in df.head(500).iterrows():
             texto=(f"{escape(title)}<br>ID: {escape(str(r['id']))}<br>"
-                   f"Fecha: {escape(str(r['fecha_utc']))}<br>"
-                   f"Tipo: {escape(str(r['detalle']))}<br>"
-                   f"Estado original: {escape(str(r['estado_origen']))}")
+                   f"Date: {escape(str(r['fecha_utc']))}<br>"
+                   f"Type: {escape(str(r['detalle']))}<br>"
+                   f"Original status: {escape(str(r['estado_origen']))}")
             folium.CircleMarker([float(r.lat),float(r.lon)],radius=6,color=color,
                                 fill=True,fill_color=color,fill_opacity=.90,
                                 tooltip=f"{title} · {r['id']}",popup=folium.Popup(texto,max_width=330)).add_to(layer)
@@ -541,7 +541,7 @@ def dibujar_mapa(nasa: pd.DataFrame, bom: pd.DataFrame, sin: pd.DataFrame,
     if not resultados.empty:
         layer=folium.FeatureGroup(name="Matches for review",show=True)
         for _,r in resultados[resultados.n_firms>0].head(300).iterrows():
-            texto=escape(str(r.resultado))+'<br>Nearby FIRMSnos: '+str(r.n_firms)
+            texto=escape(str(r.resultado))+'<br>Nearby FIRMS observations: '+str(r.n_firms)
             folium.CircleMarker([r.lat,r.lon],radius=11,weight=2,color="#f9e77d",
                                 fill=False,tooltip=texto,popup=texto).add_to(layer)
         layer.add_to(mapa)
@@ -558,10 +558,10 @@ def dibujar_mapa(nasa: pd.DataFrame, bom: pd.DataFrame, sin: pd.DataFrame,
 
 PASO_GRADOS = 0.2
 CASOS_DOCUMENTADOS = [
-    {"nombre":"Algorta / Orgoroso · episodio litoral 2021–2022",
+    {"nombre":"Algorta / Orgoroso · western region event 2021–2022",
      "lat":-32.4222, "lon":-57.3922, "inicio":"2021-12-29", "fin":"2022-01-05",
      "fuente":"SINAE", "url":"https://www.gub.uy/sistema-nacional-emergencias/comunicacion/comunicados/informe-situacion-incendios-forestales-31-12-2021"},
-    {"nombre":"Algorta · nuevo episodio 2023",
+    {"nombre":"Algorta · new event in 2023",
      "lat":-32.4222,"lon":-57.3922,"inicio":"2023-01-04","fin":"2023-01-05",
      "fuente":"SINAE", "url":"https://www.gub.uy/sistema-nacional-emergencias/comunicacion/noticias/informe-situacion-sobre-incendio-forestal-rio-negro"},
     {"nombre":"La Esmeralda, Rocha · 2005",
@@ -570,7 +570,7 @@ CASOS_DOCUMENTADOS = [
     {"nombre":"La Esmeralda, Rocha · 2019",
      "lat":-34.1575,"lon":-53.6931,"inicio":"2019-12-10","fin":"2019-12-17",
      "fuente":"SINAE", "url":"https://www.gub.uy/sistema-nacional-emergencias/comunicacion/noticias/eventos-adversos-significativos-ocurridos-uruguay-entre-anos-2015-2019"},
-    {"nombre":"Fortín de Santa Rosa · temporada 2021–2022",
+    {"nombre":"Fortín de Santa Rosa · 2021–2022 season",
      "lat":-34.7719,"lon":-55.8056,"inicio":"2021-12-29","fin":"2022-01-03",
      "fuente":"SINAE", "url":"https://www.gub.uy/sistema-nacional-emergencias/comunicacion/comunicados/informe-situacion-incendios-forestales-31-12-2021"},
 ]
@@ -587,11 +587,11 @@ REFERENCIAS_CAMARAS = [
      "nota":"Town cited by the Ministry of the Interior; camera location unverified"},
 ]
 ZONAS = {
-    "Todo Uruguay": (-35.28,-29.90,-58.70,-53.00),
-    "Litoral oeste · recorte aproximado":(-34.0,-30.65,-58.70,-56.65),
-    "Centro · recorte aproximado":(-34.3,-31.3,-57.55,-54.9),
-    "Costa sur y este · recorte aproximado":(-35.28,-33.35,-58.7,-53.0),
-    "Norte · recorte aproximado":(-32.0,-29.90,-58.65,-53.35),
+    "All Uruguay": (-35.28,-29.90,-58.70,-53.00),
+    "Western Uruguay · approximate extent":(-34.0,-30.65,-58.70,-56.65),
+    "Central Uruguay · approximate extent":(-34.3,-31.3,-57.55,-54.9),
+    "South and east coast · approximate extent":(-35.28,-33.35,-58.7,-53.0),
+    "Northern Uruguay · approximate extent":(-32.0,-29.90,-58.65,-53.35),
 }
 
 
@@ -627,7 +627,7 @@ def _contorno_uy() -> list[tuple[float,float]]:
 
 
 def _contiene_punto(lon:float, lat:float, poligono:list[tuple[float,float]]) -> bool:
-    # Ray casting independiente de shapely. Contorno simplificado = aproximación.
+    # Ray casting independiente de shapely. Simplified national boundary = aproximación.
     if not poligono:return True
     dentro=False
     for i in range(len(poligono)-1):
@@ -681,7 +681,7 @@ def _mapa_plotly(malla:pd.DataFrame, nasa:pd.DataFrame, bom:pd.DataFrame,
         figura.add_trace(go.Scatter(
             x=[x for x,y in geo], y=[y for x,y in geo],mode='lines',
             fill='toself',fillcolor='rgba(26,48,70,.50)',
-            line=dict(color='#c7e7fa',width=2),name='Contorno simplificado',hoverinfo='skip',
+            line=dict(color='#c7e7fa',width=2),name='Simplified national boundary',hoverinfo='skip',
             showlegend=False))
     else:
         figura.add_trace(go.Scatter(x=[],y=[],mode='lines',showlegend=False))
@@ -691,16 +691,16 @@ def _mapa_plotly(malla:pd.DataFrame, nasa:pd.DataFrame, bom:pd.DataFrame,
         bordes=['#ffed97' if (int(r.ilat),int(r.ilon)) in activas else 'rgba(4,17,30,.5)' for r in m.itertuples()]
         hover=(m['anios'].astype(str)+' years with FIRMS detections<br>'+
                m['registros'].astype(str)+' records in the cell<br>'+
-               'Centro: '+m['lat_c'].round(2).astype(str)+'°, '+m['lon_c'].round(2).astype(str)+'°<br>'+
+               'Center: '+m['lat_c'].round(2).astype(str)+'°, '+m['lon_c'].round(2).astype(str)+'°<br>'+
                'Click to inspect')
         figura.add_trace(go.Scatter(
-            x=m['lon_c'],y=m['lat_c'],mode='markers',name='Celdas FIRMS',
+            x=m['lon_c'],y=m['lat_c'],mode='markers',name='FIRMS grid cells',
             marker=dict(symbol='square',size=23,color=[_paleta(int(v)) for v in m.anios],
                         line=dict(color=bordes,width=1.2 if celdas_activas is not None else 0.6),opacity=.96),
             customdata=np.array(m[['ilat','ilon']].values,object),
             text=hover,hovertemplate='%{text}<extra></extra>',showlegend=False))
     else:
-        figura.add_trace(go.Scatter(x=[],y=[],mode='markers',name='Celdas FIRMS',showlegend=False))
+        figura.add_trace(go.Scatter(x=[],y=[],mode='markers',name='FIRMS grid cells',showlegend=False))
     if celda_seleccionada is not None:
         il,jo=celda_seleccionada
         x0,x1=jo*PASO_GRADOS,(jo+1)*PASO_GRADOS
@@ -714,7 +714,7 @@ def _mapa_plotly(malla:pd.DataFrame, nasa:pd.DataFrame, bom:pd.DataFrame,
         if ref:
             figura.add_trace(go.Scatter(
                 x=[x['lon'] for x in ref],y=[x['lat'] for x in ref],
-                mode='markers',name='Localidades de referencia, NO torres',
+                mode='markers',name='Reference towns, NOT towers',
                 marker=dict(symbol='diamond-open',size=14,color='#4fc2ff',line=dict(width=2)),
                 text=[f"{x['nombre']}<br>{x['nota']}" for x in ref],
                 hovertemplate='%{text}<extra></extra>'))
@@ -726,12 +726,12 @@ def _mapa_plotly(malla:pd.DataFrame, nasa:pd.DataFrame, bom:pd.DataFrame,
         if cases:
             figura.add_trace(go.Scatter(
                 x=[c['lon'] for c in cases],y=[c['lat'] for c in cases],
-                mode='markers', name='Localidad de incendio documentado',
+                mode='markers', name='Documented wildfire town',
                 marker=dict(symbol='circle-open',size=17,color='#ff8aa5',line=dict(width=2.5)),
-                text=[c['nombre']+'<br>'+c['inicio']+' a '+c['fin']+
+                text=[c['nombre']+'<br>'+c['inicio']+' to '+c['fin']+
                       '<br>Town location, NOT the precise fire location' for c in cases],
                 hovertemplate='%{text}<extra></extra>'))
-    for d,color,name in ((bom,'#ffbd60','Terrestre cargado'),(sin,'#f17ce2','SINAE cargado')):
+    for d,color,name in ((bom,'#ffbd60','Uploaded ground records'),(sin,'#f17ce2','Uploaded SINAE records')):
         if d is not None and not d.empty:
             d=d.head(1000)
             figura.add_trace(go.Scatter(
@@ -745,9 +745,9 @@ def _mapa_plotly(malla:pd.DataFrame, nasa:pd.DataFrame, bom:pd.DataFrame,
         height=690,margin=dict(t=15,b=25,l=15,r=15),
         hovermode='closest',clickmode='event+select',
         legend=dict(x=.01,y=.01,xanchor='left',yanchor='bottom',bgcolor='rgba(8,21,38,.7)',font=dict(size=10)),
-        xaxis=dict(range=[c-.05,d+.05],title='Longitud (°O)',gridcolor='#1c3348',zeroline=False,
+        xaxis=dict(range=[c-.05,d+.05],title='Longitude (°W)',gridcolor='#1c3348',zeroline=False,
                    scaleanchor='y',scaleratio=1),
-        yaxis=dict(range=[a-.05,b+.05],title='Latitud (°S)',gridcolor='#1c3348',zeroline=False)
+        yaxis=dict(range=[a-.05,b+.05],title='Latitude (°S)',gridcolor='#1c3348',zeroline=False)
     )
     return figura
 
@@ -770,7 +770,7 @@ def _descripcion_celda(malla:pd.DataFrame,c:tuple[int,int]) -> str:
     m=malla[(malla.ilat==c[0])&(malla.ilon==c[1])]
     if m.empty:return str(c)
     r=m.iloc[0]
-    return (f"{r.lat_c:.2f}°S, {abs(r.lon_c):.2f}°O · "
+    return (f"{r.lat_c:.2f}°S, {abs(r.lon_c):.2f}°W · "
             f"{int(r.anios)} years · {int(r.registros)} observations")
 
 
@@ -862,7 +862,7 @@ def _mapa_estatico_para_pdf(malla: pd.DataFrame, celda: tuple[int, int],
     lat0, lon0 = celda[0]*PASO_GRADOS, celda[1]*PASO_GRADOS
     ax.add_patch(Rectangle((lon0, lat0), PASO_GRADOS, PASO_GRADOS,
                            facecolor='none', edgecolor='#ffe57b', linewidth=3))
-    for d, color, label in [(bom, '#ffba63', 'Bomberos/PAIF'),
+    for d, color, label in [(bom, '#ffba63', 'Fire Service/PAIF'),
                              (sin, '#fb83d9', 'SINAE/MIRA')]:
         if d is not None and not d.empty:
             ax.scatter(d.lon, d.lat, c=color, s=27, marker='x', linewidth=1.2, label=label)
@@ -872,8 +872,8 @@ def _mapa_estatico_para_pdf(malla: pd.DataFrame, celda: tuple[int, int],
     ax.tick_params(axis='both', colors='#c8e0ef', labelsize=7)
     ax.grid(color='#253b55', alpha=.40)
     for sp in ax.spines.values(): sp.set_color('#243e5b')
-    ax.set_xlabel('Longitud (WGS84)', color='#b7d1e6', fontsize=7)
-    ax.set_ylabel('Latitud (WGS84)', color='#b7d1e6', fontsize=7)
+    ax.set_xlabel('Longitude (WGS84)', color='#b7d1e6', fontsize=7)
+    ax.set_ylabel('Latitude (WGS84)', color='#b7d1e6', fontsize=7)
     if ax.get_legend_handles_labels()[0]:
         leg = ax.legend(facecolor='#183148', edgecolor='#49617a', fontsize=7,
                         loc='lower right')
@@ -985,7 +985,7 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
         yini,yfin=int(df.fecha_utc.dt.year.min()),int(df.fecha_utc.dt.year.max())
         return [nombre,n(len(df)),f'{yini}–{yfin}', 'Synthetic' if df.es_simulado.any() else 'Declared origin']
     rows=[['Source','Events in cell','Event years','Status']]
-    rows.extend([fuente_fila('Bomberos / PAIF',bom_celda),fuente_fila('SINAE / MIRA',sin_celda)])
+    rows.extend([fuente_fila('Fire Service / PAIF',bom_celda),fuente_fila('SINAE / MIRA',sin_celda)])
     tt=Table([[Paragraph(str(x),estilo['IGNISCell']) for x in row] for row in rows],
               colWidths=[4.0*cm,2.9*cm,6.1*cm,4.7*cm],repeatRows=1)
     tt.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),C.HexColor('#dceaf2')),
@@ -1099,7 +1099,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
                 st.error(f"Additional NASA: {type(exc).__name__}: {exc}")
         cb,cs=st.columns(2)
         with cb:
-            st.markdown('**Bomberos / PAIF**')
+            st.markdown('**Fire Service / PAIF**')
             b_file=st.file_uploader('CSV, JSON, or GeoJSON ground events',
                                     type=['csv','json','geojson'],key='fus_v2_bomberos')
             st.download_button('Download sample synthetic CSV',tabla_ejemplo('terrestre'),
@@ -1173,7 +1173,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
         st.plotly_chart(fig,use_container_width=True)
         seleccion=None
     clicked=_seleccion_de_grafico(seleccion)
-    st.caption('◼ Azul: 3–5 years · Turquesa: 6–10 · Amarillo: 11–17 · Naranja: 18+ '
+    st.caption('◼ Blue: 3–5 years · Turquoise: 6–10 · Yellow: 11–17 · Orange: 18+ '
                '· ◇ Blue: reference TOWN (NOT a camera location) '
                '· ○ Pink: documented wildfire town (NOT exact location).')
     if ano is not None:
@@ -1214,17 +1214,17 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
     a.metric('Detections in cell',len(t_per))
     b1.metric('Years with observations',t_hist.fecha_utc.dt.year.nunique())
     c1.metric('Distinct days observed',t_hist.fecha_utc.dt.date.nunique())
-    st.caption(f"Approximate extent: latitudes {lat0:.2f} a {lat1:.2f}; "
-               f"longitudes {lon0:.2f} a {lon1:.2f} grados WGS84. "
+    st.caption(f"Approximate extent: latitudes {lat0:.2f} to {lat1:.2f}; "
+               f"longitudes {lon0:.2f} to {lon1:.2f} degrees WGS84. "
                'This is a geographic cell, NOT burned area.')
     if not t_hist.empty:
-        por_anio=t_hist.groupby(t_hist.fecha_utc.dt.year).size().rename('Observaciones').reset_index()
-        por_anio.columns=['Año','Observaciones']
+        por_anio=t_hist.groupby(t_hist.fecha_utc.dt.year).size().rename('Observations').reset_index()
+        por_anio.columns=['Year','Observations']
         instrumentos=t_per.groupby('instrumento').size().rename('Registros').reset_index()
         x1,x2=st.columns([1,1])
         with x1:
             st.markdown('**Annual cell history**')
-            st.bar_chart(por_anio.set_index('Año'))
+            st.bar_chart(por_anio.set_index('Year'))
         with x2:
             st.markdown('**Sensors in period**')
             display_dataframe(instrumentos,use_container_width=True,hide_index=True)
@@ -1300,7 +1300,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
         celda_fusion=fusion.loc[fusion.lat.ge(lat0)&fusion.lat.lt(lat1)&
                                fusion.lon.ge(lon0)&fusion.lon.lt(lon1)].copy()
         n_match=int((fusion.n_firms>0).sum())
-        n_triple=int(fusion.resultado.astype(str).str.contains(r'NASA \+ terrestre \+ SINAE',regex=True).sum())
+        n_triple=int(fusion.resultado.astype(str).str.contains(r'NASA \+ ground \+ SINAE',regex=True).sum())
         xx,yy,zz=st.columns(3)
         xx.metric('External events in area',len(fusion))
         yy.metric('Near NASA observations',n_match)
@@ -1340,7 +1340,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
     st.markdown('#### 🔗 Results for selected grid cell')
     if not bom_cell.empty or not sin_cell.empty:
         eventos_tabla=[]
-        for nombre,df in [('Bomberos / PAIF',bom_cell),('SINAE / MIRA',sin_cell)]:
+        for nombre,df in [('Fire Service / PAIF',bom_cell),('SINAE / MIRA',sin_cell)]:
             for r in df.itertuples():
                 eventos_tabla.append({'Provenance':nombre,'UTC date':str(r.fecha_utc)[:19],
                     'ID':str(r.id)[:50],'Reported type':str(r.detalle)[:100],

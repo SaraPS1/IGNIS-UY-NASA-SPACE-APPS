@@ -59,15 +59,15 @@ def convertir_fuentes_a_casos(fuentes):
         })
         caso["fechas_utc"] = sorted(set(caso["fechas_utc"] + fechas))
         caso["fuentes"].append({
-            "tipo": fuente.get("clase", "Fuente externa"),
-            "medio": fuente.get("organismo", "Organismo no indicado"),
+            "tipo": fuente.get("clase", "External source"),
+            "medio": fuente.get("organismo", "Agency not specified"),
             "titulo": fuente.get("titulo", "Untitled source"),
             "fecha_publicacion": fuente.get("fecha_publicacion", ""),
             "hecho_fecha_desde_local": fuente.get("evento_desde", ""),
             "hecho_fecha_hasta_local": fuente.get("evento_hasta", ""),
             "lugar": fuente.get("lugar_reportado", "Uruguay"),
             "url": fuente.get("url", ""),
-            "alcance": fuente.get("alcance", "Fuente documental contextual"),
+            "alcance": fuente.get("alcance", "Contextual documentary source"),
             "notas": fuente.get("nota", ""),
         })
     return list(casos_por_año.values())
@@ -141,14 +141,14 @@ def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = Non
     coincide, cantidad = coincidente_en_datos(caso, datos)
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Fuentes externas", len(caso.get("fuentes", [])))
+    col1.metric("External sources", len(caso.get("fuentes", [])))
     col2.metric("FIRMS records in current upload", cantidad)
     col3.metric("Documentary association", "Regional/temporal match" if coincide else "No match in current upload")
 
     st.write(caso.get("resumen", "No summary available."))
     st.caption("The following counts and dates come from the historical catalogue and may differ from uploaded observations.")
     display_dataframe(pd.DataFrame([{
-        "Fechas UTC": ", ".join(caso.get("fechas_utc", [])),
+        "UTC dates": ", ".join(caso.get("fechas_utc", [])),
         "MODIS": caso.get("esperados", {}).get("MODIS", 0),
         "VIIRS S-NPP": caso.get("esperados", {}).get("VIIRS S-NPP", 0),
         "VIIRS NOAA-20": caso.get("esperados", {}).get("VIIRS NOAA-20", 0),
@@ -162,25 +162,25 @@ def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = Non
     filas = []
     for fuente in fuentes:
         filas.append({
-            "Tipo": fuente.get("tipo", ""),
-            "Medio": fuente.get("medio", ""),
+            "Type": fuente.get("tipo", ""),
+            "Publisher": fuente.get("medio", ""),
             "Publication date": fuente.get("fecha_publicacion", ""),
-            "Fechas del hecho": f"{fuente.get('hecho_fecha_desde_local', '')} a {fuente.get('hecho_fecha_hasta_local', '')}",
-            "Lugar reportado": fuente.get("lugar", ""),
+            "Event dates": f"{fuente.get('hecho_fecha_desde_local', '')} to {fuente.get('hecho_fecha_hasta_local', '')}",
+            "Reported location": fuente.get("lugar", ""),
             "Title": fuente.get("titulo", ""),
-            "Enlace": fuente.get("url", ""),
+            "Source URL": fuente.get("url", ""),
         })
     display_dataframe(pd.DataFrame(filas), use_container_width=True, hide_index=True)
 
     for numero, fuente in enumerate(fuentes, start=1):
-        with st.expander(f"Fuente {numero} · {fuente.get('medio', '')}", expanded=(numero == 1)):
+        with st.expander(f"Source {numero} · {fuente.get('medio', '')}", expanded=(numero == 1)):
             st.markdown(f"**{fuente.get('titulo', '')}**")
-            st.write(f"Tipo: {fuente.get('tipo', '')} · Lugar: {fuente.get('lugar', '')}")
-            st.caption(f"Hecho reportado: {fuente.get('hecho_fecha_desde_local', '')} a {fuente.get('hecho_fecha_hasta_local', '')}")
-            st.write(f"**Alcance:** {fuente.get('alcance', '')}")
+            st.write(f"Type: {fuente.get('tipo', '')} · Location: {fuente.get('lugar', '')}")
+            st.caption(f"Reported event: {fuente.get('hecho_fecha_desde_local', '')} to {fuente.get('hecho_fecha_hasta_local', '')}")
+            st.write(f"**Evidence scope:** {fuente.get('alcance', '')}")
             st.write(fuente.get("notas", ""))
             if fuente.get("url"):
-                st.link_button("Abrir fuente original", fuente["url"])
+                st.link_button("Open original source", fuente["url"])
 
     st.download_button(
         "Download full source catalogue (JSON)",

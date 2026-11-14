@@ -26,7 +26,7 @@ class SpaceLayoutTests(unittest.TestCase):
     def test_tle_fetch_is_optional_and_parallel(self):
         self.assertIn("ThreadPoolExecutor(max_workers=5)", self.source)
         self.assertIn('key="ignis_orbit_source"', self.source)
-        self.assertIn('orbit_mode == "TLE actuales"', self.source)
+        self.assertIn('orbit_mode == "Current TLE data"', self.source)
 
     def test_globe_is_in_hero_slot(self):
         self.assertIn('globe_slot = st.empty()', self.source)
