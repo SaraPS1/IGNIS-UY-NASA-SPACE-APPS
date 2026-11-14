@@ -793,19 +793,19 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           animate();
           const orbitStatus = (showOrbits && illustrativeOrbits > 0)
             ? ' · illustrative orbits ('+illustrativeOrbits+')'
-            : (showOrbits && tleOrbits > 0 ? ' · TLE actuales' : '');
+            : (showOrbits && tleOrbits > 0 ? ' · current TLE' : '');
           const shownHotspots = (payload.hotspots || []).length;
           const totalHotspots = Number(payload.hotspots_total) || shownHotspots;
           const hotspotNote = (showHotspots && totalHotspots > shownHotspots)
-            ? ' · focos: ' + shownHotspots + ' de ' + totalHotspots + ' (mayor FRP)'
-            : (showHotspots && shownHotspots ? ' · focos: ' + shownHotspots : '');
-          setStatus('3D listo'+orbitStatus+hotspotNote);
+            ? ' · hotspots: ' + shownHotspots + ' of ' + totalHotspots + ' (highest FRP)'
+            : (showHotspots && shownHotspots ? ' · hotspots: ' + shownHotspots : '');
+          setStatus('3D ready'+orbitStatus+hotspotNote);
           }} catch (error) {{
             console.error('IGNIS 3D error:', error);
-            const message = error && error.message ? error.message : 'Error no identificado al preparar la vista 3D.';
+            const message = error && error.message ? error.message : 'Unknown error while initializing the 3D view.';
             setStatus('Error 3D: ' + message, 'error');
             if (root) {{
-              root.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:2rem;color:#fce5e5;text-align:center;font:14px Arial,sans-serif;background:linear-gradient(180deg,#0b1220,#090d18);">Could not initialize the 3D view. Check your browser's WebGL support or reload this page.</div>';
+              root.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:2rem;color:#fce5e5;text-align:center;font:14px Arial,sans-serif;background:linear-gradient(180deg,#0b1220,#090d18);">Could not initialize the 3D view. Check your browser WebGL support or reload this page.</div>';
             }}
           }}
         </script>
