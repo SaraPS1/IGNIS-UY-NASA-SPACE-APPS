@@ -39,24 +39,24 @@ class AskIgnisSpanishTests(unittest.TestCase):
 
     def test_no_external_llm(self):
         result = responder_ignis(example_data(), "¿Qué IA utiliza ASK IGNIS?")
-        self.assertIn("no utiliza GPT", result["answer"].lower().replace("no utiliza gpt", "no utiliza GPT"))
+        self.assertIn("does not use GPT", result["answer"].lower().replace("does not use gpt", "does not use GPT"))
         self.assertIsNone(result["chart"])
 
     def test_handles_missing_files_in_spanish(self):
         result = responder_ignis(pd.DataFrame(), "¿Cuántos registros hay?")
-        self.assertIn("Todavía no hay registros", result["answer"])
+        self.assertIn("No records have been uploaded", result["answer"])
         self.assertEqual(result["sources"], [])
 
     def test_modis_viirs_comparison(self):
         result = responder_ignis(example_data(), "Compará las observaciones MODIS y VIIRS.")
-        self.assertEqual(result["chart"]["Observaciones"].sum(), 3)
-        self.assertEqual(set(result["chart"]["Instrumento"]), {"MODIS", "VIIRS"})
-        self.assertIn("no están armonizados", result["answer"])
+        self.assertEqual(result["chart"]["Observations"].sum(), 3)
+        self.assertEqual(set(result["chart"]["Instrument"]), {"MODIS", "VIIRS"})
+        self.assertIn("have not been harmonized", result["answer"])
 
     def test_historical_yearly(self):
         result = responder_ignis(example_data(), "Mostrá el histórico por año.")
-        self.assertEqual(result["chart"]["Año"].tolist(), [2024, 2025])
-        self.assertIn("Serie anual", result["answer"])
+        self.assertEqual(result["chart"]["Year"].tolist(), [2024, 2025])
+        self.assertIn("Annual series", result["answer"])
 
     def test_frp_spanish(self):
         result = responder_ignis(example_data(), "¿Cuáles son los valores de FRP?")
@@ -65,19 +65,19 @@ class AskIgnisSpanishTests(unittest.TestCase):
 
     def test_does_not_invent_fire_confirmations(self):
         result = responder_ignis(example_data(), "¿Son incendios confirmados?")
-        self.assertIn("no la confirmación de un incendio", result["answer"])
+        self.assertIn("not confirmation of a wildfire", result["answer"])
         self.assertIsNone(result["chart"])
 
     def test_unknown_question_is_not_fabricated(self):
         result = responder_ignis(example_data(), "¿Cuál es la temperatura de Marte?")
-        self.assertIn("No reconozco todavía", result["answer"])
+        self.assertIn("I cannot answer that question yet", result["answer"])
         self.assertIsNone(result["chart"])
 
     def test_uruguay_filter(self):
         df = example_data().copy()
         df.loc[len(df)] = ["2025-03-05", 42.0, 11.0, "VIIRS", 4, "FIRMS"]
         result = responder_ignis(df, "¿Cuántos registros hay en Uruguay?")
-        self.assertIn("3 registros", result["answer"])
+        self.assertIn("3 records", result["answer"])
 
     def test_contact_url_encodes_user_text(self):
         build = extract_preparar_aporte()
@@ -86,7 +86,7 @@ class AskIgnisSpanishTests(unittest.TestCase):
                               "https://example.org/reporte")
         parsed = urlparse(url)
         self.assertEqual(parsed.netloc, "github.com")
-        self.assertEqual(parsed.path, "/sarapcoffee/ignis-uy-historico/issues/new")
+        self.assertEqual(parsed.path, "/SaraPS1/IGNIS-UY-NASA-SPACE-APPS/issues/new")
         fields = parse_qs(parsed.query)
         self.assertIn("Incendio en Durazno", fields["title"][0])
         self.assertIn("2022-01-08", fields["body"][0])
