@@ -1,18 +1,18 @@
-# Fondos de la portada de IGNIS UY
+# IGNIS UY homepage backgrounds
 
-Estas cuatro imágenes fueron aportadas por el equipo del proyecto y optimizadas a WebP para su uso en la página de Inicio. Se alojan en el repositorio, no en un servicio externo.
+These four images were provided by the project team and optimized as WebP for the Home page. They are hosted in the repository, not an external service.
 
-| Ubicación | Archivo | Asunto |
+| Location | File | Depiction |
 |---|---|---|
-| Portada principal | `bg_portada.webp` | Sudamérica, Uruguay resaltado y satélite |
-| Observaciones satelitales | `bg_observaciones.webp` | Satélite escaneando la región |
-| Atlas científico | `bg_atlas.webp` | Uruguay destacado sobre la Tierra |
-| Trazabilidad | `bg_trazabilidad.webp` | Panel de documentos, análisis y escudo de verificación |
+| Main hero | `bg_portada.webp` | South America with Uruguay highlighted and a satellite |
+| Satellite observations | `bg_observaciones.webp` | A satellite scanning the region |
+| Scientific Atlas | `bg_atlas.webp` | Uruguay highlighted on Earth |
+| Traceability | `bg_trazabilidad.webp` | Documents, analysis, and a verification shield |
 
-## Integración
+## Integration
 
-Se cargan en `ignis_visual.py` mediante `_apply_local_home_backgrounds()`. La función usa `asset_uri(path, "image/webp")` y emite reglas CSS con degradados oscuros de contraste. Solo afecta a la página de Inicio. Si falta una imagen, se conserva el fondo anterior para esa sección; la portada mantiene además el SVG local como respaldo.
+The images are loaded in `ignis_visual.py` through `_apply_local_home_backgrounds()`. The function uses `asset_uri(path, "image/webp")` and emits high-contrast dark-gradient CSS rules. It only affects the Home page. Missing images fall back to previous section backgrounds; the hero also retains its local SVG fallback.
 
-Los recursos **son ilustraciones visuales**. No constituyen imágenes satelitales fechadas, coordenadas validadas, ubicaciones reales de incendios ni evidencia de detecciones NASA FIRMS. Los puntos luminosos y los contornos ilustrativos no deben utilizarse para inferencia geoespacial.
+These assets **are illustrative artwork**. They are not dated satellite imagery, validated coordinates, actual wildfire locations, or NASA FIRMS detection evidence. Glowing points and illustrative borders must not support geospatial inference.
 
-No se han modificado algoritmos de armonización, mapas científicos, importación ZIP, validación externa ni filtros.
+Harmonization algorithms, scientific maps, ZIP imports, external validation, and filters were not modified.
