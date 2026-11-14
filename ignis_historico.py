@@ -812,7 +812,7 @@ if current_section==NAV_PAGES[5]:
         aq3.metric('Valid UTC time', f"{audit['horarios_validos']:,}")
         aq4.metric('Available FRP', f"{audit['frp_disponible']:,}")
         for aviso in lectura_diagnostica(audit):
-            st.caption('• ' + english_quality_notice(aviso)
+            st.caption('• ' + english_quality_notice(aviso))
         if selected is not None:
             inventario = inventario_mensual(sample, int(selected))
             with st.expander('Monthly source inventory · selected year', expanded=False):
