@@ -81,7 +81,7 @@ def encontrar_columna(columns: list[str], tipo: str) -> str | None:
 def leer_tabla_bytes(nombre: str, contenido: bytes) -> pd.DataFrame:
     """Lee CSV/JSON/GeoJSON SIN conexiones de red ni ejecución de contenido."""
     if len(contenido) > MAX_UPLOAD_BYTES:
-        raise ValueError("Archivo demasiado grande para esta demostración (máximo 12 MB).")
+        raise ValueError("File too large for this demonstration (maximum 12 MB).")
     extension = Path(nombre).suffix.lower()
     if extension == ".csv":
         errors = []
@@ -116,9 +116,9 @@ def leer_tabla_bytes(nombre: str, contenido: bytes) -> pd.DataFrame:
             else:
                 df = pd.DataFrame([data])
     else:
-        raise ValueError("Formato no admitido: cargá CSV, JSON o GeoJSON.")
+        raise ValueError("Unsupported format: upload CSV, JSON, or GeoJSON.")
     if len(df) > MAX_ROWS:
-        raise ValueError("Demasiadas filas (máximo 100.000 registros por carga).")
+        raise ValueError("Too many rows (maximum 100,000 per upload).")
     if df.empty:
         raise ValueError("El archivo no contiene filas de datos.")
     df.columns = [str(c).strip() for c in df.columns]
@@ -126,17 +126,17 @@ def leer_tabla_bytes(nombre: str, contenido: bytes) -> pd.DataFrame:
 
 
 def leer_firms_adicional(nombre: str, contenido: bytes) -> pd.DataFrame:
-    """NASA FIRMS CSV/ZIP adicional, para importar observaciones NRT manualmente.
+    """NASA FIRMS CSV/ZIP adicional, para importar observations NRT manualmente.
     NO consulta una API ni modifica el Maestro original.
     """
     if len(contenido) > MAX_UPLOAD_BYTES:
-        raise ValueError("NASA CSV/ZIP excede el límite de 12 MB de esta demostración.")
+        raise ValueError("NASA CSV/ZIP exceeds the 12 MB demonstration limit.")
     tablas=[]
     if nombre.lower().endswith(".zip"):
         with zipfile.ZipFile(io.BytesIO(contenido)) as z:
             csvs=[info for info in z.infolist() if info.filename.lower().endswith(".csv")]
             if len(csvs)>20 or sum(x.file_size for x in csvs)>40*1024*1024:
-                raise ValueError("ZIP NASA demasiado grande para esta demostración.")
+                raise ValueError("NASA ZIP exceeds the demonstration size limit.")
             for f in csvs:
                 tablas.append(leer_tabla_bytes(f.filename,z.read(f)))
     else:
@@ -219,9 +219,9 @@ def adaptar_externo(raw: pd.DataFrame, categoria: str, columnas: dict[str, str |
                      origen_tz: str = "America/Montevideo") -> tuple[pd.DataFrame, dict]:
     """Adaptador universal. Evita atribuir a Bomberos campos no confirmados."""
     if categoria not in ("BOMBEROS_PAIF", "SINAE_MIRA"):
-        raise ValueError("Categoría de fuente incorrecta.")
+        raise ValueError("Invalid source category.")
     if not columnas.get("fecha"):
-        raise ValueError("Elegí la columna de fecha para permitir el cruce.")
+        raise ValueError("Choose the date column to enable matching.")
     df = raw.copy()
     lat_col, lon_col = columnas.get("lat"), columnas.get("lon")
     if lat_col and lon_col:
@@ -232,7 +232,7 @@ def adaptar_externo(raw: pd.DataFrame, categoria: str, columnas: dict[str, str |
         lat = pares.map(lambda t: t[0])
         lon = pares.map(lambda t: t[1])
     else:
-        raise ValueError("Seleccioná latitud y longitud (WGS84) o una columna WKT POINT.")
+        raise ValueError("Select latitude and longitude (WGS84) or a WKT POINT column.")
     result = []
     for i, (idx, row) in enumerate(df.iterrows()):
         f, es_dia = fecha_hora(row[columnas["fecha"]],
@@ -401,7 +401,7 @@ def buscar_asociaciones(fuentes: pd.DataFrame, candidatos: pd.DataFrame,
             "dist_km": float(sub.iloc[0]["km"]),
             "delta_min": (float(sub.iloc[0]["delta_min"])
                           if not fila_dia and not bool(sub.iloc[0]["solo_fecha"]) else np.nan),
-            "precision": ("coincidencia de día (hora desconocida)"
+            "precision": ("same-day match (time unknown)"
                           if fila_dia or bool(sub.iloc[0]["solo_fecha"]) else "tiempo UTC"),
             "ids": sub.id.astype(str).tolist()[:20],
             "instrumentos": ", ".join(sorted(sub.instrumento.unique())) if "instrumento" in sub else "",
@@ -464,7 +464,7 @@ def fusionar(nasa: pd.DataFrame, bomberos: pd.DataFrame, sinae: pd.DataFrame,
             "precision":sat["precision"] if sat else ("fecha sin hora" if r["solo_fecha"] else "con hora"),
             "instrumentos":sat["instrumentos"] if sat else "",
             "detalle":str(r["detalle"]), "estado_origen":str(r["estado_origen"]),
-            "simulado":"SÍ — NO USAR COMO EVIDENCIA" if bool(r.get("es_simulado",False)) else "No",
+            "simulado":"YES — DO NOT USE AS EVIDENCE" if bool(r.get("es_simulado",False)) else "No",
         })
     return pd.DataFrame(salidas)
 
@@ -479,12 +479,12 @@ def demo_sintetica(nasa: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     f = pd.Timestamp(sat["fecha_utc"])
     fake1={"id":"SIMULADO_CAMARA_001","fecha_utc":f+pd.Timedelta(minutes=15),
            "solo_fecha":False,"lat":float(sat.lat)+0.006,"lon":float(sat.lon)+0.005,
-           "categoria":"BOMBEROS_PAIF","detalle":"SIMULACIÓN: cámara detecta posible humo",
-           "estado_origen":"SIMULADO — sin verificación", "fuente_decl":"SIMULADO", "es_simulado":True}
+           "categoria":"BOMBEROS_PAIF","detalle":"SIMULATION: camera detects possible smoke",
+           "estado_origen":"SIMULATED — not verified", "fuente_decl":"SIMULADO", "es_simulado":True}
     fake2={"id":"SIMULADO_SINAE_001","fecha_utc":f+pd.Timedelta(minutes=23),
            "solo_fecha":False,"lat":float(sat.lat)+0.007,"lon":float(sat.lon)+0.005,
-           "categoria":"SINAE_MIRA","detalle":"SIMULACIÓN: reporte de evento (inventado)",
-           "estado_origen":"SIMULADO — sin verificación", "fuente_decl":"SIMULADO", "es_simulado":True}
+           "categoria":"SINAE_MIRA","detalle":"SIMULATION: fictional event report",
+           "estado_origen":"SIMULATED — not verified", "fuente_decl":"SIMULADO", "es_simulado":True}
     return pd.DataFrame([fake1]),pd.DataFrame([fake2])
 
 
@@ -512,7 +512,7 @@ def dibujar_mapa(nasa: pd.DataFrame, bom: pd.DataFrame, sin: pd.DataFrame,
         g["ilat"] = np.floor(g.lat / 0.2).astype(int)
         g["ilon"] = np.floor(g.lon / 0.2).astype(int)
         r=g.groupby(["ilat","ilon"]).ano.nunique().sort_values(ascending=False)
-        layer=folium.FeatureGroup(name="Recurrencia histórica FIRMS (celdas)",show=True)
+        layer=folium.FeatureGroup(name="Historical FIRMS recurrence (grid cells)",show=True)
         for (il,io),n in r.head(550).items():
             if n < 3:
                 continue
@@ -521,9 +521,9 @@ def dibujar_mapa(nasa: pd.DataFrame, bom: pd.DataFrame, sin: pd.DataFrame,
             folium.Rectangle([[il*.2,io*.2],[(il+1)*.2,(io+1)*.2]],
                              fill=True,fill_color=color,fill_opacity=.53,
                              color=color,weight=0.4,
-                             tooltip=f"{n} años con observación NASA FIRMS en celda de 0,2°").add_to(layer)
+                             tooltip=f"{n} years with NASA FIRMS observations in a 0.2° cell").add_to(layer)
         layer.add_to(mapa)
-    for df,color,title in ((bom,"#ffbe6d","Detección terrestre cargada"),
+    for df,color,title in ((bom,"#ffbe6d","Imported ground detection"),
                            (sin,"#6bd2fa","Registro SINAE/MIRA cargado")):
         if df.empty:
             continue
@@ -538,7 +538,7 @@ def dibujar_mapa(nasa: pd.DataFrame, bom: pd.DataFrame, sin: pd.DataFrame,
                                 tooltip=f"{title} · {r['id']}",popup=folium.Popup(texto,max_width=330)).add_to(layer)
         layer.add_to(mapa)
     if not resultados.empty:
-        layer=folium.FeatureGroup(name="Coincidencias para revisión",show=True)
+        layer=folium.FeatureGroup(name="Matches for review",show=True)
         for _,r in resultados[resultados.n_firms>0].head(300).iterrows():
             texto=escape(str(r.resultado))+'<br>FIRMS cercanos: '+str(r.n_firms)
             folium.CircleMarker([r.lat,r.lon],radius=11,weight=2,color="#f9e77d",
@@ -691,7 +691,7 @@ def _mapa_plotly(malla:pd.DataFrame, nasa:pd.DataFrame, bom:pd.DataFrame,
         hover=(m['anios'].astype(str)+' años con detecciones FIRMS<br>'+
                m['registros'].astype(str)+' registros en la celda<br>'+
                'Centro: '+m['lat_c'].round(2).astype(str)+'°, '+m['lon_c'].round(2).astype(str)+'°<br>'+
-               'Hacé clic para inspeccionar')
+               'Click to inspect')
         figura.add_trace(go.Scatter(
             x=m['lon_c'],y=m['lat_c'],mode='markers',name='Celdas FIRMS',
             marker=dict(symbol='square',size=23,color=[_paleta(int(v)) for v in m.anios],
@@ -728,7 +728,7 @@ def _mapa_plotly(malla:pd.DataFrame, nasa:pd.DataFrame, bom:pd.DataFrame,
                 mode='markers', name='Localidad de incendio documentado',
                 marker=dict(symbol='circle-open',size=17,color='#ff8aa5',line=dict(width=2.5)),
                 text=[c['nombre']+'<br>'+c['inicio']+' a '+c['fin']+
-                      '<br>Posición de localidad, NO punto exacto del incendio' for c in cases],
+                      '<br>Town location, NOT the precise fire location' for c in cases],
                 hovertemplate='%{text}<extra></extra>'))
     for d,color,name in ((bom,'#ffbd60','Terrestre cargado'),(sin,'#f17ce2','SINAE cargado')):
         if d is not None and not d.empty:
@@ -770,22 +770,22 @@ def _descripcion_celda(malla:pd.DataFrame,c:tuple[int,int]) -> str:
     if m.empty:return str(c)
     r=m.iloc[0]
     return (f"{r.lat_c:.2f}°S, {abs(r.lon_c):.2f}°O · "
-            f"{int(r.anios)} años · {int(r.registros)} observaciones")
+            f"{int(r.anios)} years · {int(r.registros)} observations")
 
 
 def _interpretacion_celda(hist:pd.DataFrame, b:pd.DataFrame, s:pd.DataFrame,
                            resultados:pd.DataFrame, sim:bool) -> str:
-    if hist.empty:return 'No hay observaciones en la celda según el maestro cargado.'
+    if hist.empty:return 'No hay observations en la celda según el maestro cargado.'
     anios=int(hist.fecha_utc.dt.year.nunique())
-    partes=[f"La celda presenta anomalías térmicas FIRMS durante {anios} años distintos de los archivos incorporados."]
+    partes=[f"The cell contains FIRMS thermal anomalies across {anios} different years in uploaded files."]
     if not b.empty:partes.append(f"Se cargaron {len(b)} registros terrestres en esta celda.")
     if not s.empty:partes.append(f"Se cargaron {len(s)} registros SINAE en esta celda.")
     if not resultados.empty and (resultados.n_firms>0).any():
-        partes.append('El motor halló al menos una proximidad espacial y temporal que debe revisarse; no confirma un incendio.')
+        partes.append('The engine found at least one spatial-temporal association requiring review; this does not confirm a wildfire.')
     elif not b.empty or not s.empty:
-        partes.append('La ausencia de una coincidencia bajo los filtros actuales no demuestra que la detección sea falsa.')
+        partes.append('No match under the current filters does not imply a false detection.')
     if sim:partes.append('IMPORTANTE: parte de la evidencia terrestre/institucional es SIMULADA.')
-    partes.append('Los recuentos no están corregidos por revisitas, nubosidad ni diferencias MODIS–VIIRS.')
+    partes.append('Counts are not corrected for satellite revisits, clouds, or MODIS–VIIRS differences.')
     return ' '.join(partes)
 
 
@@ -796,9 +796,9 @@ def _configuracion_automatica(st, raw:pd.DataFrame,prefijo:str, nombre:str) -> d
     if '__geo_lon' in cols: config['lon']='__geo_lon'
     auto=bool(config['fecha'] and ((config['lat'] and config['lon']) or config['wkt']))
     if auto:
-        st.success(f"{nombre}: columnas de fecha y ubicación reconocidas automáticamente.")
+        st.success(f"{nombre}: date and location columns detected automatically.")
     else:
-        st.warning(f"{nombre}: faltan campos por identificar. Abrí «Ajustar columnas».")
+        st.warning(f"{nombre}: some fields need manual mapping. Open “Adjust columns”.")
     with st.expander(f"Ajustar columnas de {nombre} (opcional si aparece el aviso verde)",expanded=not auto):
         opciones=['— No disponible —']+cols
         etiquetas={"fecha":"Fecha / fecha y hora", "hora":"Hora separada", "lat":"Latitud WGS84", "lon":"Longitud WGS84",
@@ -819,7 +819,7 @@ def _leer_fuente(st, uploaded, categoria:str,prefijo:str) -> pd.DataFrame:
         cols=_configuracion_automatica(st,raw,prefijo,categoria.replace('_',' / '))
         tz_sugerido='UTC' if cols['fecha'] and 'utc' in canon(cols['fecha']) else 'America/Montevideo'
         with st.expander(f"Fecha, procedencia y controles de {categoria.replace('_',' / ')}"):
-            tz=st.selectbox('Zona horaria si el archivo no incluye zona explícita',
+            tz=st.selectbox('Time zone if the file has no explicit time zone',
                             ['America/Montevideo','UTC'],index=0 if tz_sugerido=='America/Montevideo' else 1,
                             key=f'fus_v2_tz_{prefijo}')
             marcado_auto=('simulad' in uploaded.name.lower() or 'sintet' in uploaded.name.lower())
@@ -830,8 +830,8 @@ def _leer_fuente(st, uploaded, categoria:str,prefijo:str) -> pd.DataFrame:
             data['es_simulado']=True
             data['estado_origen']=data['estado_origen'].astype(str)+' · SIMULADO'
         if resumen['omitidos']:
-            st.warning(f"{categoria}: {resumen['omitidos']} filas sin fecha o posición WGS84 válidas se excluyeron.")
-        st.caption(f"{categoria}: {len(data)} registros válidos (de {resumen['leidos']})")
+            st.warning(f"{categoria}: {resumen['omitidos']} rows lacking valid dates or WGS84 coordinates were excluded.")
+        st.caption(f"{categoria}: {len(data)} valid records (out of {resumen['leidos']})")
         return data
     except Exception as exc:
         st.error(f"{categoria}: {type(exc).__name__}: {exc}")
@@ -915,7 +915,7 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
     estilo.add(ParagraphStyle(name='IGNISCell',parent=estilo['Normal'],fontSize=7.1,leading=9))
     buf=io.BytesIO()
     doc=SimpleDocTemplate(buf,pagesize=A4,rightMargin=1.55*cm,leftMargin=1.55*cm,
-                          topMargin=2.55*cm,bottomMargin=1.75*cm, title='IGNIS - Análisis exploratorio de cuadrícula')
+                          topMargin=2.55*cm,bottomMargin=1.75*cm, title='IGNIS - Exploratory grid-cell analysis')
 
     def pagina(c, doc_):
         w,h=A4
@@ -937,28 +937,28 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
             c.setFillColor(C.HexColor('#70cddb'));c.setFont('Helvetica-Bold',10)
             c.drawRightString(w-3.85*cm,h-1.00*cm,'SINAE / MIRA')
         c.setFillColor(C.white);c.setFont('Helvetica-Bold',12)
-        c.drawString(1.55*cm,h-.86*cm,'IGNIS UY | FUSIÓN CIELO - TIERRA')
+        c.drawString(1.55*cm,h-.86*cm,'IGNIS UY | SATELLITE–GROUND FUSION')
         c.setFillColor(C.HexColor('#b3dbf0'));c.setFont('Helvetica',8)
         c.drawString(1.55*cm,h-1.24*cm,'Informe exploratorio de una celda seleccionada')
         c.setStrokeColor(C.HexColor('#b6c7d9'));c.line(1.55*cm,1.36*cm,w-1.55*cm,1.36*cm)
         c.setFillColor(C.HexColor('#586678'));c.setFont('Helvetica',7)
         c.drawString(1.55*cm,1.05*cm,
-                     'Los nombres y emblemas identifican fuentes; no implican validación ni aval institucional.')
-        c.drawRightString(w-1.55*cm,1.05*cm,f'Página {doc_.page}')
+                     'Names and logos identify sources; they do not imply validation or institutional endorsement.')
+        c.drawRightString(w-1.55*cm,1.05*cm,f'Page {doc_.page}')
 
-    partes.append(Paragraph('Ficha de observaciones y evidencia asociada',estilo['IGNISTitle']))
-    periodo='Histórico completo' if ano_filtro is None else str(ano_filtro)
+    partes.append(Paragraph('Ficha de observations y evidencia asociada',estilo['IGNISTitle']))
+    periodo='Full historical archive' if ano_filtro is None else str(ano_filtro)
     partes.append(Paragraph(f'<b>Celda de 0,2 grados:</b> {zona_texto} &nbsp; | &nbsp; '
-                             f'<b>Período de visualización:</b> {periodo}',estilo['IGNISSmall']))
+                             f'<b>Display period:</b> {periodo}',estilo['IGNISSmall']))
     simulado=bool((not bom_celda.empty and bom_celda.es_simulado.any()) or
                   (not sin_celda.empty and sin_celda.es_simulado.any()) or
                   (not asociaciones.empty and asociaciones.simulado.astype(str).str.startswith('SÍ').any()))
     if simulado:
-        partes.append(Paragraph('<b>DEMOSTRACIÓN CON DATOS SINTÉTICOS.</b> '
-                                 'La fusión observada no confirma detecciones terrestres reales.',estilo['IGNISSmall']))
+        partes.append(Paragraph('<b>DEMONSTRATION WITH SYNTHETIC DATA.</b> '
+                                 'Observed matches do not confirm real ground detections.',estilo['IGNISSmall']))
     partes.append(Paragraph('1. Resumen de la celda',estilo['IGNISH2']))
     def n(x):return f'{int(x):,}'.replace(',','.')
-    resumen_data=[['Observaciones FIRMS en el período','Años con señal FIRMS en el histórico','Días con registro FIRMS'],
+    resumen_data=[['FIRMS observations in period','Years with FIRMS signals in archive','Days with FIRMS records'],
                   [n(len(nasa_periodo)),n(nasa_hist.fecha_utc.dt.year.nunique() if not nasa_hist.empty else 0),
                    n(nasa_hist.fecha_utc.dt.date.nunique() if not nasa_hist.empty else 0)]]
     t=Table(resumen_data,colWidths=[5.9*cm]*3,rowHeights=[.67*cm,.78*cm])
@@ -970,11 +970,11 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
                            ('ALIGN',(0,0),(-1,-1),'CENTER'),('VALIGN',(0,0),(-1,-1),'MIDDLE'),
                            ('BOX',(0,0),(-1,-1),.4,C.HexColor('#a8c0d1'))]))
     partes.append(t);partes.append(Spacer(1,9))
-    partes.append(Paragraph('2. Mapa histórico y ubicación seleccionada',estilo['IGNISH2']))
+    partes.append(Paragraph('2. Historical map and selected location',estilo['IGNISH2']))
     graf=_mapa_estatico_para_pdf(malla,celda,bom_mapeado if bom_mapeado is not None else bom_celda,
                                  sin_mapeado if sin_mapeado is not None else sin_celda)
     partes.append(RLImage(io.BytesIO(graf),width=17.6*cm,height=9.65*cm))
-    partes.append(Paragraph('Colores = años calendario con al menos una anomalía térmica en la celda. '
+    partes.append(Paragraph('Colors = calendar years with at least one thermal anomaly in the cell. '
                              'Recuentos no corregidos por cobertura, revisita, nubosidad ni diferencias MODIS/VIIRS. '
                              'No representan cantidad de incendios ni superficies quemadas.',estilo['IGNISNote']))
     partes.append(PageBreak())
@@ -982,8 +982,8 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
     def fuente_fila(nombre,df):
         if df is None or df.empty:return [nombre,'0','Sin registros cargados para la celda','—']
         yini,yfin=int(df.fecha_utc.dt.year.min()),int(df.fecha_utc.dt.year.max())
-        return [nombre,n(len(df)),f'{yini}–{yfin}', 'Sintética' if df.es_simulado.any() else 'Origen declarado']
-    rows=[['Fuente','Eventos en celda','Años de los eventos','Condición']]
+        return [nombre,n(len(df)),f'{yini}–{yfin}', 'Synthetic' if df.es_simulado.any() else 'Declared origin']
+    rows=[['Fuente','Events in cell','Event years','Status']]
     rows.extend([fuente_fila('Bomberos / PAIF',bom_celda),fuente_fila('SINAE / MIRA',sin_celda)])
     tt=Table([[Paragraph(str(x),estilo['IGNISCell']) for x in row] for row in rows],
               colWidths=[4.0*cm,2.9*cm,6.1*cm,4.7*cm],repeatRows=1)
@@ -995,7 +995,7 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
     # Coincidencias en la celda, no resultados de todo el país.
     coincidencias=asociaciones[asociaciones.n_firms.gt(0)] if not asociaciones.empty else pd.DataFrame()
     if coincidencias.empty:
-        estado='No se han obtenido coincidencias satelital-terrestres en esta selección con los datos cargados.'
+        estado='No satellite–ground matches were found within the uploaded data selection.'
     else:
         estado=f'{len(coincidencias)} evento(s) con proximidad espacial y temporal FIRMS en el filtro elegido.'
     partes.append(Paragraph(estado,estilo['IGNISSmall']))
@@ -1013,8 +1013,8 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
         partes.append(t)
         if len(asociaciones)>12:
             partes.append(Paragraph(f'Informe abreviado: se muestran 12 de {len(asociaciones)} eventos. '
-                                     'Utilizá el CSV de resultados para el detalle completo.',estilo['IGNISNote']))
-    partes.append(Paragraph('4. Histórico anual de observaciones FIRMS',estilo['IGNISH2']))
+                                     'Use the results CSV for full details.',estilo['IGNISNote']))
+    partes.append(Paragraph('4. Histórico anual de observations FIRMS',estilo['IGNISH2']))
     if not nasa_hist.empty:
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -1033,29 +1033,29 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
         partes.append(RLImage(io.BytesIO(image_buffer.getvalue()),width=17.3*cm,height=4.37*cm))
         partes.append(Paragraph('La evolución del recuento no puede interpretarse como tendencia '
                                 'de incidencia sin normalizar cambios de sensores y cobertura.',estilo['IGNISNote']))
-    partes.append(Paragraph('5. Incendios documentados próximos',estilo['IGNISH2']))
+    partes.append(Paragraph('5. Nearby documented wildfires',estilo['IGNISH2']))
     if casos:
         for caso,dist in casos:
             partes.append(Paragraph(f'<b>{escape(caso["nombre"])}</b> – localidad a aproximadamente {dist:.1f} km '
                                      f'del centro de la celda; consultar fuente oficial y fechas del episodio. '
-                                     'La ubicación es referencial, NO el punto de ignición.',estilo['IGNISSmall']))
+                                     'The location is approximate, NOT the ignition point.',estilo['IGNISSmall']))
     else:
         partes.append(Paragraph('Sin caso incorporado a la biblioteca limitada de IGNIS para esta celda. '
                                  'No equivale a ausencia de incendios ni de registros de otras instituciones.',estilo['IGNISSmall']))
     partes.append(Paragraph('6. Criterio, cobertura y limitaciones',estilo['IGNISH2']))
     notas=[
-        f'Asociación espacial: {umbral_km:g} km. Si ambos registros incluyen hora: hasta {umbral_h:g} horas; '
+        f'Spatial association: {umbral_km:g} km. Si ambos registros incluyen hora: hasta {umbral_h:g} horas; '
         f'si falta hora: coincidencia de fecha local con margen de {dias} día(s).',
-        'NASA FIRMS detecta anomalías térmicas, no incendios necesariamente confirmados. '
-        'Una coincidencia entre fuentes no demuestra independencia ni una detección anticipada.',
+        'NASA FIRMS detects thermal anomalies, not necessarily confirmed wildfires. '
+        'A match between sources does not establish independence or early detection.',
         'El CSV abierto del SINAE/MIRA publicado en 2022 cubre marzo de 2018 a junio de 2022. '
-        'Los registros de otros años deben aportarse y verificarse por separado.',
-        'Las cámaras costeras referenciadas son localidades aproximadas, NO posiciones ni cobertura de torres verificadas. '
+        'Records from other years must be submitted and verified separately.',
+        'Referenced coastal cameras are approximate towns, NOT verified tower locations or coverage. '
         'No se describen posiciones individuales de la red PAIF.',
-        'No es un sistema de alarma o despacho operativo. Los archivos sintéticos NO se usan como evidencia real.'
+        'This is not an operational warning or dispatch system. Synthetic records are NOT real evidence.'
     ]
     for nota in notas:partes.append(Paragraph('• '+escape(nota),estilo['IGNISNote']))
-    partes.append(Paragraph('<b>Fuentes públicas:</b> NASA FIRMS; '
+    partes.append(Paragraph('<b>Public sources:</b> NASA FIRMS; '
                              f'<link href="{FUENTE_MIRA}" color="blue">SINAE/MIRA (conjunto 2018–2022)</link>; '
                              f'<link href="{FUENTE_CAMARAS}" color="blue">Ministerio del Interior (Bomberos)</link>.',estilo['IGNISNote']))
     doc.build(partes,onFirstPage=pagina,onLaterPages=pagina)
@@ -1069,23 +1069,23 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
     Llamada sin cambios desde el principal: mostrar_fusion_terrestre(combined)
     """
     import streamlit as st
-    st.header('🌎 IGNIS | Mapa de fusión cielo–tierra')
-    st.caption('NASA MODIS/VIIRS + evidencia terrestre Bomberos/PAIF + registros SINAE/MIRA')
-    st.info('Prototipo exploratorio. No está conectado a Bomberos, PAIF ni MIRA; NO genera '
-            'alertas operativas, NO predice incendios y NO despacha recursos.')
+    st.header('🌎 IGNIS | Satellite–ground fusion map')
+    st.caption('NASA MODIS/VIIRS + Fire Service/PAIF ground evidence + SINAE/MIRA records')
+    st.info('Exploratory prototype. Not connected to Fire Service, PAIF, or MIRA; it does NOT generate '
+            'operational alerts, predict wildfires, or dispatch resources.')
     try:
         nasa=normalizar_nasa(maestro)
         nasa=forzar_fechas_utc(nasa,'Maestro NASA')
     except Exception as exc:
         nasa=pd.DataFrame()
-        st.error(f"No se pudo interpretar el Maestro: {type(exc).__name__}: {exc}")
+        st.error(f"Could not read the Master dataset: {type(exc).__name__}: {exc}")
     if nasa.empty:
-        st.warning('Primero cargá el Maestro IGNIS en «Carga de datos» (pestaña 1). '
-                   'También podés incorporar un CSV FIRMS adicional en «Fuentes de datos».')
-    with st.expander('📁 Fuentes de datos · cargar NASA, Bomberos y SINAE',expanded=nasa.empty):
-        st.caption('Si ya cargaste el Maestro en la primera pestaña, NO lo vuelvas a subir: '
-                   'se recupera automáticamente aquí. Los archivos institucionales son opcionales.')
-        nasa_extra=st.file_uploader('NASA FIRMS CSV/ZIP adicional (opcional; NO es necesario si usás el Maestro)',
+        st.warning('First upload the IGNIS Master dataset in “Data upload” (tab 1). '
+                   'You can also import an additional FIRMS CSV in “Data sources”.')
+    with st.expander('📁 Data sources · upload NASA, Fire Service, and SINAE',expanded=nasa.empty):
+        st.caption('If you uploaded the Master dataset in the first tab, do NOT upload it again: '
+                   'it is automatically reused here. Institutional files are optional.')
+        nasa_extra=st.file_uploader('Additional NASA FIRMS CSV/ZIP (optional; not needed when using the Master dataset)',
                                    type=['csv','zip'],key='fus_v2_extra_nasa')
         if nasa_extra is not None:
             try:
@@ -1093,51 +1093,51 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
                 nasa=pd.concat([nasa,nuevo],ignore_index=True).drop_duplicates(
                     subset=['fecha_utc','lat','lon','instrumento']).reset_index(drop=True)
                 nasa=forzar_fechas_utc(nasa,'NASA adicional').reset_index(drop=True)
-                st.success(f"NASA listo: {len(nasa):,} observaciones únicas en el recorte amplio.")
+                st.success(f"NASA ready: {len(nasa):,} observations únicas en el recorte amplio.")
             except Exception as exc:
-                st.error(f"NASA adicional: {type(exc).__name__}: {exc}")
+                st.error(f"Additional NASA: {type(exc).__name__}: {exc}")
         cb,cs=st.columns(2)
         with cb:
             st.markdown('**Bomberos / PAIF**')
-            b_file=st.file_uploader('CSV, JSON o GeoJSON de eventos terrestres',
+            b_file=st.file_uploader('CSV, JSON, or GeoJSON ground events',
                                     type=['csv','json','geojson'],key='fus_v2_bomberos')
-            st.download_button('Descargar CSV sintético para ensayar',tabla_ejemplo('terrestre'),
+            st.download_button('Download sample synthetic CSV',tabla_ejemplo('terrestre'),
                                file_name='IGNIS_BOMBEROS_DEMO_SIMULADO.csv',mime='text/csv',
                                key='fus_v2_plantilla_bomberos')
         with cs:
             st.markdown('**SINAE / MIRA**')
-            s_file=st.file_uploader('CSV, JSON o GeoJSON de eventos institucionales',
+            s_file=st.file_uploader('CSV, JSON, or GeoJSON institutional events',
                                     type=['csv','json','geojson'],key='fus_v2_sinae')
-            st.download_button('Descargar CSV sintético para ensayar',tabla_ejemplo('sinae'),
+            st.download_button('Download sample synthetic CSV',tabla_ejemplo('sinae'),
                                file_name='IGNIS_SINAE_DEMO_SIMULADO.csv',mime='text/csv',
                                key='fus_v2_plantilla_sinae')
-            st.markdown(f'[CSV oficial SINAE/MIRA (marzo 2018 – junio 2022, publicado en 2022)]({FUENTE_MIRA})')
-            st.caption('Para 2023–2026 es necesario importar registros posteriores autorizados: '
-                       'el CSV público de esta página no cubre esos años.')
+            st.markdown(f'[Official SINAE/MIRA CSV (March 2018–June 2022, published in 2022)]({FUENTE_MIRA})')
+            st.caption('For 2023–2026, later authorized records must be imported: '
+                       'the public CSV linked here does not cover those years.')
         b=_leer_fuente(st,b_file,'BOMBEROS_PAIF','b')
         s=_leer_fuente(st,s_file,'SINAE_MIRA','s')
-        demo=st.checkbox('Añadir demostración con eventos terrestres SINTÉTICOS cerca de un punto NASA',
+        demo=st.checkbox('Add a demonstration using SYNTHETIC ground events near a NASA point',
                          value=False,key='fus_v2_demo')
         if demo and not nasa.empty:
             b_demo,s_demo=demo_sintetica(nasa)
             b=pd.concat([b,b_demo],ignore_index=True)
             s=pd.concat([s,s_demo],ignore_index=True)
-            st.warning('Se agregaron datos inventados para probar el motor. NO son señales reales de Bomberos o SINAE.')
+            st.warning('Fictional records were added to test the engine. They are NOT real Fire Service or SINAE signals.')
     if nasa.empty:
-        st.info('El mapa y los informes aparecerán cuando cargues al menos un archivo FIRMS real.')
+        st.info('The map and reports appear after uploading at least one real FIRMS file.')
         return
 
     # La visualización se centra en el mapa, no en la configuración de columnas.
-    st.markdown('### 🗺️ Mapa histórico de Uruguay · elegí una cuadrícula')
+    st.markdown('### 🗺️ Historical map of Uruguay · choose a grid cell')
     years=sorted(int(v) for v in nasa.fecha_utc.dt.year.dropna().unique())
     col_z,col_y=st.columns([2,1])
-    zona=col_z.selectbox('Zona de consulta',list(ZONAS),key='fus_v2_zona')
-    year_opt=col_y.selectbox('Período',['Histórico completo']+years,
+    zona=col_z.selectbox('Study area',list(ZONAS),key='fus_v2_zona')
+    year_opt=col_y.selectbox('Period',['Full historical archive']+years,
                              index=0,key='fus_v2_anio')
     ano=year_opt if isinstance(year_opt,int) else None
-    ver_torres=st.checkbox('Localidades vinculadas a la red costera de Bomberos (no torres verificadas)',
+    ver_torres=st.checkbox('Towns associated with the Fire Service coastal network (not verified towers)',
                           value=True,key='fus_v2_ver_refs')
-    ver_casos=st.checkbox('Incendios documentados: puntos de referencia de localidades',
+    ver_casos=st.checkbox('Documented wildfires: town reference points',
                          value=True,key='fus_v2_ver_casos')
 
     recorte=_recortar(nasa,zona)
@@ -1153,12 +1153,12 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
     b_vista=b_zona.loc[b_zona.fecha_utc.dt.year==ano].copy() if ano is not None and not b_zona.empty else b_zona
     s_vista=s_zona.loc[s_zona.fecha_utc.dt.year==ano].copy() if ano is not None and not s_zona.empty else s_zona
     mk1,mk2,mk3=st.columns(3)
-    mk1.metric('Observaciones FIRMS en el período',f"{len(periodo):,}")
-    mk2.metric('Años con datos en la zona',f"{recorte.fecha_utc.dt.year.nunique():,}")
-    mk3.metric('Celdas visibles de 0,2°',f"{len(visible):,}")
-    st.caption('Los colores representan AÑOS con al menos una detección térmica por celda, '
-               'no cantidad de incendios. Los archivos del Maestro no cubren necesariamente todos los meses. '
-               'No se corrige por diferencias instrumentales, nubosidad ni revisitas.')
+    mk1.metric('FIRMS observations in period',f"{len(periodo):,}")
+    mk2.metric('Years with observations in area',f"{recorte.fecha_utc.dt.year.nunique():,}")
+    mk3.metric('Visible 0.2° grid cells',f"{len(visible):,}")
+    st.caption('Colors represent YEARS with at least one thermal detection per cell, '
+               'not wildfire counts. Master dataset files do not necessarily cover every month. '
+               'No correction is applied for instrument differences, clouds, or revisits.')
     # Primero se dibuja lo seleccionado en la sesión; al pulsar otra celda,
     # Plotly provoca un rerun y el reporte sigue el nuevo punto sin lat/lon manual.
     guardada=st.session_state.get('fus_v2_celda')
@@ -1172,19 +1172,19 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
         st.plotly_chart(fig,use_container_width=True)
         seleccion=None
     clicked=_seleccion_de_grafico(seleccion)
-    st.caption('◼ Azul: 3–5 años · Turquesa: 6–10 · Amarillo: 11–17 · Naranja: 18+ '
-               '· ◇ Azul: LOCALIDAD de referencia (NO ubicación de cámara) '
-               '· ○ Rosa: localidad de incendio documentado (NO punto exacto).')
+    st.caption('◼ Azul: 3–5 years · Turquesa: 6–10 · Amarillo: 11–17 · Naranja: 18+ '
+               '· ◇ Blue: reference TOWN (NOT a camera location) '
+               '· ○ Pink: documented wildfire town (NOT exact location).')
     if ano is not None:
-        st.caption('Las celdas con borde amarillo contienen observaciones en el año elegido; '
-                   'el color interior conserva la recurrencia del histórico.')
-    st.caption('Hacé clic sobre una celda coloreada. Si tu navegador no admite selección, '
-               'elegila en el selector que aparece debajo.')
+        st.caption('Las celdas con borde amarillo contienen observations en el año elegido; '
+                   'their interior color shows historical recurrence.')
+    st.caption('Click a colored cell. If your browser does not support selection, '
+               'choose it from the list below.')
 
-    # Si no hay observaciones dentro de la zona/período, no arriesgar un index inválido.
+    # Si no hay observations dentro de la zona/período, no arriesgar un index inválido.
     if visible.empty:
-        st.warning('No hay celdas con observaciones FIRMS para esa selección; '
-                   'esto no demuestra que no ocurrieran incendios.')
+        st.warning('No hay celdas con observations FIRMS para esa selección; '
+                   'this does not prove that no wildfires occurred.')
         return
     opciones=list(zip(visible.ilat.astype(int),visible.ilon.astype(int)))
     key='fus_v2_celda'
@@ -1192,10 +1192,10 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
         st.session_state[key]=clicked
     if key not in st.session_state or st.session_state[key] not in opciones:
         st.session_state[key]=opciones[0]
-    st.success('📍 CUADRÍCULA SELECCIONADA: ' + _descripcion_celda(visible, st.session_state[key]) +
-               ' · Hacé clic en otra casilla coloreada para actualizar todo el análisis.')
-    with st.expander('Elegir otra cuadrícula mediante lista (alternativa al clic)'):
-        seleccion_celda=st.selectbox('Cuadrícula para inspeccionar',opciones,
+    st.success('📍 SELECTED GRID CELL: ' + _descripcion_celda(visible, st.session_state[key]) +
+               ' · Click another colored cell to update the analysis.')
+    with st.expander('Choose another grid cell from a list (alternative to clicking)'):
+        seleccion_celda=st.selectbox('Grid cell to inspect',opciones,
                   format_func=lambda k:_descripcion_celda(visible,k),key=key)
 
     lat0,lat1=seleccion_celda[0]*PASO_GRADOS,(seleccion_celda[0]+1)*PASO_GRADOS
@@ -1208,27 +1208,27 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
         return df.loc[df.lat.ge(lat0)&df.lat.lt(lat1)&df.lon.ge(lon0)&df.lon.lt(lon1)].copy()
     bom_cell=dentro_celda(b_vista)
     sin_cell=dentro_celda(s_vista)
-    st.markdown('### 🔎 Informe automático de la cuadrícula elegida')
+    st.markdown('### 🔎 Automated report for the selected grid cell')
     a,b1,c1=st.columns(3)
-    a.metric('Detecciones en la celda',len(t_per))
-    b1.metric('Años con actividad observada',t_hist.fecha_utc.dt.year.nunique())
-    c1.metric('Días distintos observados',t_hist.fecha_utc.dt.date.nunique())
-    st.caption(f"Perímetro aproximado: latitudes {lat0:.2f} a {lat1:.2f}; "
+    a.metric('Detections in cell',len(t_per))
+    b1.metric('Years with observations',t_hist.fecha_utc.dt.year.nunique())
+    c1.metric('Distinct days observed',t_hist.fecha_utc.dt.date.nunique())
+    st.caption(f"Approximate extent: latitudes {lat0:.2f} a {lat1:.2f}; "
                f"longitudes {lon0:.2f} a {lon1:.2f} grados WGS84. "
-               'Es una celda geográfica, NO una superficie quemada.')
+               'This is a geographic cell, NOT burned area.')
     if not t_hist.empty:
         por_anio=t_hist.groupby(t_hist.fecha_utc.dt.year).size().rename('Observaciones').reset_index()
         por_anio.columns=['Año','Observaciones']
         instrumentos=t_per.groupby('instrumento').size().rename('Registros').reset_index()
         x1,x2=st.columns([1,1])
         with x1:
-            st.markdown('**Histórico anual de la celda**')
+            st.markdown('**Annual cell history**')
             st.bar_chart(por_anio.set_index('Año'))
         with x2:
-            st.markdown('**Sensores presentes en el período**')
+            st.markdown('**Sensors in period**')
             st.dataframe(instrumentos,use_container_width=True,hide_index=True)
     else:
-        st.info('No hay datos satelitales en esta cuadrícula para el período activo.')
+        st.info('No satellite observations in this cell for the active period.')
     # Cruce anual solo descriptivo: una fila por año, nunca significa que hubo un incendio confirmado.
     hist_anual=(t_hist.groupby(t_hist.fecha_utc.dt.year).size().rename('NASA FIRMS').reset_index()
                 if not t_hist.empty else pd.DataFrame(columns=['Año','NASA FIRMS']))
@@ -1245,12 +1245,12 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
         hist_anual=hist_anual.fillna(0).sort_values('Año')
         for col in hist_anual.columns:
             hist_anual[col]=hist_anual[col].astype(int)
-        with st.expander('📅 Comparar años: NASA vs. registros institucionales cargados',expanded=False):
+        with st.expander('📅 Compare years: NASA vs. uploaded institutional records',expanded=False):
             st.dataframe(hist_anual,use_container_width=True,hide_index=True)
-            st.caption('Estos recuentos son de fuentes y resoluciones distintas. '
-                       'Cero en SINAE o Bomberos significa cero registros IMPORTADOS a IGNIS en esta celda, '
-                       'no que no hayan ocurrido incendios. Los datos MIRA abiertos cubren solo 2018–2022.')
-    st.markdown('**Antecedentes documentados cercanos (referencias, no verificación de cada píxel)**')
+            st.caption('These counts come from sources with different resolutions. '
+                       'Zero for SINAE or Fire Service means zero records IMPORTED into this cell, '
+                       'not zero wildfires. Open MIRA data only cover 2018–2022.')
+    st.markdown('**Nearby documented events (references, not pixel-level verification)**')
     centroid=(lat0+lat1)/2,(lon0+lon1)/2
     casos=[]
     for x in CASOS_DOCUMENTADOS:
@@ -1259,39 +1259,39 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
             casos.append((x,dist))
     if casos:
         for x,dist in casos:
-            st.markdown(f"- **{x['nombre']}** · localidad a unos {dist:.1f} km del centro de la celda "
-                        f"· [{x['fuente']} (fuente documental)]({x['url']})")
+            st.markdown(f"- **{x['nombre']}** · town approximately {dist:.1f} km del centro de la celda "
+                        f"· [{x['fuente']} (documentary source)]({x['url']})")
     else:
-        st.caption('No hay un caso en nuestra pequeña biblioteca documental a menos de 30 km. '
-                   'Eso NO significa ausencia de incendios o de registros institucionales.')
+        st.caption('Our limited documentary collection contains no cases within 30 km. '
+                   'This does NOT imply an absence of wildfires or institutional records.')
 
-    st.markdown('### 🛰️ Fusión exploratoria NASA · Bomberos · SINAE')
+    st.markdown('### 🛰️ Exploratory NASA · Fire Service · SINAE fusion')
     ca,cb,cc=st.columns(3)
-    radio=ca.select_slider('Distancia máxima (km)',options=[1,3,5,10,15,20,30],value=10,
+    radio=ca.select_slider('Maximum distance (km)',options=[1,3,5,10,15,20,30],value=10,
                             key='fus_v2_radio')
-    horas=cb.select_slider('Separación máxima (h)',options=[1,3,6,12,24,48,72],value=24,
+    horas=cb.select_slider('Maximum time difference (h)',options=[1,3,6,12,24,48,72],value=24,
                            key='fus_v2_horas')
-    dias=cc.selectbox('Si sólo hay fecha: margen (días)',[0,1],key='fus_v2_dias')
+    dias=cc.selectbox('For date-only records: tolerance (days)',[0,1],key='fus_v2_dias')
     # Motor sobre toda la zona/periodo (no solamente la celda), luego filtro por celda.
     ext_n=len(b_vista)+len(s_vista)
     if ext_n>2000:
-        st.warning(f'{ext_n:,} eventos externos en la selección: por rendimiento analizamos '
-                   'solo los 2.000 primeros, sin interpretar el resultado como exhaustivo.')
+        st.warning(f'{ext_n:,} external events in the selection: for performance reasons, only '
+                   'the first 2,000 are analyzed; results are not exhaustive.')
     bb=b_vista.head(1000) if not b_vista.empty else b_vista
     ss=s_vista.head(1000) if not s_vista.empty else s_vista
     if ext_n and not periodo.empty:
         try:
             fusion=fusionar(periodo,bb,ss,float(radio),float(horas),int(dias))
         except Exception as exc:
-            st.error(f"Error controlado del motor: {type(exc).__name__}: {exc}. "
-                     'Comprobá fecha, zona y tipos de columnas del CSV.')
+            st.error(f"Engine error: {type(exc).__name__}: {exc}. "
+                     'Check the CSV date, region, and column types.')
             fusion=pd.DataFrame()
     elif ext_n:
-        # Sin FIRMS igualmente se conservan las observaciones externas para revisión.
+        # Sin FIRMS igualmente se conservan las observations externas para revisión.
         try:
             fusion=fusionar(pd.DataFrame(),bb,ss,float(radio),float(horas),int(dias))
         except Exception as exc:
-            st.warning(f'No se pudo calcular coincidencias: {exc}')
+            st.warning(f'Could not calculate matches: {exc}')
             fusion=pd.DataFrame()
     else:
         fusion=pd.DataFrame()
@@ -1301,30 +1301,30 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
         n_match=int((fusion.n_firms>0).sum())
         n_triple=int(fusion.resultado.astype(str).str.contains(r'NASA \+ terrestre \+ SINAE',regex=True).sum())
         xx,yy,zz=st.columns(3)
-        xx.metric('Eventos externos en la zona',len(fusion))
-        yy.metric('Con NASA próximo',n_match)
-        zz.metric('Coincidencias triples',n_triple)
+        xx.metric('External events in area',len(fusion))
+        yy.metric('Near NASA observations',n_match)
+        zz.metric('Three-source matches',n_triple)
         if fusion.simulado.astype(str).str.startswith('SÍ').any():
-            st.warning('Incluye registros sintéticos. Una coincidencia simulada prueba el cruce del software, '
-                       'no la capacidad operativa de detectar incendios.')
+            st.warning('Includes synthetic records. A simulated match only tests the software's matching logic, '
+                       'not its operational ability to detect wildfires.')
         if not celda_fusion.empty:
             st.dataframe(celda_fusion,use_container_width=True,hide_index=True)
         else:
-            st.info('No hay eventos externos cargados en la cuadrícula elegida; '
-                    'las asociaciones de otras celdas se pueden descargar.')
-        st.download_button('⬇️ Descargar resultados del tridente (CSV)',
+            st.info('No external events were uploaded for the selected cell; '
+                    'matches in other cells can be downloaded.')
+        st.download_button('⬇️ Download three-source results (CSV)',
             fusion.to_csv(index=False).encode('utf-8-sig'),
             file_name='IGNIS_FUSION_EXPLORATORIA_NO_OPERATIVA.csv',
             mime='text/csv',key='fus_v2_descargar_fusion')
         salida_local=celda_fusion
     else:
         salida_local=pd.DataFrame()
-        st.info('Para comprobar coincidencias cargá un CSV terrestre/SINAE autorizado o '
-                'activá la demostración sintética dentro de «Fuentes de datos». '
-                'El mapa histórico funciona aunque no cargues archivos externos.')
+        st.info('To check matches, upload an authorized ground/SINAE CSV or '
+                'enable the synthetic demonstration under “Data sources”. '
+                'The historical map also works without external files.')
     sim=bool((not bom_cell.empty and bom_cell.es_simulado.any()) or
              (not sin_cell.empty and sin_cell.es_simulado.any()))
-    st.markdown('**Lectura de la celda:** '+_interpretacion_celda(t_hist,bom_cell,sin_cell,salida_local,sim))
+    st.markdown('**Cell interpretation:** '+_interpretacion_celda(t_hist,bom_cell,sin_cell,salida_local,sim))
     resumen=pd.DataFrame([{
         'lat_min':lat0,'lat_max':lat1,'lon_min':lon0,'lon_max':lon1,
         'anio_filtro':ano if ano is not None else 'TODOS',
@@ -1335,16 +1335,16 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
         'casos_documentados_cercanos':len(casos),
         'es_informe_operativo':False,
     }])
-    # Lectura de la celda: distingue evidencia aportada de ausencia de evidencia.
-    st.markdown('#### 🔗 Resultado para la cuadrícula seleccionada')
+    # Cell interpretation: distingue evidencia aportada de ausencia de evidencia.
+    st.markdown('#### 🔗 Results for selected grid cell')
     if not bom_cell.empty or not sin_cell.empty:
         eventos_tabla=[]
         for nombre,df in [('Bomberos / PAIF',bom_cell),('SINAE / MIRA',sin_cell)]:
             for r in df.itertuples():
-                eventos_tabla.append({'Procedencia':nombre,'Fecha UTC':str(r.fecha_utc)[:19],
-                    'ID':str(r.id)[:50],'Tipo informado':str(r.detalle)[:100],
-                    'Estado declarado':str(r.estado_origen)[:100],
-                    'Condición':'SINTÉTICO' if bool(r.es_simulado) else 'Declarado por archivo'})
+                eventos_tabla.append({'Provenance':nombre,'UTC date':str(r.fecha_utc)[:19],
+                    'ID':str(r.id)[:50],'Reported type':str(r.detalle)[:100],
+                    'Declared status':str(r.estado_origen)[:100],
+                    'Status':'SYNTHETIC' if bool(r.es_simulado) else 'Declared in file'})
         if eventos_tabla:
             st.dataframe(pd.DataFrame(eventos_tabla),use_container_width=True,hide_index=True)
     else:
@@ -1358,7 +1358,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
                    'en esta celda con los umbrales elegidos.')
     if not salida_local.empty and salida_local.simulado.astype(str).str.startswith('SÍ').any():
         st.warning('RESULTADO DEMOSTRATIVO: incluye datos sintéticos, '
-                   'no confirma observaciones reales de Bomberos ni SINAE.')
+                   'no confirma observations reales de Bomberos ni SINAE.')
     try:
         pdf_celda=generar_informe_pdf_celda(
             visible,seleccion_celda,t_hist,t_per,bom_cell,sin_cell,salida_local,
@@ -1381,7 +1381,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
             "se documentan 20 cámaras, pero NO hay lista verificada de sus coordenadas en el proyecto. "
             "Los diamantes marcan centros de localidades de referencia, no torres ni radios reales de vigilancia.\n"
             f"- [SINAE/MIRA — catálogo CSV histórico 2018–2022]({FUENTE_MIRA}); "
-            "los eventos pueden derivarse también de otras fuentes, incluso de observaciones espaciales.\n"
+            "los eventos pueden derivarse también de otras fuentes, incluso de observations espaciales.\n"
             "- Biblioteca de casos: ubicaciones aproximadas de LOCALIDADES y fechas documentadas; "
             "no se dispone de polígonos quemados, coordenadas de inicio ni cobertura exhaustiva.\n"
             "- PAIF: otra red de 65 cámaras forestales (temporada 2025–2026); no se afirma "
