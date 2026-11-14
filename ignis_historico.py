@@ -1009,16 +1009,16 @@ if current_section==NAV_PAGES[10]:
 if current_section==NAV_PAGES[11]:
     render_space_tracker(combined)
 
-if current_section==NAV_PAGES[13]:
+if current_section==NAV_PAGES[12]:
     render_ask_ignis(combined)
 
 # Nueva pestaña aislada: NASA FIRMS + Bomberos/PAIF + SINAE/MIRA.
 # Utiliza el Maestro normalizado `combined` existente y no lo modifica.
-if current_section==NAV_PAGES[14]:
+if current_section==NAV_PAGES[13]:
     from ignis_fusion_terrestre import mostrar_fusion_terrestre
     mostrar_fusion_terrestre(combined)
 
-if current_section == NAV_PAGES[15]:
+if current_section == NAV_PAGES[14]:
     from ignis_feedback import mostrar_contacto_team
     mostrar_contacto_team()
 
