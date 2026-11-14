@@ -22,7 +22,7 @@ from PIL import Image as PILImage
 from ignis_coincidencias import emparejar, resumir_pares
 
 BASE=Path(__file__).resolve().parent
-MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December']
 CMAP=LinearSegmentedColormap.from_list('ignis',['#42206a','#8440a9','#dc4b95','#ff975a','#ffe36c'])
 BG='#081425'; PANEL='#11203b'; PANEL2='#172949'; WHITE='#eef4ff'; SOFT='#b8c9ee'; CYAN='#67d6ff'; VIOLET='#d9c7ff'
 
