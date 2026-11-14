@@ -12,6 +12,16 @@ on:
       - "ignis_nrt.py"
       - "ignis_worldview.py"
       - "ignis_historico.py"
+      - "ignis_fusion_terrestre.py"
+      - "ignis_visual.py"
+      - "ignis_espacio.py"
+      - "ignis_informe.py"
+      - "ignis_evidencias.py"
+      - "ignis_ask.py"
+      - "ignis_feedback.py"
+      - "ignis_i18n.py"
+      - "pages/**"
+      - "tests/test_ignis_english_interface.py"
       - "tests/test_ignis_sensibilidad.py"
       - "tests/test_ignis_pareo_calidad_v5.py"
       - ".github/workflows/ignis-science.yml"
@@ -37,7 +47,7 @@ jobs:
       - name: Install scientific dependencies
         run: python -m pip install "numpy>=1.24" "pandas>=2" "scipy>=1.11"
       - name: Compile Python sources
-        run: python -m py_compile ignis_sensibilidad.py ignis_historico.py ignis_pareo_v5.py ignis_calidad.py ignis_worldview.py ignis_firms_sensor.py ignis_nrt.py
+        run: python -m compileall -q -f ignis_historico.py ignis_fusion_terrestre.py ignis_visual.py ignis_espacio.py ignis_informe.py ignis_evidencias.py ignis_ask.py ignis_feedback.py ignis_i18n.py ignis_nrt.py ignis_sensibilidad.py ignis_pareo_v5.py ignis_calidad.py ignis_worldview.py ignis_firms_sensor.py pages
       - name: Grid sensitivity tests
         run: python -m unittest discover -s tests -p 'test_ignis_sensibilidad.py' -v
       - name: UTC matching, quality and Worldview tests
