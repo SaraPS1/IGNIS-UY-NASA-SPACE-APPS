@@ -239,7 +239,7 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
     df=ensure_time_cols(datos.copy())
     year=df[df.anio==ano].copy()
     out=io.BytesIO()
-    doc=SimpleDocTemplate(out,pagesize=A4,leftMargin=1.55*cm,rightMargin=1.55*cm,topMargin=1.45*cm,bottomMargin=1.55*cm,title=' Informe técnico exploratorio · NASA FIRMS|IGNIS UY | Exploratory technical report · NASA FIRMS- Scientific thermal activity report',author='Proyecto IGNIS UY')
+    doc=SimpleDocTemplate(out,pagesize=A4,leftMargin=1.55*cm,rightMargin=1.55*cm,topMargin=1.45*cm,bottomMargin=1.55*cm,title='IGNIS UY - Scientific thermal activity report',author='Proyecto IGNIS UY')
     S=getSampleStyleSheet()
     S.add(ParagraphStyle(name='PaperT',parent=S['Title'],fontName='Helvetica-Bold',fontSize=20,leading=24,textColor=colors.HexColor(WHITE),alignment=TA_CENTER,spaceAfter=6))
     S.add(ParagraphStyle(name='PaperSub',parent=S['Normal'],alignment=TA_CENTER,fontSize=10,leading=13,textColor=colors.HexColor(SOFT),spaceAfter=8))
@@ -456,7 +456,7 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
         canvas.line(1.55*cm,1.15*cm,w-1.55*cm,1.15*cm)
         canvas.setFont('Helvetica',7)
         canvas.setFillColor(colors.HexColor(SOFT))
-        canvas.drawString(1.55*cm,0.86*cm,' Informe técnico exploratorio · NASA FIRMS|IGNIS UY | Exploratory technical report · NASA FIRMS| Informe técnico exploratorio · NASA FIRMS')
+        canvas.drawString(1.55*cm,0.86*cm,'IGNIS UY | Exploratory technical report · NASA FIRMS')
         canvas.drawRightString(w-1.55*cm,0.86*cm,f'Page {document.page}')
         canvas.restoreState()
 
