@@ -127,8 +127,8 @@ class HomeBackgroundsTests(unittest.TestCase):
         self.assertNotIn("def _home_image_style", self.source)
 
     def test_scientific_disclaimer_and_legacy_fallback(self):
-        self.assertIn("La escena espacial es ilustrativa.", self.source)
-        self.assertIn("no fotografías satelitales fechadas", self.source)
+        self.assertIn("The space scene is illustrative.", self.source)
+        self.assertIn("not dated satellite photographs", self.source)
         self.assertIn('"ignis_hero_premium.svg"', self.source)
         self.assertIn("def render_scientific_atlas", self.source)
         self.assertIn("def render_control_center", self.source)
