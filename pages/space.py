@@ -3,7 +3,7 @@ import streamlit as st
 
 from ignis_espacio import render_ignis_space_module
 
-st.set_page_config(page_title="IGNIS UY | Espacio 3D", page_icon="🌍", layout="wide")
+st.set_page_config(page_title="IGNIS UY | 3D Earth", page_icon="🌍", layout="wide")
 
 st.markdown(
     """
@@ -49,15 +49,15 @@ st.markdown(
     }
     </style>
     <div class="ignis-space-hero">
-      <div class="eyebrow">Espacio / seguimiento satelital</div>
-      <h1>IGNIS UY — Espacio</h1>
-      <p>Visualización 3D de la Tierra, focos térmicos y seguimiento orbital para Uruguay y su contexto regional, con una experiencia más visual y profesional.</p>
+      <div class="eyebrow">Space / satellite tracking</div>
+      <h1>IGNIS UY — Space</h1>
+      <p>3D visualization of Earth, thermal hotspots, and satellite orbits for Uruguay and the surrounding region, with an immersive scientific interface.</p>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-with st.spinner("Preparando la vista espacial 3D..."):
+with st.spinner("Preparing the 3D space view..."):
     data = st.session_state.get("combined")
     if data is None:
         data = st.session_state.get("ignis_combined")
