@@ -1,4 +1,4 @@
-"""Regresiones de ASK IGNIS en español y del formulario de contribuciones."""
+"""Regression tests for English ASK IGNIS and the contribution form."""
 import ast
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -28,12 +28,12 @@ def extract_preparar_aporte():
     node = next(n for n in tree.body if isinstance(n, ast.FunctionDef)
                 and n.name == "preparar_aporte")
     env = {"urlencode": __import__("urllib.parse", fromlist=["urlencode"]).urlencode,
-           "ISSUES_URL": "https://github.com/sarapcoffee/ignis-uy-historico/issues"}
+           "ISSUES_URL": "https://github.com/SaraPS1/IGNIS-UY-NASA-SPACE-APPS/issues"}
     exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), "exec"), env)
     return env["preparar_aporte"]
 
 
-class AskIgnisSpanishTests(unittest.TestCase):
+class AskIgnisEnglishTests(unittest.TestCase):
     def test_normalizes_accents(self):
         self.assertEqual(normalizar_pregunta("¿Cuántas detecciones?"), "¿cuantas detecciones?")
 
@@ -42,7 +42,7 @@ class AskIgnisSpanishTests(unittest.TestCase):
         self.assertIn("does not use GPT", result["answer"].lower().replace("does not use gpt", "does not use GPT"))
         self.assertIsNone(result["chart"])
 
-    def test_handles_missing_files_in_spanish(self):
+    def test_handles_missing_files_in_english(self):
         result = responder_ignis(pd.DataFrame(), "¿Cuántos registros hay?")
         self.assertIn("No records have been uploaded", result["answer"])
         self.assertEqual(result["sources"], [])
@@ -58,7 +58,7 @@ class AskIgnisSpanishTests(unittest.TestCase):
         self.assertEqual(result["chart"]["Year"].tolist(), [2024, 2025])
         self.assertIn("Annual series", result["answer"])
 
-    def test_frp_spanish(self):
+    def test_frp_english(self):
         result = responder_ignis(example_data(), "¿Cuáles son los valores de FRP?")
         self.assertIn("12.50 MW", result["answer"])
         self.assertIn("22.00 MW", result["answer"])
