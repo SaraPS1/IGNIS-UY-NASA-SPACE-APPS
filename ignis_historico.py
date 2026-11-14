@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import requests
 import streamlit as st
-from ignis_i18n import display_dataframe
+from ignis_i18n import display_dataframe, english_quality_notice
 import plotly.express as px
 import plotly.graph_objects as go
 from ignis_coincidencias import emparejar, resumir_pares
@@ -36,7 +36,7 @@ REGIONES={
  'Uruguay (approximate rectangle)':(-35.2,-30.,-58.6,-53.),
  'Durazno':(-33.460,-33.280,-56.750,-56.440),
  'Cerro del Toro (Maldonado)':(-34.880,-34.840,-55.280,-55.230),
- 'Treinta y Tres (zona Vergara)':(-32.985,-32.879,-54.069,-53.920),
+ 'Treinta y Tres (Vergara area)':(-32.985,-32.879,-54.069,-53.920),
  'Canelones (Atlántida/Salinas)':(-34.788,-34.724,-55.890,-55.810),
  'Lavalleja':(-34.116,-34.044,-54.940,-54.842),
  'Artigas':(-30.505,-30.443,-56.576,-56.499),
@@ -88,7 +88,7 @@ def parse_firms(blob, filename):
             df=pd.read_csv(io.BytesIO(raw),low_memory=False)
             df.columns=[x.strip().lower() for x in df.columns]
             if not {'latitude','longitude','acq_date'}.issubset(df):
-                errors.append(f'{name}: falta latitude, longitude o acq_date');continue
+                errors.append(f'{name}: missing latitude, longitude, or acq_date');continue
             sat=df.get('satellite',pd.Series('',index=df.index)).fillna('').astype(str).str.upper()
             instrumentos=clasificar_instrumentos(df,name)
             sin_identificar=int(instrumentos.isna().sum())
@@ -479,9 +479,9 @@ NAV_PAGES = [
     "🔄 MODIS–VIIRS harmonization",
     "🗺️ Map of Uruguay",
     "⚠️ Alerts and traceability",
-    "🗓️ Calendario final",
-    "📄 Informe PDF",
-    "🛰️ Monitoreo reciente",
+    "🗓️ Final calendar",
+    "📄 PDF report",
+    "🛰️ Recent monitoring",
     "🌐 3D Earth and satellites",
     "🤖 ASK IGNIS",
     "🌎 Satellite–ground fusion",
@@ -812,7 +812,7 @@ if current_section==NAV_PAGES[5]:
         aq3.metric('Valid UTC time', f"{audit['horarios_validos']:,}")
         aq4.metric('Available FRP', f"{audit['frp_disponible']:,}")
         for aviso in lectura_diagnostica(audit):
-            st.caption('• ' + aviso)
+            st.caption('• ' + english_quality_notice(aviso)
         if selected is not None:
             inventario = inventario_mensual(sample, int(selected))
             with st.expander('Monthly source inventory · selected year', expanded=False):
