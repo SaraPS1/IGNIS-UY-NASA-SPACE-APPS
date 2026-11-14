@@ -121,7 +121,7 @@ def leer_tabla_bytes(nombre: str, contenido: bytes) -> pd.DataFrame:
     if len(df) > MAX_ROWS:
         raise ValueError("Too many rows (maximum 100,000 per upload).")
     if df.empty:
-        raise ValueError("El archivo no contiene filas de datos.")
+        raise ValueError("The file contains no data rows.")
     df.columns = [str(c).strip() for c in df.columns]
     return df
 
@@ -253,7 +253,7 @@ def adaptar_externo(raw: pd.DataFrame, categoria: str, columnas: dict[str, str |
             "lon": float(lon.loc[idx]) if pd.notna(lon.loc[idx]) else np.nan,
             "categoria": categoria,
             "detalle": valor("detalle"),
-            "estado_origen": valor("estado", "Sin especificar"),
+            "estado_origen": valor("estado", "Unspecified"),
             "fuente_decl": valor("origen", categoria),
             "es_simulado": any("SIMULAD" in t.upper() or "SINTETIC" in t.upper()
                                 for t in (valor("id"),valor("estado"),valor("origen"))),
@@ -275,7 +275,7 @@ def normalizar_nasa(maestro: pd.DataFrame | None) -> pd.DataFrame:
     df = maestro.copy()
     faltan = set(["fecha", "latitude", "longitude"]) - set(df.columns)
     if faltan:
-        raise ValueError("El Maestro no tiene columnas esperadas: " + ", ".join(sorted(faltan)))
+        raise ValueError("The Master dataset is missing expected columns: " + ", ".join(sorted(faltan)))
     lat = pd.to_numeric(df["latitude"], errors="coerce")
     lon = pd.to_numeric(df["longitude"], errors="coerce")
     salida = pd.DataFrame({
@@ -689,7 +689,7 @@ def _mapa_plotly(malla:pd.DataFrame, nasa:pd.DataFrame, bom:pd.DataFrame,
         m=malla.sort_values(['ilon','ilat']).reset_index(drop=True)
         activas=(set() if celdas_activas is None else celdas_activas)
         bordes=['#ffed97' if (int(r.ilat),int(r.ilon)) in activas else 'rgba(4,17,30,.5)' for r in m.itertuples()]
-        hover=(m['anios'].astype(str)+' años con detecciones FIRMS<br>'+
+        hover=(m['anios'].astype(str)+' years with FIRMS detections<br>'+
                m['registros'].astype(str)+' records in the cell<br>'+
                'Centro: '+m['lat_c'].round(2).astype(str)+'°, '+m['lon_c'].round(2).astype(str)+'°<br>'+
                'Click to inspect')
@@ -707,7 +707,7 @@ def _mapa_plotly(malla:pd.DataFrame, nasa:pd.DataFrame, bom:pd.DataFrame,
         y0,y1=il*PASO_GRADOS,(il+1)*PASO_GRADOS
         figura.add_trace(go.Scatter(x=[x0,x1,x1,x0,x0],y=[y0,y0,y1,y1,y0],
                     mode='lines',line=dict(color='#ffe36f',width=3.7),
-                    hoverinfo='skip',showlegend=False,name='Cuadrícula seleccionada'))
+                    hoverinfo='skip',showlegend=False,name='Selected grid cell'))
     if ver_referencias:
         ref=[r for r in REFERENCIAS_CAMARAS
              if ZONAS[zona][0]<=r['lat']<=ZONAS[zona][1] and ZONAS[zona][2]<=r['lon']<=ZONAS[zona][3]]
@@ -1352,7 +1352,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
         st.info('No Fire Service/PAIF or SINAE/MIRA records were imported within '
                 'this cell and period. This does NOT imply no wildfires occurred.')
     if not salida_local.empty and salida_local.n_firms.gt(0).any():
-        st.success('Hay al menos un evento aportado con observación Nearby FIRMSna en la '
+        st.success('At least one submitted event has a nearby FIRMS observation within '
                    'the configured window. This is a match for review, NOT wildfire confirmation.')
     elif not bom_cell.empty or not sin_cell.empty:
         st.warning('Events were imported, but no FIRMS match was established '
