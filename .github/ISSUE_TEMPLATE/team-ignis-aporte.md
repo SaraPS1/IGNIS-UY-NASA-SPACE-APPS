@@ -1,22 +1,22 @@
 ---
-name: Consulta o aporte al Team IGNIS
-about: Preguntas, fuentes, errores o propuestas para IGNIS UY
+name: Question or contribution to Team IGNIS
+about: Questions, documentary sources, bug reports, or proposals for IGNIS UY
 title: "[Team IGNIS] "
 labels: []
 assignees: []
 ---
 
-## Tipo de aporte
-<!-- Consulta, fuente, error, mejora o colaboración -->
+## Contribution type
+<!-- Question, source, bug, improvement, or collaboration -->
 
-## Descripción
-<!-- Detalles de la pregunta o propuesta -->
+## Description
+<!-- Details of the question or proposal -->
 
-## Fecha, lugar y referencias (si corresponde)
-<!-- Enlaces comprobables y fechas precisas -->
+## Date, location, and references (if applicable)
+<!-- Verifiable links and precise dates -->
 
-## Antes de publicar
-- [ ] No incluyo claves API, contraseñas ni datos personales.
-- [ ] Sé que un punto térmico FIRMS no confirma un incendio.
+## Before submitting
+- [ ] I have not included API keys, passwords, or personal information.
+- [ ] I understand a FIRMS thermal point does not confirm a wildfire.
 
-> El equipo revisará los aportes; ninguno se incorpora automáticamente como evidencia validada.
+> The team will review submissions; none are automatically incorporated as validated evidence.

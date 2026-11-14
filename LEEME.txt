@@ -1,29 +1,29 @@
-IGNIS UY — PILOTO HISTÓRICO 2000–2026
+IGNIS UY — HISTORICAL PILOT 2000–2026
 
-El archivo ignis_historico.py es una aplicación Streamlit INDEPENDIENTE.
-No sustituye ni modifica la versión original de IGNIS UY 1.7.
+ignis_historico.py is an INDEPENDENT Streamlit application.
+It does not replace or modify the original IGNIS UY 1.7 version.
 
-Para probarlo localmente:
+To test locally:
   pip install -r requirements.txt
   streamlit run ignis_historico.py
 
-Para usarlo en Streamlit Cloud, crear una NUEVA app/repo con ignis_historico.py como entrada.
-NO sobrescribir streamlit_app.py en el repositorio original.
+For Streamlit Cloud, create a NEW app/repository with ignis_historico.py as its entry point.
+Do NOT overwrite streamlit_app.py in the original repository.
 
-Datos en vivo NASA FIRMS:
-- La pestaña de carga puede consultar datos NRT de Uruguay sin subir ZIP/CSV.
-- Obtener una MAP_KEY gratis en NASA FIRMS y configurarla como FIRMS_MAP_KEY en los Secrets de Streamlit Cloud.
-- Para ejecución local, copiar .streamlit/secrets.toml.example como .streamlit/secrets.toml y reemplazar el valor de ejemplo.
-- Las consultas cubren hasta los últimos 10 días y se cachean durante una hora.
+Live NASA FIRMS data:
+- The upload tab can retrieve recent Uruguay NRT detections without uploading ZIP/CSV files.
+- Obtain a free NASA FIRMS MAP_KEY and configure FIRMS_MAP_KEY in Streamlit Cloud Secrets.
+- Locally, copy .streamlit/secrets.toml.example to .streamlit/secrets.toml and replace the example value.
+- Queries span up to the previous 10 days and are cached for one hour.
 
-Límites actuales:
-- Lee ZIP/CSV históricos y puede consultar datos NRT de NASA FIRMS.
-- MODIS del 2000 se admite sin VIIRS.
-- No descarga 27 años de datos automáticamente.
-- La carga de archivos depende de los límites de tamaño de Streamlit Cloud.
-- Un mes sin registros cargados no demuestra ausencia de detecciones ni cobertura completa.
-- El mapa es de densidad de puntos térmicos, no de incendios confirmados.
-- Los informes y evidencias 2023 siguen en la app original.
-- Las sumas crudas entre sensores no constituyen un histórico armonizado científicamente.
+Current limitations:
+- Reads historical ZIP/CSV files and queries NASA FIRMS NRT data.
+- Supports MODIS observations from 2000 without VIIRS.
+- Does not automatically download 27 years of records.
+- Uploads are subject to Streamlit Cloud file-size limits.
+- A month without imported observations proves neither an absence of detections nor full satellite coverage.
+- The map shows thermal-point density, not confirmed wildfires.
+- Reports and evidence for 2023 remain in the original app.
+- Raw sums across sensors are not a scientifically harmonized historical series.
 
-NOTA: La imagen de diseño producida previamente es un mockup ilustrativo y sus números NO son resultados reales.
+NOTE: The previously generated design illustration is a mockup; its numbers are NOT real results.

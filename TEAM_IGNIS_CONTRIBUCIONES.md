@@ -1,45 +1,39 @@
-# Consultas y aportes al Team IGNIS
+# Questions and contributions to Team IGNIS
 
-IGNIS UY utiliza **GitHub Issues** como canal público de consultas,
-propuestas de mejora, fuentes documentales y reportes de errores.
-La aplicación Streamlit no almacena ni envía esos mensajes directamente.
+IGNIS UY uses **GitHub Issues** as a public channel for questions, improvements, documentary sources, and bug reports. The Streamlit application does not directly store or submit these messages.
 
-## Activación para administradores
+## Enable Issues (repository administrators)
 
-GitHub Issues estaba **desactivado** en el repositorio cuando se preparó
-esta función. Para recibir aportes:
+GitHub Issues was **disabled** when this feature was originally prepared. To accept contributions:
 
-1. Abrí el repositorio en GitHub.
-2. Entrá en **Settings → General → Features**.
-3. Activá **Issues**.
-4. Confirmá que aparezca la pestaña Issues.
-5. Probá el formulario de la sección Team IGNIS desde la app.
+1. Open the repository on GitHub.
+2. Navigate to **Settings → General → Features**.
+3. Enable **Issues**.
+4. Check that the Issues tab appears.
+5. Test the Team IGNIS form in the app.
 
-La app comprueba el indicador público has_issues con una caché de cinco
-minutos y solo ofrece el enlace de publicación si está activado.
+The app checks the public `has_issues` flag (cached for five minutes) and only provides the publishing link while Issues is enabled.
 
-## Cómo aportar
+## Contributing
 
-1. Completá el formulario Team IGNIS.
-2. Elegí un tipo de contribución, título y detalle.
-3. Confirmá que el mensaje será público.
-4. Presioná **Preparar para GitHub**.
-5. Elegí **Continuar y publicar en GitHub Issues**.
-6. Iniciá sesión en GitHub y confirmá **Submit new issue**.
+1. Complete the Team IGNIS form.
+2. Select a contribution type, title, and description.
+3. Confirm the message will be public.
+4. Click **Prepare for GitHub**.
+5. Click **Continue and publish on GitHub Issues**.
+6. Sign in and confirm **Submit new issue**.
 
-También se puede usar la plantilla directamente en:
-https://github.com/sarapcoffee/ignis-uy-historico/issues/new/choose
+The template is available at:
+https://github.com/SaraPS1/IGNIS-UY-NASA-SPACE-APPS/issues/new/choose
 
-## Privacidad y ciencia
+## Privacy and science
 
-- No compartas claves FIRMS, tokens, contraseñas ni datos personales.
-- En una noticia o reporte, indicá fecha, ubicación y URL de origen.
-- Ninguna detección térmica equivale automáticamente a incendio confirmado.
-- Las contribuciones son propuestas pendientes de revisión.
-- El equipo no garantiza tiempos de respuesta ni incorporación de fuentes.
+- Do not share FIRMS keys, tokens, passwords, or personal data.
+- Provide dates, locations, and source URLs for news reports or external evidence.
+- A thermal detection is not necessarily a confirmed wildfire.
+- Contributions are proposals awaiting review.
+- The team does not guarantee response times or source inclusion.
 
 ## ASK IGNIS
 
-ASK IGNIS es un asistente estadístico basado en reglas de Python/Pandas
-sobre archivos cargados. No usa un modelo de IA generativa ni consulta
-internet por su cuenta.
+ASK IGNIS is a Python/Pandas rule-based statistical assistant for uploaded data. It does not use generative AI or independently browse the internet.
