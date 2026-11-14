@@ -19,6 +19,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from ignis_i18n import display_dataframe
 from ignis_worldview import enlace_worldview
 
 FUENTES = {
@@ -232,11 +233,11 @@ def mostrar_monitoreo_nrt():
     st.caption("Approximate rectangular extent may include areas outside Uruguay. The map displays at most 1,200 points per source; the table and CSV retain all returned records.")
     st.markdown("#### Detections by source (not unique wildfires)")
     recuentos = datos.groupby("producto").size().reset_index(name="observaciones")
-    st.dataframe(recuentos, use_container_width=True, hide_index=True)
+    display_dataframe(recuentos, use_container_width=True, hide_index=True)
     st.markdown("#### Recent records")
     tabla = datos.head(400).copy()
     tabla["adquisicion_utc"] = tabla["adquisicion_utc"].dt.strftime("%Y-%m-%d %H:%M UTC")
-    st.dataframe(tabla, use_container_width=True, hide_index=True, height=260)
+    display_dataframe(tabla, use_container_width=True, hide_index=True, height=260)
     exportar = datos.copy()
     exportar["adquisicion_utc"] = exportar["adquisicion_utc"].dt.strftime("%Y-%m-%d %H:%M UTC")
     st.download_button("⬇️ Download recent query CSV", exportar.to_csv(index=False).encode("utf-8-sig"),
