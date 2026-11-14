@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import requests
 import streamlit as st
-from ignis_i18n import display_dataframe, english_quality_notice
+from ignis_i18n import display_dataframe
 import plotly.express as px
 import plotly.graph_objects as go
 from ignis_coincidencias import emparejar, resumir_pares
@@ -29,6 +29,27 @@ import matplotlib.pyplot as plt
 from ignis_espacio import render_ignis_space_module
 from ignis_visual import (apply_visual_theme, render_project_home,
                           render_control_center, render_scientific_atlas)
+
+def english_quality_notice(message: str) -> str:
+    """Convert quality diagnostics to English without changing scientific outputs."""
+    import re
+    if message.startswith("Sin registros importados:"):
+        return "No records imported: satellite coverage or absence of thermal activity cannot be inferred."
+    if message.startswith("No se han verificado oportunidades"):
+        return "Observation opportunities, cloud cover, and instrument coverage have not been verified."
+    match = re.fullmatch(r"([\d,]+) de ([\d,]+) registros sin (.+) válida\.", message)
+    if match:
+        names = {"coordenadas": "coordinates", "fechas": "dates",
+                 "horarios UTC": "UTC timestamps", "familia instrumental": "instrument family"}
+        return (f"{match.group(1)} of {match.group(2)} records have missing or invalid "
+                f"{names.get(match.group(3), match.group(3))}.")
+    match = re.fullmatch(r"Hay ([\d,]+) IDs repetidos en esta tabla\.", message)
+    if match:
+        return f"There are {match.group(1)} duplicate IDs in this table."
+    return message
+
+
+
 
 st.set_page_config(page_title='IGNIS UY | Historical Archive 2000–2026',page_icon='🛰️',layout='wide',initial_sidebar_state='expanded')
 BASE=Path(__file__).resolve().parent
