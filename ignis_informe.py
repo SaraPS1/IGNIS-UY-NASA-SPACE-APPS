@@ -284,7 +284,7 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
     story.append(P('<b>Summary.</b> This report only summarizes satellite observations imported into the IGNIS Master dataset. Detections are thermal anomalies, not confirmed wildfires; they do not represent burned area or wildfire rates. The MODIS–VIIRS comparison is exploratory and is not a calibrated series.'))
 
     story.append(P('1. Purpose and scope','PaperH'))
-    story.append(P('Describe the temporal and geographic distribution of detections in the selected area; place the selected year in the context of uploaded historical records; identify preliminary statistical signals; explain the current status of MODIS–VIIRS harmonization; and document the system's main limitations.'))
+    story.append(P('Describe the temporal and geographic distribution of detections in the selected area; place the selected year in the context of uploaded historical records; identify preliminary statistical signals; explain the current status of MODIS–VIIRS harmonization; and document the main limitations of the system.'))
 
     story.append(P('2. Results for the selected year','PaperH'))
     rows=[['Indicator','Result'],['Yearly records',str(len(year))],['Days with records',str(year.dia.nunique())],['Instrument families',', '.join(sorted(map(str,year.instrumento.unique()))) or 'No records']]
