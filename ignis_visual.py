@@ -557,7 +557,7 @@ def _header(kicker, title, subtitle):
 def _empty_uruguay_outline(base, key):
     file = Path(base) / "uruguay_contorno.geojson"
     if not file.exists():
-        st.info("El contorno de Uruguay no está disponible en este despliegue.")
+        st.info("Uruguay's outline is unavailable in this deployment.")
         return
     geometry = json.loads(file.read_text(encoding="utf-8"))["features"][0]["geometry"]
     coords = geometry["coordinates"] if geometry["type"] == "Polygon" else geometry["coordinates"][0]
@@ -611,7 +611,7 @@ def render_project_home(base, asset_uri, pages, navigate):
                    if logo.exists() else "◈")
     st.markdown(
         '<div class="ignis-ui-topbar"><div class="ignis-ui-wordmark">'
-        f'{logo_markup}<div>IGNIS UY<small>Histórico · Uruguay</small></div></div>'
+        f'{logo_markup}<div>IGNIS UY<small>Historical Archive · Uruguay</small></div></div>'
         '<div class="ignis-ui-links">'
         '<a href="https://ema.fau.mil.uy/" target="_blank" rel="noopener noreferrer">EMA ↗</a>'
         '<a href="https://www.spaceappschallenge.org/2026/" target="_blank" '
@@ -631,45 +631,45 @@ def render_project_home(base, asset_uri, pages, navigate):
         '<div class="ignis-ui-hero">'
         + hero_image +
         '<div class="ignis-ui-kicker">'
-        'Análisis satelital de actividad térmica en Uruguay</div>'
-        '<h1>IGNIS UY<br><span>Histórico</span></h1>'
-        '<p>Explorá observaciones NASA FIRMS de los sensores MODIS y VIIRS, '
-        'compará períodos históricos y consultá evidencia documental para '
-        'interpretar la actividad térmica del territorio uruguayo.</p>'
+        'Satellite analysis of thermal activity in Uruguay</div>'
+        '<h1>IGNIS UY<br><span>Historical Archive</span></h1>'
+        '<p>Explore NASA FIRMS observations from MODIS and VIIRS sensors, '
+        'compare historical periods and review documentary evidence to '
+        'interpret thermal activity in Uruguay.</p>'
         '<div class="ignis-ui-hero-facts">'
         '<span>' + _feature_icon("sat") + 'MODIS + VIIRS</span>'
-        '<span>' + _feature_icon("calendar") + 'Estudio histórico 2000–2026</span>'
-        '<span>' + _feature_icon("location") + 'Enfoque geoespacial</span>'
+        '<span>' + _feature_icon("calendar") + 'Historical study 2000–2026</span>'
+        '<span>' + _feature_icon("location") + 'Geospatial focus</span>'
         '</div></div>',
         unsafe_allow_html=True,
     )
     left, center, right = st.columns([1.08, 1, 1], gap="medium")
     with left:
-        st.button("Explorar histórico", type="primary", use_container_width=True,
+        st.button("Explore historical archive", type="primary", use_container_width=True,
                   key="hero_to_history", on_click=navigate, args=(pages[4],))
     with center:
-        st.button("Centro de control", use_container_width=True,
+        st.button("Dashboard", use_container_width=True,
                   key="hero_to_dashboard", on_click=navigate, args=(pages[1],))
     with right:
-        st.button("Cargar datos", use_container_width=True,
+        st.button("Upload data", use_container_width=True,
                   key="hero_to_upload", on_click=navigate, args=(pages[2],))
     st.markdown(
-        '<h2 class="ignis-home-section-title">Qué podés hacer en IGNIS</h2>',
+        '<h2 class="ignis-home-section-title">What you can do with IGNIS</h2>',
         unsafe_allow_html=True,
     )
     cards = [
         ("sat", "ignis-ui-card--heat", "bg_observaciones.webp",
-         "Observaciones satelitales",
-         "Explorá los registros originales y las diferencias entre los "
-         "instrumentos MODIS y VIIRS."),
+         "Satellite observations",
+         "Explore original observations and differences between "
+         "MODIS and VIIRS instruments."),
         ("map", "ignis-ui-card--atlas", "bg_atlas.webp",
-         "Atlas científico",
-         "Localizá actividad térmica por región, fecha y sensor en los "
-         "mapas del estudio."),
+         "Scientific Atlas",
+         "Locate thermal activity by region, date, and sensor using "
+         "the study maps."),
         ("shield", "ignis-ui-card--trace", "bg_trazabilidad.webp",
-         "Trazabilidad",
-         "Contrastá episodios con informes y fuentes externas, sin asumir "
-         "que una detección confirma un incendio."),
+         "Traceability",
+         "Compare events with reports and external sources, without assuming "
+         "that a detection confirms a wildfire."),
     ]
     for col, (icon, variant, filename, title, description) in zip(
         st.columns(3, gap="medium"), cards
@@ -689,27 +689,27 @@ def render_project_home(base, asset_uri, pages, navigate):
                 unsafe_allow_html=True,
             )
     st.caption(
-        "Investigación independiente en el contexto de NASA Space Apps "
-        "Challenge 2026. La escena espacial es ilustrativa. Los fondos "
-        "son ilustraciones digitales, no fotografías satelitales fechadas "
-        "ni validaciones de incendios. Las anomalías térmicas no equivalen "
-        "a incendios confirmados; la armonización sigue siendo experimental "
-        "y la cobertura depende de los archivos suministrados."
+        "Independent research in the context of NASA Space Apps "
+        "Challenge 2026. The space scene is illustrative. The backgrounds "
+        "are digital illustrations, not dated satellite photographs "
+        "or wildfire validation. Thermal anomalies are not "
+        "confirmed wildfires; harmonization remains experimental "
+        "and coverage depends on the uploaded files."
     )
 
 
 def render_control_center(combined,sample,selected,base,map_fn,pages,navigate):
-    _header("Panel general · Uruguay","Centro de control",
-            "Monitoreo exploratorio y análisis histórico de observaciones NASA FIRMS.")
+    _header("General overview · Uruguay","Dashboard",
+            "Exploratory monitoring and historical analysis of NASA FIRMS observations.")
     if isinstance(combined,pd.DataFrame) and not combined.empty and not sample.empty:
         view=sample[sample.anio==selected] if selected is not None else sample
     else:
         view=pd.DataFrame()
     cards=[
-        ("Detecciones visibles",f"{len(view):,}" if not view.empty else "Sin datos"),
-        ("Años con registros",str(sample.anio.nunique()) if not sample.empty else "—"),
-        ("Sensores presentes",str(view.instrumento.nunique()) if not view.empty else "—"),
-        ("Año seleccionado",str(selected) if selected is not None else "—"),
+        ("Visible detections",f"{len(view):,}" if not view.empty else "No data"),
+        ("Years with observations",str(sample.anio.nunique()) if not sample.empty else "—"),
+        ("Sensors present",str(view.instrumento.nunique()) if not view.empty else "—"),
+        ("Selected year",str(selected) if selected is not None else "—"),
     ]
     for column,(title,value) in zip(st.columns(4,gap="small"),cards):
         column.metric(title,value)
@@ -717,18 +717,18 @@ def render_control_center(combined,sample,selected,base,map_fn,pages,navigate):
     left,right=st.columns([1.9,1],gap="medium")
     with left:
         with st.container(border=True):
-            st.markdown("#### 🗺️ Actividad térmica · Uruguay")
+            st.markdown("#### 🗺️ Thermal activity · Uruguay")
             if not view.empty:
                 map_fn(view,"ignis_control_map")
             else:
-                st.caption("Importá registros para visualizar las detecciones.")
+                st.caption("Import records to visualize detections.")
                 _empty_uruguay_outline(base,"ignis_control_empty")
     with right:
         with st.container(border=True):
-            st.markdown("#### 📡 Instrumentos")
+            st.markdown("#### 📡 Instruments")
             if view.empty:
-                st.info("No hay observaciones en esta selección.")
-                st.button("📂 Importar datos",type="primary",
+                st.info("No observations in this selection.")
+                st.button("📂 Import data",type="primary",
                           use_container_width=True,key="control_upload",
                           on_click=navigate,args=(pages[2],))
             else:
@@ -738,83 +738,83 @@ def render_control_center(combined,sample,selected,base,map_fn,pages,navigate):
                     marker_color="#44d1e4"))
                 fig.update_layout(height=245,margin=dict(l=12,r=12,t=15,b=28),
                     paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#dceffa"),xaxis_title="Registros")
+                    font=dict(color="#dceffa"),xaxis_title="Records")
                 st.plotly_chart(fig,use_container_width=True,key="ignis_control_sensors")
-                st.caption("Cantidad de detecciones por instrumento; no son incendios únicos.")
+                st.caption("Detections by instrument; these are not unique wildfires.")
         with st.container(border=True):
-            st.markdown("#### 🛡️ Validación externa")
-            st.caption("Evidencias históricas y referencias originales para revisar posibles episodios.")
-            st.button("Consultar fuentes",use_container_width=True,key="control_evidence",
+            st.markdown("#### 🛡️ External validation")
+            st.caption("Historical evidence and original references for reviewing potential events.")
+            st.button("Review sources",use_container_width=True,key="control_evidence",
                       on_click=navigate,args=(pages[7],))
         with st.container(border=True):
-            st.markdown("#### 📚 Otras herramientas")
-            st.button("Atlas científico",use_container_width=True,key="control_atlas",
+            st.markdown("#### 📚 Other tools")
+            st.button("Scientific Atlas",use_container_width=True,key="control_atlas",
                       on_click=navigate,args=(pages[6],))
-            st.button("Armonización MODIS–VIIRS",use_container_width=True,
+            st.button("MODIS–VIIRS harmonization",use_container_width=True,
                       key="control_harmonization",on_click=navigate,args=(pages[5],))
     if not view.empty:
-        st.markdown("#### 📈 Evolución mensual del año seleccionado")
+        st.markdown("#### 📈 Monthly trend for the selected year")
         months=view.groupby("mes").size().sort_index()
         fig=go.Figure(go.Bar(
             x=months.index.tolist(),y=months.values.tolist(),
-            marker=dict(color="#f28c52"),name="Detecciones"))
+            marker=dict(color="#f28c52"),name="Detections"))
         fig.update_layout(height=290,margin=dict(l=15,r=15,t=12,b=35),
             paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#e4f3ff"),xaxis=dict(title="Mes",dtick=1,range=[.5,12.5]),
-            yaxis_title="Registros")
+            font=dict(color="#e4f3ff"),xaxis=dict(title="Month",dtick=1,range=[.5,12.5]),
+            yaxis_title="Records")
         st.plotly_chart(fig,use_container_width=True,key="ignis_control_months")
-    st.caption("La ausencia de registros no significa ausencia de incendios ni confirma "
-               "cobertura satelital completa. Esta plataforma no emite alertas oficiales.")
+    st.caption("The absence of records does not imply an absence of wildfires or confirm "
+               "complete satellite coverage. This platform does not issue official alerts.")
 
 
 def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
-    _header("Atlas científico · Exploración espacial",
-            "Atlas de actividad térmica",
-            "Elegí una escala temporal y explorá las observaciones térmicas cargadas para Uruguay.")
+    _header("Scientific Atlas · Spatial exploration",
+            "Thermal activity Atlas",
+            "Choose a time range and explore uploaded thermal observations for Uruguay.")
     if sample.empty:
-        st.info("Importá archivos ZIP/CSV o el Maestro IGNIS antes de explorar el atlas.")
+        st.info("Import ZIP/CSV files or the IGNIS Master dataset before using the Atlas.")
         left,right=st.columns([2,1],gap="medium")
         with left:
             _empty_uruguay_outline(base,"ignis_atlas_empty")
         with right:
-            st.markdown("#### Empezá por cargar datos")
-            st.button("📂 Ir a Carga de datos",type="primary",
+            st.markdown("#### Start by uploading data")
+            st.button("📂 Go to Data upload",type="primary",
                       use_container_width=True,key="atlas_upload",
                       on_click=navigate,args=(pages[2],))
         return
-    selector=st.radio("Período del mapa",
-                      ["Todo el histórico cargado","Año seleccionado"],
+    selector=st.radio("Map time range",
+                      ["All uploaded historical records","Selected year"],
                       horizontal=True,key="ignis_atlas_period")
-    mapped=sample if selector=="Todo el histórico cargado" else sample[sample.anio==selected]
+    mapped=sample if selector=="All uploaded historical records" else sample[sample.anio==selected]
     a,b,c=st.columns(3)
-    a.metric("Detecciones en el recorte",f"{len(mapped):,}")
-    b.metric("Años con registros",str(mapped.anio.nunique()))
-    c.metric("Sensores presentes",str(mapped.instrumento.nunique()))
+    a.metric("Detections in selection",f"{len(mapped):,}")
+    b.metric("Years with observations",str(mapped.anio.nunique()))
+    c.metric("Sensors present",str(mapped.instrumento.nunique()))
     st.write("")
     map_col,tools_col=st.columns([2.15,1],gap="medium")
     with map_col:
         with st.container(border=True):
-            st.markdown("#### 🗺️ Distribución geográfica")
+            st.markdown("#### 🗺️ Geographic distribution")
             if not mapped.empty:
                 map_fn(mapped,"ignis_atlas_scientific")
             else:
-                st.info("No hay puntos para el período seleccionado.")
+                st.info("No points for the selected period.")
                 _empty_uruguay_outline(base,"ignis_atlas_selection_empty")
     with tools_col:
         with st.container(border=True):
-            st.markdown("#### 🧰 Herramientas")
-            st.button("🔄 Comparar MODIS–VIIRS",use_container_width=True,
+            st.markdown("#### 🧰 Tools")
+            st.button("🔄 Compare MODIS–VIIRS",use_container_width=True,
                       key="atlas_harmonization",on_click=navigate,args=(pages[5],))
-            st.button("🛡️ Fuentes externas",use_container_width=True,
+            st.button("🛡️ External sources",use_container_width=True,
                       key="atlas_sources",on_click=navigate,args=(pages[7],))
             if not mapped.empty:
                 available=[c for c in columns if c in mapped.columns]
                 csv=mapped[available].to_csv(index=False).encode("utf-8-sig")
-                st.download_button("⬇️ Descargar recorte CSV",csv,
+                st.download_button("⬇️ Download selected CSV",csv,
                     file_name="IGNIS_atlas_registros.csv",mime="text/csv",
                     use_container_width=True,key="atlas_download")
         with st.container(border=True):
-            st.markdown("#### 📊 Actividad por sensor")
+            st.markdown("#### 📊 Activity by sensor")
             if not mapped.empty:
                 counts=mapped.groupby("instrumento").size()
                 fig=go.Figure(go.Pie(labels=counts.index.astype(str),
@@ -825,9 +825,9 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
                     showlegend=True,legend=dict(orientation="h",y=-.12))
                 st.plotly_chart(fig,use_container_width=True,key="atlas_instrument_pie")
             else:
-                st.caption("No hay datos para comparar.")
+                st.caption("No data to compare.")
         with st.container(border=True):
-            st.markdown("#### 📈 Actividad por mes")
+            st.markdown("#### 📈 Activity by month")
             if not mapped.empty:
                 monthly=mapped.groupby("mes").size().sort_index()
                 fig=go.Figure(go.Scatter(
@@ -836,9 +836,9 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
                     marker=dict(size=7,color="#fd9356")))
                 fig.update_layout(height=220,margin=dict(l=8,r=8,t=12,b=25),
                     paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#dceeff"),xaxis=dict(dtick=1,title="Mes"))
+                    font=dict(color="#dceeff"),xaxis=dict(dtick=1,title="Month"))
                 st.plotly_chart(fig,use_container_width=True,key="atlas_month_line")
-    st.caption("Mapa estadístico basado en los registros FIRMS importados; "
-               "no utiliza imágenes satelitales como fondo. La densidad es ilustrativa "
-               "y no corresponde a hectáreas quemadas. Los meses sin registros "
-               "no demuestran ausencia de actividad.")
+    st.caption("Statistical map based on imported FIRMS records; "
+               "it does not use satellite imagery as a background. Density is illustrative "
+               "and does not represent burned hectares. Months without records "
+               "do not demonstrate an absence of activity.")

@@ -29,29 +29,29 @@ def responder_ignis(datos: pd.DataFrame, pregunta: str):
     """
     q = normalizar_pregunta(pregunta)
     if not q:
-        return _resultado("Escribí una consulta sobre tus registros FIRMS.")
+        return _resultado("Ask a question about your FIRMS records.")
 
-    if any(t in q for t in ("que es ask ignis", "que ia", "que modelo", "como funciona ask")):
+    if any(t in q for t in ("que es ask ignis", "que ia", "que modelo", "como funciona ask", "what is ask ignis", "what ai", "which ai", "what model", "how does ask")):
         return _resultado(
-            "ASK IGNIS es un asistente estadístico basado en reglas de Python y Pandas. "
-            "No utiliza GPT, Gemini ni otro modelo generativo. "
-            "Analiza únicamente los archivos cargados en esta sesión."
+            "ASK IGNIS is a rule-based statistical assistant built with Python and Pandas. "
+            "It does not use GPT, Gemini, or any other generative model. "
+            "It only analyzes files uploaded during this session."
         )
     if any(t in q for t in (
         "incendio confirmado", "incendios confirmados", "fuego confirmado",
-        "son incendios", "validar incendio", "verificar incendio",
+        "son incendios", "validar incendio", "verificar incendio", "confirmed wildfire", "confirmed fire", "are these fires", "verify wildfire",
     )):
         return _resultado(
-            "Un punto de calor FIRMS es una observación de anomalía térmica, no la "
-            "confirmación de un incendio. Para verificar un episodio hacen falta "
-            "fuentes externas, fechas y coordenadas comparables. "
-            "Consultá «Alertas y trazabilidad» para revisar documentación."
+            "A FIRMS hotspot is a thermal anomaly observation, not "
+            "confirmation of a wildfire. Verifying an event requires "
+            "external evidence, comparable dates, and coordinates. "
+            "See “Alerts and traceability” to review documentation."
         )
 
     if datos is None or datos.empty:
         return _resultado(
-            "Todavía no hay registros cargados. Importá un ZIP/CSV NASA FIRMS o un "
-            "Maestro IGNIS en «Carga de datos» para realizar consultas estadísticas."
+            "No records have been uploaded yet. Import a NASA FIRMS ZIP/CSV or an "
+            "IGNIS Master dataset in “Data upload” to run statistical queries."
         )
 
     frame = datos.copy()
@@ -59,14 +59,14 @@ def responder_ignis(datos: pd.DataFrame, pregunta: str):
     frame = frame.dropna(subset=["fecha"])
     if frame.empty:
         return _resultado(
-            "El archivo no contiene fechas válidas para analizar. Revisá la carga."
+            "This file has no valid dates to analyze. Review the upload."
         )
 
     # Esta procedencia indica únicamente el archivo aportado, no una
     # validación independiente de las observaciones o de un incendio.
-    fuentes = ["Registros importados en IGNIS (sesión actual)"]
+    fuentes = ["Records imported into IGNIS (current session)"]
     if "fuente" in frame.columns and frame["fuente"].notna().any():
-        fuentes.append("Campo de procedencia «fuente» del archivo cargado")
+        fuentes.append("“fuente” provenance field in the uploaded file")
 
     if "uruguay" in q or " uy" in " " + q:
         frame = frame[
@@ -85,26 +85,26 @@ def responder_ignis(datos: pd.DataFrame, pregunta: str):
             "VIIRS", case=False, na=False
         )]
 
-    if "departamento" in q or any(n in q for n in (
+    if ("departamento" in q or "department" in q) or any(n in q for n in (
         "durazno", "lavalleja", "artigas", "canelones", "treinta y tres", "cerro del toro"
     )):
         return _resultado(
-            "ASK IGNIS aún no puede asignar automáticamente cada detección a un "
-            "departamento o caso a partir del texto. Seleccioná la región desde "
-            "los filtros de IGNIS para explorar ese recorte. "
-            "No se inventan límites administrativos.",
+            "ASK IGNIS cannot yet automatically assign each detection to a "
+            "department or case based on text. Select the region using "
+            "IGNIS filters to explore the area. "
+            "Administrative boundaries are not inferred.",
             fuentes=fuentes,
         )
 
     if (has_modis and has_viirs) or (
-        "compar" in q and ("sensor" in q or "instrument" in q)
+        ("compar" in q or "compare" in q) and ("sensor" in q or "instrument" in q)
     ):
-        grouped = frame.groupby("instrumento").size().reset_index(name="Observaciones")
-        grouped = grouped.rename(columns={"instrumento": "Instrumento"})
+        grouped = frame.groupby("instrumento").size().reset_index(name="Observations")
+        grouped = grouped.rename(columns={"instrumento": "Instrument"})
         return _resultado(
-            "Comparación descriptiva de registros MODIS y VIIRS en el archivo "
-            "cargado. Los conteos no están armonizados entre sensores y no "
-            "equivalen a incendios únicos.",
+            "Descriptive comparison of MODIS and VIIRS records in the "
+            "uploaded file. Counts have not been harmonized across sensors and do not "
+            "represent unique wildfires.",
             grouped,
             fuentes,
         )
@@ -116,14 +116,14 @@ def responder_ignis(datos: pd.DataFrame, pregunta: str):
         ).dropna()
         if frp.empty:
             return _resultado(
-                "No hay valores FRP numéricos disponibles en el recorte cargado.",
+                "No numeric FRP values are available in the uploaded selection.",
                 fuentes=fuentes,
             )
         return _resultado(
-            f"En {len(frp):,} registros con FRP disponible, el mínimo es "
-            f"{frp.min():,.2f} MW, el máximo {frp.max():,.2f} MW y el "
-            f"promedio {frp.mean():,.2f} MW. "
-            "Estos valores no miden por sí solos superficie quemada.",
+            f"Among {len(frp):,} records with FRP, the minimum is "
+            f"{frp.min():,.2f} MW, the maximum is {frp.max():,.2f} MW, and the "
+            f"average is {frp.mean():,.2f} MW. "
+            "These values alone cannot measure burned area.",
             fuentes=fuentes,
         )
 
@@ -134,13 +134,13 @@ def responder_ignis(datos: pd.DataFrame, pregunta: str):
             & (frame["fecha"].dt.month == now.month)
         ]
         grouped = frame.groupby(frame["fecha"].dt.day).size().reset_index(
-            name="Observaciones"
+            name="Observations"
         )
-        grouped.columns = ["Día", "Observaciones"]
+        grouped.columns = ["Day", "Observations"]
         return _resultado(
-            f"En {now.strftime('%Y-%m')} hay {len(frame):,} observaciones "
-            "en los archivos cargados para el recorte consultado. "
-            "Un cero no demuestra ausencia de incendios ni cobertura completa.",
+            f"In {now.strftime('%Y-%m')}, there are {len(frame):,} observations "
+            "in uploaded files for the selected area. "
+            "Zero observations do not prove an absence of wildfires or complete coverage.",
             grouped,
             fuentes,
         )
@@ -149,63 +149,63 @@ def responder_ignis(datos: pd.DataFrame, pregunta: str):
         last = int(frame["fecha"].dt.year.max())
         frame = frame[frame["fecha"].dt.year >= last - 4]
         grouped = frame.groupby(frame["fecha"].dt.year).size().reset_index(
-            name="Observaciones"
+            name="Observations"
         )
-        grouped.columns = ["Año", "Observaciones"]
+        grouped.columns = ["Year", "Observations"]
         return _resultado(
-            f"Actividad de los cinco años hasta {last}, según los años presentes "
-            "en el archivo. Son registros observados, no incendios confirmados.",
+            f"Activity over the five years up to {last}, based on years included "
+            "in the file. These are observations, not confirmed wildfires.",
             grouped,
             fuentes,
         )
 
     if any(t in q for t in (
         "historico", "historia", "por ano", "periodos", "evolucion anual",
-        "historical"
+         "historical"
     )):
         grouped = frame.groupby(frame["fecha"].dt.year).size().reset_index(
-            name="Observaciones"
+            name="Observations"
         )
-        grouped.columns = ["Año", "Observaciones"]
+        grouped.columns = ["Year", "Observations"]
         return _resultado(
-            "Serie anual calculada a partir del histórico efectivamente cargado. "
-            "La comparación puede verse afectada por diferencias de cobertura y "
-            "de sensores entre años.",
+            "Annual series calculated from uploaded historical records. "
+            "The comparison may be affected by differences in coverage and "
+            "sensor availability across years.",
             grouped,
             fuentes,
         )
 
-    if any(t in q for t in ("por mes", "por meses", "actividad mensual", "activity by month")):
+    if any(t in q for t in ("por mes", "por meses", "actividad mensual", "activity by month", "monthly", "by month")):
         grouped = frame.groupby(frame["fecha"].dt.month).size().reset_index(
-            name="Observaciones"
+            name="Observations"
         )
-        grouped.columns = ["Mes", "Observaciones"]
+        grouped.columns = ["Month", "Observations"]
         return _resultado(
-            "Distribución por mes calendario de las observaciones del archivo. "
-            "Combina los años cargados y no equivale a una tasa de incendios.",
+            "Distribution of file observations by calendar month. "
+            "It combines all uploaded years and does not represent a wildfire rate.",
             grouped,
             fuentes,
         )
 
     if any(t in q for t in (
         "cuant", "cantidad", "numero", "total", "deteccion", "observacion",
-        "hotspot", "punto de calor", "registro", "count"
+        "hotspot", "punto de calor", "registro", "count", "observations"
     )):
         counts = frame.groupby("instrumento").size().reset_index(
-            name="Observaciones"
-        ).rename(columns={"instrumento": "Instrumento"})
+            name="Observations"
+        ).rename(columns={"instrumento": "Instrument"})
         return _resultado(
-            f"El recorte consultado contiene {len(frame):,} registros de "
-            "observaciones térmicas cargadas. No son incendios únicos "
-            "ni superficie quemada.",
+            f"The requested area contains {len(frame):,} records of "
+            "uploaded thermal observations. These are neither unique wildfires "
+            "nor burned area.",
             counts,
             fuentes,
         )
 
     return _resultado(
-        "No reconozco todavía esa consulta. Probá preguntar por el total de "
-        "observaciones, la comparación MODIS y VIIRS, la actividad por año o "
-        "mes, o los valores FRP. ASK IGNIS no inventa respuestas "
-        "cuando la pregunta está fuera de sus reglas.",
+        "I cannot answer that question yet. Try asking about the total number of "
+        "observations, MODIS–VIIRS comparisons, activity by year or "
+        "month, or FRP values. ASK IGNIS does not invent answers "
+        "when a question falls outside its supported rules.",
         fuentes=fuentes,
     )

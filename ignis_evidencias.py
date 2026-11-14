@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from ignis_i18n import display_dataframe
 RUTA_CATALOGO = Path(__file__).resolve().parent / "biblioteca_ignis" / "evidencias.json"
 RUTA_MAESTRO_HISTORICO = Path(__file__).resolve().parent / "catalogo_fuentes_2000_2026.json"
 
@@ -20,7 +21,7 @@ def normalizar_catalogo(catalogo):
         return {**catalogo, "casos": convertir_fuentes_a_casos(fuentes)}
     if isinstance(casos, list) and casos:
         return catalogo
-    raise ValueError("El maestro documental debe contener una lista no vacía de 'fuentes' o 'casos'.")
+    raise ValueError("The documentary master must contain a nonempty 'fuentes' or 'casos' list.")
 
 
 def cargar_catalogo():
@@ -30,8 +31,8 @@ def cargar_catalogo():
                 return normalizar_catalogo(json.load(archivo))
         except (OSError, json.JSONDecodeError, ValueError) as error:
             raise ValueError(
-                "El maestro documental 2000–2026 está incompleto o vacío. "
-                "No se debe mostrar el catálogo antiguo de 2023 como sustituto."
+                "The 2000–2026 documentary master is incomplete or empty. "
+                "Do not substitute the older 2023 catalogue."
             ) from error
 
     with RUTA_CATALOGO.open("r", encoding="utf-8") as archivo:
@@ -48,11 +49,11 @@ def convertir_fuentes_a_casos(fuentes):
         caso = casos_por_año.setdefault(año, {
             "id": f"documental-{año}",
             "anio": año,
-            "nombre": f"Incidentes documentados {año}",
+            "nombre": f"Documented incidents {año}",
             "departamento": fuente.get("lugar_reportado", "Uruguay"),
             "fechas_utc": fechas,
             "bbox": [-35.2, -30.0, -58.6, -53.0],
-            "resumen": "Fuentes externas agregadas al maestro histórico; no constituyen perímetros ni validación individual de píxel.",
+            "resumen": "External sources added to the historical archive; they are not wildfire perimeters or pixel-level validation.",
             "esperados": {},
             "fuentes": [],
         })
@@ -60,7 +61,7 @@ def convertir_fuentes_a_casos(fuentes):
         caso["fuentes"].append({
             "tipo": fuente.get("clase", "Fuente externa"),
             "medio": fuente.get("organismo", "Organismo no indicado"),
-            "titulo": fuente.get("titulo", "Fuente sin título"),
+            "titulo": fuente.get("titulo", "Untitled source"),
             "fecha_publicacion": fuente.get("fecha_publicacion", ""),
             "hecho_fecha_desde_local": fuente.get("evento_desde", ""),
             "hecho_fecha_hasta_local": fuente.get("evento_hasta", ""),
@@ -94,9 +95,9 @@ def coincidente_en_datos(caso: dict, datos: pd.DataFrame | None) -> tuple[bool, 
 
 
 def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = None) -> None:
-    etiqueta_año = str(año) if año is not None else "todos los años"
-    st.markdown(f"##### Evidencia externa verificada · {etiqueta_año}")
-    st.info("Una noticia, declaración de Bomberos o informe SINAE confirma el contexto del incendio reportado, pero no valida cada detección FIRMS ni su perímetro.")
+    etiqueta_año = str(año) if año is not None else "all years"
+    st.markdown(f"##### Verified external evidence · {etiqueta_año}")
+    st.info("A news story, Fire Service statement, or SINAE report provides context for the reported fire but does not validate every FIRMS detection or its perimeter.")
 
     with st.expander("Fuentes adicionales incorporadas por el usuario", expanded=False):
         maestro = st.file_uploader("Importar otro Maestro IGNIS documental (JSON, opcional)", type=["json"], key="maestro_documental")
@@ -105,7 +106,7 @@ def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = Non
                 candidato = json.loads(maestro.getvalue().decode("utf-8-sig"))
                 candidato = normalizar_catalogo(candidato)
                 st.session_state["maestro_documental_2000_2026"] = candidato
-                st.success(f"Maestro documental cargado: {len(candidato['casos'])} casos por año.")
+                st.success(f"Documentary master loaded: {len(candidato['casos'])} year-specific cases.")
             except (UnicodeDecodeError, json.JSONDecodeError, AttributeError, ValueError) as error:
                 st.error(f"No se pudo importar el Maestro documental: {error}")
 
@@ -113,11 +114,11 @@ def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = Non
         catalogo_sesion = st.session_state.get("maestro_documental_2000_2026")
         catalogo = normalizar_catalogo(catalogo_sesion) if catalogo_sesion is not None else cargar_catalogo()
     except (OSError, json.JSONDecodeError, ValueError) as error:
-        st.error(f"No se pudo leer el catálogo documental: {error}")
+        st.error(f"Could not read the documentary catalogue: {error}")
         return
 
     st.download_button(
-        "Descargar catálogo anual incorporado (JSON)",
+        "Download incorporated yearly catalogue (JSON)",
         data=json.dumps(catalogo, ensure_ascii=False, indent=2).encode("utf-8"),
         file_name="IGNIS_MAESTRO_DOCUMENTAL.json",
         mime="application/json",
@@ -130,23 +131,23 @@ def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = Non
                  int(caso.get("anio", año)) == año
                  or any(str(fecha).startswith(str(año)) for fecha in caso.get("fechas_utc", []))]
     if not casos:
-        st.warning(f"No hay fuentes externas incorporadas y verificadas para el año {año}. Esto no demuestra ausencia de incendios.")
-        st.caption("Para cada nuevo año deben añadirse casos con fecha, ubicación, enlace y alcance al catálogo biblioteca_ignis/evidencias.json.")
+        st.warning(f"No verified external sources have been incorporated for year {año}. This does not prove an absence of wildfires.")
+        st.caption("For every new year, add cases with dates, locations, source links, and evidence scope to biblioteca_ignis/evidencias.json.")
         return
 
     opciones = {f"{caso['nombre']} ({', '.join(caso.get('fechas_utc', []))})": caso for caso in casos}
-    elegido = st.selectbox("Caso documentado", list(opciones), key=f"evidencia_documental_{año or 'todos'}")
+    elegido = st.selectbox("Documented case", list(opciones), key=f"evidencia_documental_{año or 'todos'}")
     caso = opciones[elegido]
     coincide, cantidad = coincidente_en_datos(caso, datos)
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Fuentes externas", len(caso.get("fuentes", [])))
     col2.metric("Registros FIRMS en carga actual", cantidad)
-    col3.metric("Relación documental", "Coincidencia regional/temporal" if coincide else "Sin coincidencia en la carga actual")
+    col3.metric("Documentary association", "Regional/temporal match" if coincide else "No match in current upload")
 
     st.write(caso.get("resumen", "Sin resumen disponible."))
-    st.caption("Los recuentos y fechas siguientes proceden del catálogo histórico; pueden diferir de los archivos cargados.")
-    st.dataframe(pd.DataFrame([{
+    st.caption("The following counts and dates come from the historical catalogue and may differ from uploaded observations.")
+    display_dataframe(pd.DataFrame([{
         "Fechas UTC": ", ".join(caso.get("fechas_utc", [])),
         "MODIS": caso.get("esperados", {}).get("MODIS", 0),
         "VIIRS S-NPP": caso.get("esperados", {}).get("VIIRS S-NPP", 0),
@@ -155,7 +156,7 @@ def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = Non
 
     fuentes = caso.get("fuentes", [])
     if not fuentes:
-        st.warning("No hay una fuente externa localizada incorporada para este expediente. Esto no demuestra que el incendio no ocurrió.")
+        st.warning("No geolocated external source is included for this case. This does not prove the wildfire did not occur.")
         return
 
     filas = []
@@ -163,13 +164,13 @@ def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = Non
         filas.append({
             "Tipo": fuente.get("tipo", ""),
             "Medio": fuente.get("medio", ""),
-            "Fecha publicación": fuente.get("fecha_publicacion", ""),
+            "Publication date": fuente.get("fecha_publicacion", ""),
             "Fechas del hecho": f"{fuente.get('hecho_fecha_desde_local', '')} a {fuente.get('hecho_fecha_hasta_local', '')}",
             "Lugar reportado": fuente.get("lugar", ""),
-            "Título": fuente.get("titulo", ""),
+            "Title": fuente.get("titulo", ""),
             "Enlace": fuente.get("url", ""),
         })
-    st.dataframe(pd.DataFrame(filas), use_container_width=True, hide_index=True)
+    display_dataframe(pd.DataFrame(filas), use_container_width=True, hide_index=True)
 
     for numero, fuente in enumerate(fuentes, start=1):
         with st.expander(f"Fuente {numero} · {fuente.get('medio', '')}", expanded=(numero == 1)):
@@ -182,15 +183,15 @@ def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = Non
                 st.link_button("Abrir fuente original", fuente["url"])
 
     st.download_button(
-        "Descargar catálogo completo de fuentes (JSON)",
+        "Download full source catalogue (JSON)",
         data=json.dumps(catalogo, ensure_ascii=False, indent=2).encode("utf-8"),
         file_name="IGNIS_evidencias_externas.json",
         mime="application/json",
     )
     st.download_button(
-        "Descargar índice plano de fuentes (CSV)",
+        "Download flat source index (CSV)",
         data=pd.DataFrame(filas).to_csv(index=False).encode("utf-8-sig"),
         file_name="IGNIS_fuentes_externas.csv",
         mime="text/csv",
     )
-    st.caption("La ausencia de fuentes localizadas en el catálogo no prueba ausencia de incendios. Cada fuente conserva su URL original para auditoría.")
+    st.caption("The absence of geolocated catalogue sources does not prove an absence of wildfires. Each source retains its original URL for auditing.")
