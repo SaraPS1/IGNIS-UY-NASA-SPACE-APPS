@@ -404,7 +404,7 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
     story.append(P('The included documentary library contains 2023 case files, which are not automatically attributed to other years, locations, or FIRMS observations. Factual traceability requires independent sources, dates, and spatial matches.'))
 
     story.append(P('8. Provenance, reproducibility, and limitations','PaperH'))
-    story.append(P('Primary source: user-provided NASA FIRMS files and normalized observations stored in the IGNIS Master dataset. Export the Master dataset manually and retain original ZIP files. The PDF is generated from the session's uploaded data and active filters.'))
+    story.append(P('Primary source: user-provided NASA FIRMS files and normalized observations stored in the IGNIS Master dataset. Export the Master dataset manually and retain original ZIP files. The PDF is generated from the uploaded data in the current session and active filters.'))
     story.append(P('Main limitations: unverified temporal coverage; differing instrument resolution and sensitivity; unnormalized orbital revisits; reference-outline artifacts; and detections not verified as wildfires. Empty calendar and map areas represent missing records <i>in the uploaded files</i>.'))
     story.append(P('<b>Intended use:</b> a research report and documentary reference for Team IGNIS UY, not an operational warning product or wildfire certification.'))
 
@@ -425,7 +425,7 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
         f'temporal and spatial distribution of submitted observations, document overlapping sensor periods, '
         f'and highlight statistically unusual months for review. '
         f'The selected year ({ano}) contains {n_current} records; it is one part of the series, '
-        f'not the project's complete conclusion.'
+        f'not the complete conclusion of the project.'
     ))
     story.append(P(
         f'The historical archive contains <b>{n_candidates} exploratory candidates</b> '
