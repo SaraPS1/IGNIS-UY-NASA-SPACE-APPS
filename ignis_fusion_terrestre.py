@@ -94,7 +94,7 @@ def leer_tabla_bytes(nombre: str, contenido: bytes) -> pd.DataFrame:
             except Exception as e:
                 errors.append(str(e))
         else:
-            raise ValueError("No se pudo leer CSV: " + errors[-1][:160])
+            raise ValueError("Could not read CSV: " + errors[-1][:160])
     elif extension in (".json", ".geojson"):
         data = json.loads(contenido.decode("utf-8-sig"))
         if isinstance(data, list):
@@ -165,7 +165,7 @@ def leer_firms_adicional(nombre: str, contenido: bytes) -> pd.DataFrame:
         out["id_registro"]=ids.map(lambda x:hashlib.sha256(x.encode()).hexdigest()[:24])
         preparados.append(out)
     if not preparados:
-        raise ValueError("NASA FIRMS: no se hallaron columnas latitude, longitude y acq_date/fecha.")
+        raise ValueError("NASA FIRMS: required latitude, longitude, and acq_date/date columns were not found.")
     return pd.concat(preparados,ignore_index=True)
 
 
@@ -317,7 +317,7 @@ def forzar_fechas_utc(df: pd.DataFrame, etiqueta: str) -> pd.DataFrame:
     if df is None or df.empty:
         return df.copy() if isinstance(df, pd.DataFrame) else pd.DataFrame()
     if "fecha_utc" not in df:
-        raise ValueError(f"{etiqueta}: falta la columna fecha_utc")
+        raise ValueError(f"{etiqueta}: missing fecha_utc column")
     salida = df.copy()
     try:
         fechas = pd.to_datetime(salida["fecha_utc"], utc=True,
@@ -690,7 +690,7 @@ def _mapa_plotly(malla:pd.DataFrame, nasa:pd.DataFrame, bom:pd.DataFrame,
         activas=(set() if celdas_activas is None else celdas_activas)
         bordes=['#ffed97' if (int(r.ilat),int(r.ilon)) in activas else 'rgba(4,17,30,.5)' for r in m.itertuples()]
         hover=(m['anios'].astype(str)+' años con detecciones FIRMS<br>'+
-               m['registros'].astype(str)+' registros en la celda<br>'+
+               m['registros'].astype(str)+' records in the cell<br>'+
                'Centro: '+m['lat_c'].round(2).astype(str)+'°, '+m['lon_c'].round(2).astype(str)+'°<br>'+
                'Click to inspect')
         figura.add_trace(go.Scatter(
@@ -737,7 +737,7 @@ def _mapa_plotly(malla:pd.DataFrame, nasa:pd.DataFrame, bom:pd.DataFrame,
             figura.add_trace(go.Scatter(
                 x=d['lon'],y=d['lat'],mode='markers',name=name,
                 marker=dict(symbol='x',size=11,color=color,line=dict(width=2)),
-                text=[f"{name} • {r.id}<br>{str(r.fecha_utc)}<br>{'SYNTHETIC' if r.es_simulado else 'Estado por verificar'}" for r in d.itertuples()],
+                text=[f"{name} • {r.id}<br>{str(r.fecha_utc)}<br>{'SYNTHETIC' if r.es_simulado else 'Status pending verification'}" for r in d.itertuples()],
                 hovertemplate='%{text}<extra></extra>'))
     a,b,c,d=ZONAS[zona]
     figura.update_layout(
@@ -1028,7 +1028,7 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
         aa.set_xticks(anual.index[::2].astype(int))
         aa.grid(axis='y',alpha=.2);aa.set_axisbelow(True)
         for sp in ('top','right'):aa.spines[sp].set_visible(False)
-        aa.set_ylabel('Observaciones',fontsize=7)
+        aa.set_ylabel('Observations',fontsize=7)
         image_buffer=io.BytesIO()
         FigureCanvasAgg(ff).print_png(image_buffer)
         partes.append(RLImage(io.BytesIO(image_buffer.getvalue()),width=17.3*cm,height=4.37*cm))
@@ -1260,7 +1260,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
             casos.append((x,dist))
     if casos:
         for x,dist in casos:
-            st.markdown(f"- **{x['nombre']}** · town approximately {dist:.1f} km del centro de la celda "
+            st.markdown(f"- **{x['nombre']}** · town approximately {dist:.1f} km from the center of the cell "
                         f"· [{x['fuente']} (documentary source)]({x['url']})")
     else:
         st.caption('Our limited documentary collection contains no cases within 30 km. '
@@ -1378,7 +1378,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
     with st.expander('Methodology, provenance, and limitations'):
         st.markdown(
             f"- NASA FIRMS: historical records actually imported into the Master dataset, not confirmed wildfires.\n"
-            f"- [Ministerio del Interior — Fire Service coastal network]({FUENTE_CAMARAS}): "
+            f"- [Ministry of the Interior — Fire Service coastal network]({FUENTE_CAMARAS}): "
             "20 cameras are documented, but the project has no verified list of their coordinates. "
             "Diamonds indicate approximate town centers, not towers or verified monitoring ranges.\n"
             f"- [SINAE/MIRA — historical CSV catalogue 2018–2022]({FUENTE_MIRA}); "
