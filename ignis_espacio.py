@@ -349,7 +349,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           <div class="ignis-globe-watermark">
             IGNIS UY <span>· EXPLORADOR 3D</span>
           </div>
-          <div class="ignis-globe-help">Arrastrar para rotar · Rueda para acercar · Pasar el cursor sobre una columna</div>
+          <div class="ignis-globe-help">Drag to rotate · Scroll to zoom · Hover over a column</div>
           <div id="ignis-tip"></div>
           <div id="ignis-legend">
             <b>Potencia radiativa (FRP)</b><br>
@@ -901,7 +901,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         with st.container(border=True):
             st.caption("DATA LOADED IN THIS SESSION")
             q1, q2 = st.columns(2, gap="small")
-            q1.metric("Registros", f"{len(frame):,}" if len(frame) else "—")
+            q1.metric("Records", f"{len(frame):,}" if len(frame) else "—")
             q2.metric("Fechas", len(date_options))
             q3, q4 = st.columns(2, gap="small")
             q3.metric("Sensores", frame["instrumento"].nunique() if len(frame) else "—")
@@ -961,7 +961,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
     with globe_col:
         count = len(filtered_frame)
         st.caption(
-            f"**{count:,} thermal observations** para la fecha y sensor seleccionados. "
+            f"**{count:,} thermal observations** for the selected date and sensor. "
             "Orbit mode: current TLE data if requested; otherwise illustrative "
             "trajectories. Drag to rotate the globe and scroll "
             "to zoom in."
