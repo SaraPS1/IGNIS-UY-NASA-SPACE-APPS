@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from ignis_i18n import display_dataframe
 RUTA_CATALOGO = Path(__file__).resolve().parent / "biblioteca_ignis" / "evidencias.json"
 RUTA_MAESTRO_HISTORICO = Path(__file__).resolve().parent / "catalogo_fuentes_2000_2026.json"
 
@@ -146,7 +147,7 @@ def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = Non
 
     st.write(caso.get("resumen", "Sin resumen disponible."))
     st.caption("The following counts and dates come from the historical catalogue and may differ from uploaded observations.")
-    st.dataframe(pd.DataFrame([{
+    display_dataframe(pd.DataFrame([{
         "Fechas UTC": ", ".join(caso.get("fechas_utc", [])),
         "MODIS": caso.get("esperados", {}).get("MODIS", 0),
         "VIIRS S-NPP": caso.get("esperados", {}).get("VIIRS S-NPP", 0),
@@ -169,7 +170,7 @@ def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = Non
             "Title": fuente.get("titulo", ""),
             "Enlace": fuente.get("url", ""),
         })
-    st.dataframe(pd.DataFrame(filas), use_container_width=True, hide_index=True)
+    display_dataframe(pd.DataFrame(filas), use_container_width=True, hide_index=True)
 
     for numero, fuente in enumerate(fuentes, start=1):
         with st.expander(f"Fuente {numero} · {fuente.get('medio', '')}", expanded=(numero == 1)):
