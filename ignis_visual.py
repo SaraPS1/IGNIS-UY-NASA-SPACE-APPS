@@ -667,7 +667,7 @@ def render_project_home(base, asset_uri, pages, navigate):
          "Locate thermal activity by region, date, and sensor using "
          "the study maps."),
         ("shield", "ignis-ui-card--trace", "bg_trazabilidad.webp",
-         "Trazabilidad",
+         "Traceability",
          "Compare events with reports and external sources, without assuming "
          "that a detection confirms a wildfire."),
     ]
@@ -690,25 +690,25 @@ def render_project_home(base, asset_uri, pages, navigate):
             )
     st.caption(
         "Independent research in the context of NASA Space Apps "
-        "Challenge 2026. La escena espacial es ilustrativa. Los fondos "
+        "Challenge 2026. The space scene is illustrative. The backgrounds "
         "are digital illustrations, not dated satellite photographs "
         "or wildfire validation. Thermal anomalies are not "
         "confirmed wildfires; harmonization remains experimental "
-        "y la cobertura depende de los archivos suministrados."
+        "and coverage depends on the uploaded files."
     )
 
 
 def render_control_center(combined,sample,selected,base,map_fn,pages,navigate):
-    _header("Panel general · Uruguay","Dashboard",
+    _header("General overview · Uruguay","Dashboard",
             "Exploratory monitoring and historical analysis of NASA FIRMS observations.")
     if isinstance(combined,pd.DataFrame) and not combined.empty and not sample.empty:
         view=sample[sample.anio==selected] if selected is not None else sample
     else:
         view=pd.DataFrame()
     cards=[
-        ("Detecciones visibles",f"{len(view):,}" if not view.empty else "No data"),
+        ("Visible detections",f"{len(view):,}" if not view.empty else "No data"),
         ("Years with observations",str(sample.anio.nunique()) if not sample.empty else "—"),
-        ("Sensores presentes",str(view.instrumento.nunique()) if not view.empty else "—"),
+        ("Sensors present",str(view.instrumento.nunique()) if not view.empty else "—"),
         ("Selected year",str(selected) if selected is not None else "—"),
     ]
     for column,(title,value) in zip(st.columns(4,gap="small"),cards):
@@ -725,7 +725,7 @@ def render_control_center(combined,sample,selected,base,map_fn,pages,navigate):
                 _empty_uruguay_outline(base,"ignis_control_empty")
     with right:
         with st.container(border=True):
-            st.markdown("#### 📡 Instrumentos")
+            st.markdown("#### 📡 Instruments")
             if view.empty:
                 st.info("No observations in this selection.")
                 st.button("📂 Import data",type="primary",
@@ -738,7 +738,7 @@ def render_control_center(combined,sample,selected,base,map_fn,pages,navigate):
                     marker_color="#44d1e4"))
                 fig.update_layout(height=245,margin=dict(l=12,r=12,t=15,b=28),
                     paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#dceffa"),xaxis_title="Registros")
+                    font=dict(color="#dceffa"),xaxis_title="Records")
                 st.plotly_chart(fig,use_container_width=True,key="ignis_control_sensors")
                 st.caption("Detections by instrument; these are not unique wildfires.")
         with st.container(border=True):
@@ -757,11 +757,11 @@ def render_control_center(combined,sample,selected,base,map_fn,pages,navigate):
         months=view.groupby("mes").size().sort_index()
         fig=go.Figure(go.Bar(
             x=months.index.tolist(),y=months.values.tolist(),
-            marker=dict(color="#f28c52"),name="Detecciones"))
+            marker=dict(color="#f28c52"),name="Detections"))
         fig.update_layout(height=290,margin=dict(l=15,r=15,t=12,b=35),
             paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#e4f3ff"),xaxis=dict(title="Mes",dtick=1,range=[.5,12.5]),
-            yaxis_title="Registros")
+            font=dict(color="#e4f3ff"),xaxis=dict(title="Month",dtick=1,range=[.5,12.5]),
+            yaxis_title="Records")
         st.plotly_chart(fig,use_container_width=True,key="ignis_control_months")
     st.caption("The absence of records does not imply an absence of wildfires or confirm "
                "complete satellite coverage. This platform does not issue official alerts.")
@@ -787,9 +787,9 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
                       horizontal=True,key="ignis_atlas_period")
     mapped=sample if selector=="All uploaded historical records" else sample[sample.anio==selected]
     a,b,c=st.columns(3)
-    a.metric("Detecciones en el recorte",f"{len(mapped):,}")
+    a.metric("Detections in selection",f"{len(mapped):,}")
     b.metric("Years with observations",str(mapped.anio.nunique()))
-    c.metric("Sensores presentes",str(mapped.instrumento.nunique()))
+    c.metric("Sensors present",str(mapped.instrumento.nunique()))
     st.write("")
     map_col,tools_col=st.columns([2.15,1],gap="medium")
     with map_col:
@@ -802,7 +802,7 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
                 _empty_uruguay_outline(base,"ignis_atlas_selection_empty")
     with tools_col:
         with st.container(border=True):
-            st.markdown("#### 🧰 Herramientas")
+            st.markdown("#### 🧰 Tools")
             st.button("🔄 Compare MODIS–VIIRS",use_container_width=True,
                       key="atlas_harmonization",on_click=navigate,args=(pages[5],))
             st.button("🛡️ External sources",use_container_width=True,
@@ -836,7 +836,7 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
                     marker=dict(size=7,color="#fd9356")))
                 fig.update_layout(height=220,margin=dict(l=8,r=8,t=12,b=25),
                     paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#dceeff"),xaxis=dict(dtick=1,title="Mes"))
+                    font=dict(color="#dceeff"),xaxis=dict(dtick=1,title="Month"))
                 st.plotly_chart(fig,use_container_width=True,key="atlas_month_line")
     st.caption("Statistical map based on imported FIRMS records; "
                "it does not use satellite imagery as a background. Density is illustrative "
