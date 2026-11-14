@@ -31,7 +31,7 @@ def responder_ignis(datos: pd.DataFrame, pregunta: str):
     if not q:
         return _resultado("Ask a question about your FIRMS records.")
 
-    if any(t in q for t in ("que es ask ignis", "que ia", "que modelo", "como funciona ask")):
+    if any(t in q for t in ("que es ask ignis", "que ia", "que modelo", "como funciona ask", "what is ask ignis", "what ai", "which ai", "what model", "how does ask")):
         return _resultado(
             "ASK IGNIS is a rule-based statistical assistant built with Python and Pandas. "
             "It does not use GPT, Gemini, or any other generative model. "
@@ -39,7 +39,7 @@ def responder_ignis(datos: pd.DataFrame, pregunta: str):
         )
     if any(t in q for t in (
         "incendio confirmado", "incendios confirmados", "fuego confirmado",
-        "son incendios", "validar incendio", "verificar incendio",
+        "son incendios", "validar incendio", "verificar incendio", "confirmed wildfire", "confirmed fire", "are these fires", "verify wildfire",
     )):
         return _resultado(
             "A FIRMS hotspot is a thermal anomaly observation, not "
@@ -85,7 +85,7 @@ def responder_ignis(datos: pd.DataFrame, pregunta: str):
             "VIIRS", case=False, na=False
         )]
 
-    if "departamento" in q or any(n in q for n in (
+    if ("departamento" in q or "department" in q) or any(n in q for n in (
         "durazno", "lavalleja", "artigas", "canelones", "treinta y tres", "cerro del toro"
     )):
         return _resultado(
