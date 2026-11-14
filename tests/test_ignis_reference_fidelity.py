@@ -68,7 +68,7 @@ class IgnisReferenceFidelityTests(unittest.TestCase):
             self.assertTrue((ROOT / "assets" / filename).is_file())
         self.assertIn('ignis_hero_premium.svg', self.visual)
         self.assertNotIn("Black_Marble_Americas.jpg", self.visual)
-        self.assertIn("La escena espacial es ilustrativa.", self.visual)
+        self.assertIn("The space scene is illustrative.", self.visual)
 
     def test_preserve_existing_navigation_and_science(self):
         self.assertIn('def _ignis_navigate_to(section: str)',self.main)
