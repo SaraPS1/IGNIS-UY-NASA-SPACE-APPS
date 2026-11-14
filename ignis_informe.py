@@ -129,7 +129,7 @@ def calendar_figure(df):
     ax.tick_params(length=0,colors=WHITE)
     ax.set_title('Historical calendar of monthly records (uploaded files)',fontsize=11,pad=10,color=WHITE)
     for spine in ax.spines.values(): spine.set_color('#35527b')
-    cbar=fig.colorbar(image,ax=ax,shrink=.8,label='Registros')
+    cbar=fig.colorbar(image,ax=ax,shrink=.8,label='Records')
     cbar.ax.yaxis.label.set_color(WHITE); cbar.ax.tick_params(colors=WHITE)
     fig.tight_layout()
     return plot_buffer(fig)
@@ -183,12 +183,12 @@ def trend_figure(df):
         agg.index=agg.index.astype(int).astype(str)
         palette=['#5d7fe6','#ff7e96','#9d74e5','#f1bf66'][:len(agg.columns)]
         agg.plot.bar(ax=ax,width=.75,rot=45,color=palette)
-    ax.set_ylabel('Registros FIRMS',color=WHITE)
+    ax.set_ylabel('FIRMS records',color=WHITE)
     ax.set_xlabel('Year in uploaded files',color=WHITE)
     ax.grid(axis='y',alpha=.18,color='#5677a5')
     ax.legend(fontsize=7,loc='upper left',facecolor=BG,edgecolor='#35527b',labelcolor=WHITE)
     ax.tick_params(colors=WHITE,labelsize=7)
-    ax.set_title('Conteo anual por familia instrumental (no normalizado)',fontsize=10,color=WHITE)
+    ax.set_title('Annual count by instrument family (not normalized)',fontsize=10,color=WHITE)
     for spine in ax.spines.values(): spine.set_color('#35527b')
     fig.tight_layout()
     return plot_buffer(fig)
@@ -290,7 +290,7 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
     rows=[['Indicator','Result'],['Yearly records',str(len(year))],['Days with records',str(year.dia.nunique())],['Instrument families',', '.join(sorted(map(str,year.instrumento.unique()))) or 'No records']]
     rows.append(['Month with the most records',MONTHS[int(year.groupby('mes').size().idxmax())-1] if len(year) else 'Unavailable'])
     for k,v in sorted(year.groupby('instrumento').size().to_dict().items()):
-        rows.append([f'Registros {k}',str(v)])
+        rows.append([f'Records {k}',str(v)])
     table=Table(rows,colWidths=[8.2*cm,8.1*cm],repeatRows=1,hAlign='LEFT')
     table.setStyle(TableStyle([
         ('BACKGROUND',(0,0),(-1,0),colors.HexColor('#183153')),
