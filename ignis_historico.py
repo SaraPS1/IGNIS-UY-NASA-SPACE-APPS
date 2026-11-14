@@ -33,7 +33,7 @@ from ignis_visual import (apply_visual_theme, render_project_home,
 st.set_page_config(page_title='IGNIS UY | Historical Archive 2000–2026',page_icon='🛰️',layout='wide',initial_sidebar_state='expanded')
 BASE=Path(__file__).resolve().parent
 REGIONES={
- 'Uruguay (rectángulo aproximado)':(-35.2,-30.,-58.6,-53.),
+ 'Uruguay (approximate rectangle)':(-35.2,-30.,-58.6,-53.),
  'Durazno':(-33.460,-33.280,-56.750,-56.440),
  'Cerro del Toro (Maldonado)':(-34.880,-34.840,-55.280,-55.230),
  'Treinta y Tres (zona Vergara)':(-32.985,-32.879,-54.069,-53.920),
@@ -540,7 +540,7 @@ with st.sidebar:
         region = st.selectbox("Region / case", list(REGIONES), key="sidebar_region")
         sensors_available = sorted(combined.instrumento.dropna().astype(str).unique())
         sensors = st.multiselect(
-            "Sensores visibles", sensors_available, default=sensors_available,
+            "Visible sensors", sensors_available, default=sensors_available,
             key="sidebar_sensores",
         )
         st.session_state["region"] = region
@@ -607,7 +607,7 @@ if current_section==NAV_PAGES[2]:
     vivos=pd.DataFrame(columns=COLS)
     if st.button('Refresh live Uruguay data',type='primary'):
         consultas=[]
-        sur,norte,oeste,este=REGIONES['Uruguay (rectángulo aproximado)']
+        sur,norte,oeste,este=REGIONES['Uruguay (approximate rectangle)']
         bbox=(oeste,sur,este,norte)
         for source,_ in fuentes_vivas:
             try:
@@ -712,7 +712,7 @@ if current_section==NAV_PAGES[4]:
     st.subheader('Accumulated historical records')
     if sample.empty:st.info('Import the Master dataset or upload NASA FIRMS ZIP files to view historical records.')
     else:
-        x,y,z=st.columns(3);x.metric('Records in selection',f'{len(sample):,}');y.metric('Years with records',sample.anio.nunique());z.metric('Sensores presentes',sample.instrumento.nunique())
+        x,y,z=st.columns(3);x.metric('Records in selection',f'{len(sample):,}');y.metric('Years with records',sample.anio.nunique());z.metric('Sensors present',sample.instrumento.nunique())
         sensors=sorted(sample.instrumento.unique())
         for i,sensor in enumerate(sensors):heatmap_mensual(sample[sample.instrumento==sensor],sensor,f'historico_mensual_{i}')
         st.subheader('Summer seasons · previous December plus January/February')
