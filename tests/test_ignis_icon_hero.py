@@ -78,7 +78,7 @@ class PremiumIconAndHeroTests(unittest.TestCase):
         self.assertIn("id=\"terrainCloud\"", self.svg)
         self.assertIn("id=\"earthHighlights\"", self.svg)
         self.assertIn("Illustration deliberately stylized", self.svg)
-        self.assertIn("La escena espacial es ilustrativa", self.visual)
+        self.assertIn("The space scene is illustrative", self.visual)
 
     def test_existing_routes_and_features_unchanged(self):
         for key in ("hero_to_history", "hero_to_dashboard", "hero_to_upload"):
