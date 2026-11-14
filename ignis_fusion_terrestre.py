@@ -1306,7 +1306,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
         yy.metric('Near NASA observations',n_match)
         zz.metric('Three-source matches',n_triple)
         if fusion.simulado.astype(str).str.startswith(('SÍ','YES')).any():
-            st.warning('Includes synthetic records. A simulated match only tests the software's matching logic, '
+            st.warning("Includes synthetic records. A simulated match only tests the software’s matching logic, "
                        'not its operational ability to detect wildfires.')
         if not celda_fusion.empty:
             display_dataframe(celda_fusion,use_container_width=True,hide_index=True)
