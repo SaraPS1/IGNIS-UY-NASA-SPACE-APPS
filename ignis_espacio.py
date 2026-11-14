@@ -190,7 +190,7 @@ def _generate_simulated_orbit(name: str, steps: int = 80) -> List[Dict[str, floa
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def _build_satellite_payload(use_live_tle: bool = False) -> List[Dict[str, Any]]:
-    """Renderiza inmediatamente en modo ilustrativo; TLE actuales bajo demanda.
+    """Renderiza inmediatamente en modo ilustrativo; Current TLE data bajo demanda.
 
     Los TLE consultados NO reconstruyen la fecha histórica de los puntos FIRMS.
     """
@@ -225,7 +225,7 @@ def _build_satellite_payload(use_live_tle: bool = False) -> List[Dict[str, Any]]
     return payload
 
 
-def _build_hotspot_payload(frame: pd.DataFrame, selected_date: Optional[datetime] = None, satellite_filter: str = "Todos") -> List[Dict[str, Any]]:
+def _build_hotspot_payload(frame: pd.DataFrame, selected_date: Optional[datetime] = None, satellite_filter: str = "All") -> List[Dict[str, Any]]:
     hotspot_frame = frame.copy()
     hotspot_frame["fecha"] = pd.to_datetime(hotspot_frame["fecha"], errors="coerce", utc=True)
     if selected_date is not None:
@@ -234,7 +234,7 @@ def _build_hotspot_payload(frame: pd.DataFrame, selected_date: Optional[datetime
         else:
             selected_day = pd.Timestamp(selected_date).date()
         hotspot_frame = hotspot_frame[hotspot_frame["fecha"].dt.date == selected_day]
-    if satellite_filter and satellite_filter != "Todos":
+    if satellite_filter and satellite_filter != "All":
         hotspot_frame = hotspot_frame[hotspot_frame["satellite"].str.contains(satellite_filter, case=False, na=False)]
     if len(hotspot_frame) > MAX_HOTSPOTS_3D:
         # Con tope, se conservan los de mayor FRP (no los más antiguos).
@@ -827,7 +827,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
       font-size:.81rem;color:#c6deec;line-height:1.55}
     .ignis-orbit-guide strong{color:#f2fbff}
     </style>
-    <div class="ignis-space-kicker">Explorador geoespacial · NASA FIRMS</div>
+    <div class="ignis-space-kicker">Geospatial explorer · NASA FIRMS</div>
     <div class="ignis-space-subtitle">Navigate around Earth, compare
     MODIS–VIIRS observations and explore satellite trajectories.
     Illustrative orbits do not represent actual historical passes.</div>
@@ -865,10 +865,10 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
                     "uruguay": "🇺🇾 Uruguay",
                     "south_america": "🌎 South America",
                     "global": "🌍 Full Earth",
-                    "selected": "📍 Zona seleccionada",
+                    "selected": "📍 Selected area",
                 }.get(item, item),
             )
-            options = ["Todos"] + sorted(
+            options = ["All"] + sorted(
                 frame["satellite"].dropna().astype(str).unique().tolist()
             )
             selected_satellite = st.selectbox(
@@ -885,7 +885,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
             show_bounds = st.checkbox(
                 "Geographic boundaries", value=True, key="ignis_space_show_bounds")
             show_clouds = st.checkbox(
-                "Nubes tenues", value=True, key="ignis_space_show_clouds")
+                "Thin clouds", value=True, key="ignis_space_show_clouds")
             earth_visualization = st.selectbox(
                 "Earth imagery",
                 ["Blue Marble + Black Marble", "Blue Marble (day)", "Black Marble (night)"],
@@ -894,7 +894,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
             )
             orbit_mode = st.radio(
                 "Trajectory source",
-                ["Esquemas ilustrativos", "TLE actuales"],
+                ["Illustrative trajectories", "Current TLE data"],
                 index=0, key="ignis_orbit_source",
                 help="Current TLE data cannot reconstruct orbits on historical FIRMS observation dates.",
             )
@@ -902,10 +902,10 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
             st.caption("DATA LOADED IN THIS SESSION")
             q1, q2 = st.columns(2, gap="small")
             q1.metric("Records", f"{len(frame):,}" if len(frame) else "—")
-            q2.metric("Fechas", len(date_options))
+            q2.metric("Dates", len(date_options))
             q3, q4 = st.columns(2, gap="small")
             q3.metric("Sensors", frame["instrumento"].nunique() if len(frame) else "—")
-            q4.metric("Modo orbital", "TLE" if orbit_mode == "TLE actuales" else "Esquema")
+            q4.metric("Orbit mode", "TLE" if orbit_mode == "Current TLE data" else "Illustrative")
         st.markdown(
             '<div class="ignis-orbit-guide"><strong>How to interpret the lines</strong>'
             '<p>— Solid: trajectory calculated from recent TLE data, when available.'
@@ -922,7 +922,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         ]
     else:
         filtered_frame = filtered_frame.iloc[0:0]
-    if selected_satellite != "Todos":
+    if selected_satellite != "All":
         filtered_frame = filtered_frame[
             filtered_frame["satellite"].str.contains(
                 selected_satellite, case=False, na=False)
@@ -934,7 +934,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
 
     # La carga de TLE se hace por solicitud explícita. El modo normal no accede
     # a CelesTrak y el globo abre sin depender de esa red externa.
-    use_live_tle = orbit_mode == "TLE actuales"
+    use_live_tle = orbit_mode == "Current TLE data"
     if use_live_tle:
         with st.spinner("Loading current TLE data from CelesTrak…"):
             satellites = _build_satellite_payload(use_live_tle=True)
