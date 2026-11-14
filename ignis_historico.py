@@ -646,7 +646,7 @@ if current_section==NAV_PAGES[2]:
     if master:
         base,meta,error=leer_maestro(master.getvalue())
         if error:st.error('Could not import the Master dataset: '+error)
-        else:st.success(f'Master dataset restored: {len(base):,} registros')
+        else:st.success(f'Master dataset restored: {len(base):,} records')
     inputs=[];inventory=[];problems=[]
     for a in (rawfiles or []):
         new,issues,sources=parse_firms(a.getvalue(),a.name)
@@ -720,7 +720,7 @@ if current_section==NAV_PAGES[4]:
         ss=summer.groupby(['temporada','instrumento']).size().reset_index(name='detecciones')
         if len(ss):
             ss['temporada_etiqueta']=ss['temporada'].astype(int).astype(str)
-            fig=px.bar(ss,x='temporada_etiqueta',y='detecciones',color='instrumento',barmode='group',template='plotly_dark',labels={'temporada_etiqueta':'Temporada estival','detecciones':'Registros'})
+            fig=px.bar(ss,x='temporada_etiqueta',y='detecciones',color='instrumento',barmode='group',template='plotly_dark',labels={'temporada_etiqueta':'Summer season','detecciones':'Records'})
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig,use_container_width=True,key='temporadas_estivales')
             display_dataframe(ss,use_container_width=True,hide_index=True)
