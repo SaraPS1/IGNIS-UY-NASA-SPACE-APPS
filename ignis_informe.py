@@ -215,7 +215,7 @@ def map_figure(df):
     ax.plot(border[:,0],border[:,1],color='#a5cfff',lw=1.5,zorder=4)
     for name,lon,lat in [('Artigas',-56.0,-30.45),('Durazno',-56.52,-33.22),('Canelones',-56.28,-34.55),('Maldonado',-54.95,-34.73),('Rocha',-54.32,-34.12)]:
         ax.text(lon,lat,name,color='white',fontsize=7,bbox=dict(facecolor='#14142f',alpha=.65,edgecolor='none',pad=2))
-    ax.set(xlim=(-58.85,-52.65),ylim=(-35.45,-29.75),xlabel='Longitud',ylabel='Latitud')
+    ax.set(xlim=(-58.85,-52.65),ylim=(-35.45,-29.75),xlabel='Longitude',ylabel='Latitude')
     ax.tick_params(colors=WHITE,labelsize=7)
     for spine in ax.spines.values(): spine.set_color('#35527b')
     cbar=fig.colorbar(img,ax=ax,shrink=.7,label='Relative visual density (not calibrated)')
@@ -239,7 +239,7 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
     df=ensure_time_cols(datos.copy())
     year=df[df.anio==ano].copy()
     out=io.BytesIO()
-    doc=SimpleDocTemplate(out,pagesize=A4,leftMargin=1.55*cm,rightMargin=1.55*cm,topMargin=1.45*cm,bottomMargin=1.55*cm,title='IGNIS UY - Scientific thermal activity report',author='Proyecto IGNIS UY')
+    doc=SimpleDocTemplate(out,pagesize=A4,leftMargin=1.55*cm,rightMargin=1.55*cm,topMargin=1.45*cm,bottomMargin=1.55*cm,title='IGNIS UY - Scientific thermal activity report',author='IGNIS UY project')
     S=getSampleStyleSheet()
     S.add(ParagraphStyle(name='PaperT',parent=S['Title'],fontName='Helvetica-Bold',fontSize=20,leading=24,textColor=colors.HexColor(WHITE),alignment=TA_CENTER,spaceAfter=6))
     S.add(ParagraphStyle(name='PaperSub',parent=S['Normal'],alignment=TA_CENTER,fontSize=10,leading=13,textColor=colors.HexColor(SOFT),spaceAfter=8))
