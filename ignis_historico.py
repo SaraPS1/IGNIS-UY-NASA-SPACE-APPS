@@ -215,7 +215,7 @@ def heatmap_mensual(df, nombre, clave):
     years=range(2000,2027)
     matrix=counts.pivot(index='mes',columns='anio',values='total').reindex(index=range(1,13),columns=years)
     # NaN intentionally denotes no uploaded evidence for that month; never infer zero coverage.
-    fig=go.Figure(go.Heatmap(z=matrix.values,x=[str(y) for y in years],y=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'],colorscale=[[0,'#302355'],[.25,'#6240a4'],[.5,'#b944a5'],[.75,'#ef777b'],[1,'#ffdb68']],colorbar={'title':'Registros'},hovertemplate='Year %{x} · %{y}<br>Detections %{z}<extra></extra>',xgap=2,ygap=2))
+    fig=go.Figure(go.Heatmap(z=matrix.values,x=[str(y) for y in years],y=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],colorscale=[[0,'#302355'],[.25,'#6240a4'],[.5,'#b944a5'],[.75,'#ef777b'],[1,'#ffdb68']],colorbar={'title':'Records'},hovertemplate='Year %{x} · %{y}<br>Detections %{z}<extra></extra>',xgap=2,ygap=2))
     fig.update_layout(title=nombre,template='plotly_dark',paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',height=440,margin=dict(l=25,r=15,t=50,b=30),xaxis=dict(tickangle=-55),yaxis=dict(autorange='reversed'))
     st.plotly_chart(fig,use_container_width=True,key=clave)
     st.caption('Empty cells mean no detections in uploaded files; actual satellite coverage has not been verified. They must not automatically be interpreted as zero activity.')
@@ -287,7 +287,7 @@ def resumen_armonizacion(df, ano=None, grid_deg=0.20):
     coinc_month=coinc.groupby(['anio','mes']).size().reset_index(name='celdas_coincidentes') if len(coinc) else pd.DataFrame(columns=['anio','mes','celdas_coincidentes'])
     table=monthly_presence[['anio','mes','MODIS','VIIRS']].copy() if len(monthly_presence) else pd.DataFrame(columns=['anio','mes','MODIS','VIIRS'])
     if len(table):
-        table['Mes']=table['mes'].map({1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'})
+        table['Mes']=table['mes'].map({1:'January',2:'February',3:'March',4:'April',5:'May',6:'June',7:'July',8:'August',9:'September',10:'October',11:'November',12:'December'})
         table=table.merge(coinc_month[['mes','celdas_coincidentes']],on='mes',how='left').fillna({'celdas_coincidentes':0})
         table=table[['Mes','MODIS','VIIRS','celdas_coincidentes']].rename(columns={'celdas_coincidentes':'Celdas coincidentes'})
         table['Celdas coincidentes']=table['Celdas coincidentes'].astype(int)
@@ -324,14 +324,14 @@ def mapa_ignis(datos, clave='ignis_mapa'):
     density[density<.06]=np.nan
     fig=go.Figure()
     fig.add_trace(go.Scatter(x=coords[:,0],y=coords[:,1],fill='toself',fillcolor='rgba(58,37,115,0.38)',mode='lines',line=dict(color='#9bc7ff',width=2),name='Uruguay (approximate outline)',hoverinfo='skip'))
-    fig.add_trace(go.Heatmap(x=x,y=y,z=density,colorscale=[[0,'#42206a'],[.25,'#8440a9'],[.5,'#dc4b95'],[.75,'#ff975a'],[1,'#ffe36c']],opacity=.90,zsmooth='best',colorbar=dict(title='Densidad visual',tickfont=dict(color='white')),hovertemplate='Longitud: %{x:.2f}<br>Latitud: %{y:.2f}<br>Densidad visual: %{z:.2f}<extra></extra>'))
+    fig.add_trace(go.Heatmap(x=x,y=y,z=density,colorscale=[[0,'#42206a'],[.25,'#8440a9'],[.5,'#dc4b95'],[.75,'#ff975a'],[1,'#ffe36c']],opacity=.90,zsmooth='best',colorbar=dict(title='Visual density',tickfont=dict(color='white')),hovertemplate='Longitude: %{x:.2f}<br>Latitude: %{y:.2f}<br>Visual density: %{z:.2f}<extra></extra>'))
     plotpoints=clean.sample(min(len(clean),3000),random_state=42) if len(clean)>3000 else clean
-    fig.add_trace(go.Scattergl(x=plotpoints.longitude,y=plotpoints.latitude,mode='markers',marker=dict(size=4,color='#dff4ff',opacity=.55),name='Observaciones',hovertemplate='Longitud: %{x:.4f}<br>Latitud: %{y:.4f}<extra>Registro FIRMS</extra>'))
+    fig.add_trace(go.Scattergl(x=plotpoints.longitude,y=plotpoints.latitude,mode='markers',marker=dict(size=4,color='#dff4ff',opacity=.55),name='Observations',hovertemplate='Longitude: %{x:.4f}<br>Latitude: %{y:.4f}<extra>FIRMS record</extra>'))
     for name,lon,lat in [('Artigas',-56.0,-30.45),('Durazno',-56.52,-33.22),('Canelones',-56.28,-34.55),('Maldonado',-54.95,-34.73),('Rocha',-54.32,-34.12)]:
         fig.add_annotation(x=lon,y=lat,text=name,showarrow=False,font=dict(size=11,color='#f0eaff'),bgcolor='rgba(8,12,36,.65)',borderpad=3)
     fig.update_layout(height=600,margin=dict(l=10,r=18,t=28,b=15),paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='#0b1230',font=dict(color='#e8ecff'),legend=dict(orientation='h',y=1.02,x=0))
-    fig.update_xaxes(range=[-58.85,-52.65],title='Longitud',gridcolor='rgba(128,158,220,.13)',zeroline=False)
-    fig.update_yaxes(range=[-35.45,-29.75],title='Latitud',gridcolor='rgba(128,158,220,.13)',zeroline=False,scaleanchor='x',scaleratio=1)
+    fig.update_xaxes(range=[-58.85,-52.65],title='Longitude',gridcolor='rgba(128,158,220,.13)',zeroline=False)
+    fig.update_yaxes(range=[-35.45,-29.75],title='Latitude',gridcolor='rgba(128,158,220,.13)',zeroline=False,scaleanchor='x',scaleratio=1)
     st.plotly_chart(fig,use_container_width=True,key=clave)
     st.caption('Illustrative relative density calculated from uploaded FIRMS points. The generalized Natural Earth national outline does not delineate departments or certify borders. This map does not show confirmed wildfires, burned area, or density adjusted for satellite coverage.')
 
@@ -936,7 +936,7 @@ if current_section==NAV_PAGES[7]:
         m3.metric('Flagged sensors',int(current['Sensor'].nunique()) if len(current) else 0)
         if len(current):
             st.markdown(f'''<div class="ignis-alerta" role="status"><h2>🚨 ATTENTION · {len(current)} statistical signals in {selected}</h2><p>Months with unusual activity compared with the same sensor's historical reference. <b>Review recommended.</b> These are neither confirmed wildfires nor operational alerts.</p></div>''',unsafe_allow_html=True)
-            current=current.copy(); current['Mes']=current['Mes'].map({1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'})
+            current=current.copy(); current['Mes']=current['Mes'].map({1:'January',2:'February',3:'March',4:'April',5:'May',6:'June',7:'July',8:'August',9:'September',10:'October',11:'November',12:'December'})
             display_dataframe(current[['Mes','Sensor','Detecciones','Mediana otros años','Índice frente a mediana']],use_container_width=True,hide_index=True)
         elif len(alert_df):
             st.markdown(f'''<div class="ignis-neutral" role="status"><strong>✅ {selected}: no candidates under the pilot criterion</strong><p>The archive still contains <b>{len(alert_df)} statistical signals</b> for review. This does not certify an absence of risk or complete coverage.</p></div>''',unsafe_allow_html=True)
@@ -948,7 +948,7 @@ if current_section==NAV_PAGES[7]:
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',height=320,margin=dict(l=10,r=10,t=35,b=10))
             st.plotly_chart(fig,use_container_width=True,key='alertas_por_ano')
             with st.expander('View all exploratory historical signals'):
-                full=alert_df.copy(); full['Mes']=full['Mes'].map({1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'})
+                full=alert_df.copy(); full['Mes']=full['Mes'].map({1:'January',2:'February',3:'March',4:'April',5:'May',6:'June',7:'July',8:'August',9:'September',10:'October',11:'November',12:'December'})
                 display_dataframe(full[['Año','Mes','Sensor','Detecciones','Mediana otros años','Índice frente a mediana']],use_container_width=True,hide_index=True)
         st.caption('Criterion: same sensor and month, at least 3 other years with detections, at least 5 records, and at least twice the median. WITHOUT coverage normalization: use only as a preliminary signal.')
     st.divider()
