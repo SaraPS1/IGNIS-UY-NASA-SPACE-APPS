@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import requests
 import streamlit as st
+from ignis_i18n import display_dataframe
 import plotly.express as px
 import plotly.graph_objects as go
 from ignis_coincidencias import emparejar, resumir_pares
@@ -420,7 +421,7 @@ def render_ask_ignis(datos):
                     st.caption('Procedencia: ' + ', '.join(message['sources']))
                 chart = message.get('chart')
                 if chart is not None and not chart.empty:
-                    st.dataframe(chart, use_container_width=True, hide_index=True)
+                    display_dataframe(chart, use_container_width=True, hide_index=True)
 
     if not st.session_state['ignis_chat_history']:
         st.caption(
@@ -662,7 +663,7 @@ if current_section==NAV_PAGES[2]:
     bb.metric('Net new observations',f'{max(len(combined)-len(base),0):,}')
     cc.metric('NRT observations added',f'{len(vivos):,}')
     dd.metric('Total deduplicated records',f'{len(combined):,}')
-    if inventory:st.dataframe(pd.DataFrame(inventory),use_container_width=True,hide_index=True)
+    if inventory:display_dataframe(pd.DataFrame(inventory),use_container_width=True,hide_index=True)
     if len(combined):
         st.download_button('⬇️ Download updated IGNIS Master dataset (save for the next session)',crear_maestro(combined),file_name='IGNIS_MAESTRO_HISTORICO.zip',mime='application/zip',type='primary')
         st.caption('Save this file to your computer. The Master ZIP contains normalized observations rather than original NASA ZIP files; retain the originals for documentation.')
@@ -703,7 +704,7 @@ if current_section==NAV_PAGES[3]:
         a.metric(f'Detecciones {selected}',f'{len(yr):,}')
         b.metric('Days with observations',yr.dia.nunique())
         c.metric('Instruments detected',yr.instrumento.nunique())
-        st.dataframe(yr.groupby(['mes','instrumento']).size().reset_index(name='registros').rename(columns={'mes':'Mes','instrumento':'Sensor'}),use_container_width=True,hide_index=True)
+        display_dataframe(yr.groupby(['mes','instrumento']).size().reset_index(name='registros').rename(columns={'mes':'Mes','instrumento':'Sensor'}),use_container_width=True,hide_index=True)
         st.caption('These numbers refer to the chosen calendar year and uploaded files. They are not wildfire rates or coverage-normalized data.')
         st.download_button('Download yearly CSV',yr[COLS].to_csv(index=False).encode('utf-8-sig'),file_name=f'IGNIS_{selected}_registros.csv')
 
@@ -722,7 +723,7 @@ if current_section==NAV_PAGES[4]:
             fig=px.bar(ss,x='temporada_etiqueta',y='detecciones',color='instrumento',barmode='group',template='plotly_dark',labels={'temporada_etiqueta':'Temporada estival','detecciones':'Registros'})
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig,use_container_width=True,key='temporadas_estivales')
-            st.dataframe(ss,use_container_width=True,hide_index=True)
+            display_dataframe(ss,use_container_width=True,hide_index=True)
             st.download_button('Download seasonal summary',ss.to_csv(index=False).encode('utf-8-sig'),file_name='IGNIS_temporadas.csv')
         st.warning('Available records do not guarantee complete coverage. Raw MODIS and VIIRS counts must not be compared directly, and no validated climate trend is inferred.')
 
@@ -741,10 +742,10 @@ if current_section==NAV_PAGES[5]:
             c.metric(f'Matching grid cells {selected}',armonia['selected_coincident_cells'])
             d.metric('Instruments present',sample.instrumento.nunique())
             st.markdown('##### Sensor timeline')
-            if armonia['periods']:st.dataframe(pd.DataFrame(armonia['periods']),use_container_width=True,hide_index=True)
+            if armonia['periods']:display_dataframe(pd.DataFrame(armonia['periods']),use_container_width=True,hide_index=True)
             if not armonia['table'].empty:
                 st.markdown('##### Exploratory matching for the selected year')
-                st.dataframe(armonia['table'],use_container_width=True,hide_index=True)
+                display_dataframe(armonia['table'],use_container_width=True,hide_index=True)
             else:st.info(f'Year {selected} shows overall historical overlap, but there are no comparable months with simultaneous MODIS and VIIRS observations in the active selection.')
             q1,q2=st.columns(2)
             with q1:
@@ -763,7 +764,7 @@ if current_section==NAV_PAGES[5]:
             p2.metric('Days with matches',pares.fecha_utc.nunique() if len(pares) else 0)
             p3.metric('Median distance',f'{pares.distancia_km.median():.2f} km' if len(pares) else 'No matches')
             if len(pares):
-                st.dataframe(resumir_pares(pares),use_container_width=True,hide_index=True)
+                display_dataframe(resumir_pares(pares),use_container_width=True,hide_index=True)
                 st.download_button('Download candidate pairs (CSV)',pares.to_csv(index=False).encode('utf-8-sig'),file_name=f'IGNIS_pares_{selected}.csv',mime='text/csv')
                 st.caption('An observation can be paired with different VIIRS platforms. Pairs are NOT unique wildfires. FRP is retained but NOT compared as a calibrated measure.')
             else: st.info('No pairs were found within these thresholds. You can increase them without modifying the data.')
@@ -781,7 +782,7 @@ if current_section==NAV_PAGES[5]:
             cb.metric('Imported months', comparabilidad['meses_importados'])
             cc.metric('Months with both sensor families', comparabilidad['meses_con_ambas_familias'])
             tabla_sensibilidad = comparar_resoluciones(sample, ano=selected)
-            st.dataframe(tabla_sensibilidad, use_container_width=True, hide_index=True)
+            display_dataframe(tabla_sensibilidad, use_container_width=True, hide_index=True)
             st.download_button(
                 'Download grid sensitivity (CSV)',
                 tabla_sensibilidad.to_csv(index=False).encode('utf-8-sig'),
@@ -818,7 +819,7 @@ if current_section==NAV_PAGES[5]:
                 if inventario.empty:
                     st.info('No imported months with recognized sensors in this selection.')
                 else:
-                    st.dataframe(inventario, use_container_width=True, hide_index=True)
+                    display_dataframe(inventario, use_container_width=True, hide_index=True)
                     st.download_button(
                         'Download inventory (CSV)',
                         inventario.to_csv(index=False).encode('utf-8-sig'),
@@ -857,7 +858,7 @@ if current_section==NAV_PAGES[5]:
                 r2.metric('UTC day crossings', rp['cruces_medianoche'])
                 r3.metric('Median distance', f"{rp['distancia_mediana_km']:.2f} km" if rp['distancia_mediana_km'] is not None else 'No matches')
                 if len(parejas):
-                    st.dataframe(parejas, use_container_width=True, hide_index=True)
+                    display_dataframe(parejas, use_container_width=True, hide_index=True)
                     st.download_button(
                         'Download V5 pairs (CSV)',
                         parejas.to_csv(index=False).encode('utf-8-sig'),
@@ -936,7 +937,7 @@ if current_section==NAV_PAGES[7]:
         if len(current):
             st.markdown(f'''<div class="ignis-alerta" role="status"><h2>🚨 ATTENTION · {len(current)} statistical signals in {selected}</h2><p>Months with unusual activity compared with the same sensor's historical reference. <b>Review recommended.</b> These are neither confirmed wildfires nor operational alerts.</p></div>''',unsafe_allow_html=True)
             current=current.copy(); current['Mes']=current['Mes'].map({1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'})
-            st.dataframe(current[['Mes','Sensor','Detecciones','Mediana otros años','Índice frente a mediana']],use_container_width=True,hide_index=True)
+            display_dataframe(current[['Mes','Sensor','Detecciones','Mediana otros años','Índice frente a mediana']],use_container_width=True,hide_index=True)
         elif len(alert_df):
             st.markdown(f'''<div class="ignis-neutral" role="status"><strong>✅ {selected}: no candidates under the pilot criterion</strong><p>The archive still contains <b>{len(alert_df)} statistical signals</b> for review. This does not certify an absence of risk or complete coverage.</p></div>''',unsafe_allow_html=True)
             st.markdown(f'#### 🚨 {len(alert_df)} historical signals that warrant review')
@@ -948,7 +949,7 @@ if current_section==NAV_PAGES[7]:
             st.plotly_chart(fig,use_container_width=True,key='alertas_por_ano')
             with st.expander('View all exploratory historical signals'):
                 full=alert_df.copy(); full['Mes']=full['Mes'].map({1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'})
-                st.dataframe(full[['Año','Mes','Sensor','Detecciones','Mediana otros años','Índice frente a mediana']],use_container_width=True,hide_index=True)
+                display_dataframe(full[['Año','Mes','Sensor','Detecciones','Mediana otros años','Índice frente a mediana']],use_container_width=True,hide_index=True)
         st.caption('Criterion: same sensor and month, at least 3 other years with detections, at least 5 records, and at least twice the median. WITHOUT coverage normalization: use only as a preliminary signal.')
     st.divider()
     st.markdown('#### Documentary traceability for the selected year')
@@ -967,7 +968,7 @@ if current_section==NAV_PAGES[8]:
         if selected is not None:
             st.subheader(f'Daily calendar · {selected}')
             daily=sample[sample.anio==selected].groupby(['dia','instrumento']).size().reset_index(name='detecciones')
-            st.dataframe(daily,use_container_width=True,hide_index=True)
+            display_dataframe(daily,use_container_width=True,hide_index=True)
             st.download_button('Download daily calendar CSV',daily.to_csv(index=False).encode('utf-8-sig'),file_name=f'IGNIS_calendario_{selected}.csv')
         st.caption('Comparing a current month against the historical median requires comparable observations, the same instruments, and coverage assessment. Missing records do not imply absence of fire.')
 
@@ -992,7 +993,7 @@ if current_section==NAV_PAGES[9]:
         preview=st.checkbox('Preview report contents',value=False)
         if preview:
             st.markdown('**Sections:** 1. Yearly summary · 2. Daily and monthly calendars · 3. Historical context · 4. Thermal map · 5. MODIS–VIIRS harmonization · 6. Exploratory signals · 7. Documentary traceability · 8. Provenance and limitations.')
-            st.dataframe(sample[sample.anio==selected].groupby(['mes','instrumento']).size().reset_index(name='detecciones'),use_container_width=True,hide_index=True)
+            display_dataframe(sample[sample.anio==selected].groupby(['mes','instrumento']).size().reset_index(name='detecciones'),use_container_width=True,hide_index=True)
         try:
             archivo_pdf=construir_pdf(sample,int(selected),reg,sens)
             st.download_button('⬇️ Generate and download PDF report',data=archivo_pdf,file_name=f'IGNIS_{selected}_{reg.split(" (")[0].replace(" ","_")}_informe.pdf',mime='application/pdf',type='primary')
