@@ -59,7 +59,7 @@ class PremiumLandingReferenceTests(unittest.TestCase):
             "ignis-home-section-title",
         ]:
             self.assertIn(class_name,self.visual)
-        self.assertIn("IGNIS UY<br><span>Histórico</span>",self.visual)
+        self.assertIn("IGNIS UY<br><span>Historical Archive</span>",self.visual)
         self.assertIn("NASA Space Apps",self.visual)
         self.assertIn("ema.fau.mil.uy",self.visual)
         self.assertIn("min-height:421px",self.visual)
