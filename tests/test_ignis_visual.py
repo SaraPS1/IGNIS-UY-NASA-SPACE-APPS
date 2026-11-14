@@ -46,7 +46,7 @@ class IgnisVisualSmokeTests(unittest.TestCase):
         self.assertIn("if sample.empty:", content)
         self.assertIn("if not view.empty:", content)
         self.assertIn("map_fn(mapped", content)
-        self.assertIn("La ausencia de registros", content)
+        self.assertIn("The absence of records", content)
 
     def test_official_links(self):
         content = (ROOT / "ignis_visual.py").read_text(encoding="utf-8")
