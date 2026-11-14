@@ -1014,7 +1014,7 @@ if current_section==NAV_PAGES[12]:
 
 # Nueva pestaña aislada: NASA FIRMS + Bomberos/PAIF + SINAE/MIRA.
 # Utiliza el Maestro normalizado `combined` existente y no lo modifica.
-if current_section==NAV_PAGES[13]:
+if current_section==NAV_PAGES[14]:
     from ignis_fusion_terrestre import mostrar_fusion_terrestre
     mostrar_fusion_terrestre(combined)
 
