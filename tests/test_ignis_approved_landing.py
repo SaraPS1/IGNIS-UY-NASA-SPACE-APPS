@@ -31,7 +31,7 @@ class PremiumLandingReferenceTests(unittest.TestCase):
         self.assertIn('Path(base) / "assets" / "bg_portada.webp"',self.visual)
         self.assertIn('Path(base) / "assets" / "ignis_hero_premium.svg"',self.visual)
         self.assertIn('_home_background_image(hero_path, asset_uri, "hero")',self.visual)
-        self.assertIn("La escena espacial es ilustrativa",self.visual)
+        self.assertIn("The space scene is illustrative",self.visual)
 
     def test_three_buttons_keep_callbacks(self):
         for key in ["hero_to_history","hero_to_dashboard","hero_to_upload"]:
