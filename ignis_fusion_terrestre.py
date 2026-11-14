@@ -449,7 +449,7 @@ def fusionar(nasa: pd.DataFrame, bomberos: pd.DataFrame, sinae: pd.DataFrame,
         elif ns:
             estado = "Terrestre + SINAE, sin FIRMS"
         else:
-            estado = "SINAE sin FIRMS cercano" if es_s else "Terrestre sin FIRMS cercano"
+            estado = "SINAE sin Nearby FIRMSno" if es_s else "Terrestre sin Nearby FIRMSno"
         fuentes = {"SINAE/MIRA"} if es_s else {"Bomberos/PAIF"}
         if ns:
             fuentes.add("SINAE/MIRA")
@@ -478,25 +478,25 @@ def demo_sintetica(nasa: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     post2018 = nasa[nasa.fecha_utc.dt.year >= 2018]
     sat = post2018.iloc[0] if not post2018.empty else nasa.iloc[0]
     f = pd.Timestamp(sat["fecha_utc"])
-    fake1={"id":"SIMULADO_CAMARA_001","fecha_utc":f+pd.Timedelta(minutes=15),
+    fake1={"id":"SYNTHETIC_CAMARA_001","fecha_utc":f+pd.Timedelta(minutes=15),
            "solo_fecha":False,"lat":float(sat.lat)+0.006,"lon":float(sat.lon)+0.005,
            "categoria":"BOMBEROS_PAIF","detalle":"SIMULATION: camera detects possible smoke",
-           "estado_origen":"SIMULATED — not verified", "fuente_decl":"SIMULADO", "es_simulado":True}
-    fake2={"id":"SIMULADO_SINAE_001","fecha_utc":f+pd.Timedelta(minutes=23),
+           "estado_origen":"SIMULATED — not verified", "fuente_decl":"SYNTHETIC", "es_simulado":True}
+    fake2={"id":"SYNTHETIC_SINAE_001","fecha_utc":f+pd.Timedelta(minutes=23),
            "solo_fecha":False,"lat":float(sat.lat)+0.007,"lon":float(sat.lon)+0.005,
            "categoria":"SINAE_MIRA","detalle":"SIMULATION: fictional event report",
-           "estado_origen":"SIMULATED — not verified", "fuente_decl":"SIMULADO", "es_simulado":True}
+           "estado_origen":"SIMULATED — not verified", "fuente_decl":"SYNTHETIC", "es_simulado":True}
     return pd.DataFrame([fake1]),pd.DataFrame([fake2])
 
 
 def tabla_ejemplo(tipo: str) -> bytes:
     # Ejemplos de estructura, no incidentes reales ni datos institucionales.
     if tipo == "terrestre":
-        datos=[dict(evento_id="SIMULADO_CAMARA_001",fecha_utc="2026-01-12T15:45:00Z",
+        datos=[dict(evento_id="SYNTHETIC_CAMARA_001",fecha_utc="2026-01-12T15:45:00Z",
                     latitud=-34.75,longitud=-55.70,fuente="EJEMPLO_SINTETICO_NO_REAL",
                     tipo_deteccion="posible_humo",estado="pendiente_revision")]
     else:
-        datos=[dict(evento_id="SIMULADO_SINAE_001",fecha_utc="2026-01-12",
+        datos=[dict(evento_id="SYNTHETIC_SINAE_001",fecha_utc="2026-01-12",
                     latitud=-34.75,longitud=-55.70,fuente="EJEMPLO_SINTETICO_NO_REAL",
                     tipo_incendio="no_determinado",estado="ejemplo")]
     return pd.DataFrame(datos).to_csv(index=False).encode("utf-8-sig")
@@ -541,7 +541,7 @@ def dibujar_mapa(nasa: pd.DataFrame, bom: pd.DataFrame, sin: pd.DataFrame,
     if not resultados.empty:
         layer=folium.FeatureGroup(name="Matches for review",show=True)
         for _,r in resultados[resultados.n_firms>0].head(300).iterrows():
-            texto=escape(str(r.resultado))+'<br>FIRMS cercanos: '+str(r.n_firms)
+            texto=escape(str(r.resultado))+'<br>Nearby FIRMSnos: '+str(r.n_firms)
             folium.CircleMarker([r.lat,r.lon],radius=11,weight=2,color="#f9e77d",
                                 fill=False,tooltip=texto,popup=texto).add_to(layer)
         layer.add_to(mapa)
@@ -578,13 +578,13 @@ CASOS_DOCUMENTADOS = [
 # ¡NO equivalen a las posiciones de las cámaras o de las torres instaladas!
 REFERENCIAS_CAMARAS = [
     {"nombre":"Santa Ana, Colonia", "lat":-34.4214,"lon":-57.5935,
-     "nota":"Localidad citada por Ministerio del Interior; posición de cámara sin verificar"},
+     "nota":"Town cited by the Ministry of the Interior; camera location unverified"},
     {"nombre":"Boca del Cufré, San José", "lat":-34.456,"lon":-57.111,
-     "nota":"Zona Cufré citada por Ministerio del Interior; posición de cámara sin verificar"},
+     "nota":"Cufré area cited by the Ministry of the Interior; camera location unverified"},
     {"nombre":"Parque del Plata, Canelones", "lat":-34.7560,"lon":-55.7226,
-     "nota":"Localidad mencionada en documentación de licitación; instalación no verificada"},
+     "nota":"Town mentioned in procurement documentation; installation unverified"},
     {"nombre":"Punta Ballena, Maldonado", "lat":-34.8889,"lon":-55.0406,
-     "nota":"Localidad citada por Ministerio del Interior; posición de cámara sin verificar"},
+     "nota":"Town cited by the Ministry of the Interior; camera location unverified"},
 ]
 ZONAS = {
     "Todo Uruguay": (-35.28,-29.90,-58.70,-53.00),
@@ -737,7 +737,7 @@ def _mapa_plotly(malla:pd.DataFrame, nasa:pd.DataFrame, bom:pd.DataFrame,
             figura.add_trace(go.Scatter(
                 x=d['lon'],y=d['lat'],mode='markers',name=name,
                 marker=dict(symbol='x',size=11,color=color,line=dict(width=2)),
-                text=[f"{name} • {r.id}<br>{str(r.fecha_utc)}<br>{'SIMULADO' if r.es_simulado else 'Estado por verificar'}" for r in d.itertuples()],
+                text=[f"{name} • {r.id}<br>{str(r.fecha_utc)}<br>{'SYNTHETIC' if r.es_simulado else 'Estado por verificar'}" for r in d.itertuples()],
                 hovertemplate='%{text}<extra></extra>'))
     a,b,c,d=ZONAS[zona]
     figura.update_layout(
@@ -776,16 +776,16 @@ def _descripcion_celda(malla:pd.DataFrame,c:tuple[int,int]) -> str:
 
 def _interpretacion_celda(hist:pd.DataFrame, b:pd.DataFrame, s:pd.DataFrame,
                            resultados:pd.DataFrame, sim:bool) -> str:
-    if hist.empty:return 'No hay observations en la celda según el maestro cargado.'
+    if hist.empty:return 'No observations in this cell according to the uploaded Master dataset.'
     anios=int(hist.fecha_utc.dt.year.nunique())
     partes=[f"The cell contains FIRMS thermal anomalies across {anios} different years in uploaded files."]
-    if not b.empty:partes.append(f"Se cargaron {len(b)} registros terrestres en esta celda.")
-    if not s.empty:partes.append(f"Se cargaron {len(s)} registros SINAE en esta celda.")
+    if not b.empty:partes.append(f"There are {len(b)} imported ground records in this cell.")
+    if not s.empty:partes.append(f"There are {len(s)} imported SINAE records in this cell.")
     if not resultados.empty and (resultados.n_firms>0).any():
         partes.append('The engine found at least one spatial-temporal association requiring review; this does not confirm a wildfire.')
     elif not b.empty or not s.empty:
         partes.append('No match under the current filters does not imply a false detection.')
-    if sim:partes.append('IMPORTANTE: parte de la evidencia terrestre/institucional es SIMULADA.')
+    if sim:partes.append('IMPORTANT: some ground or institutional evidence is SYNTHETIC.')
     partes.append('Counts are not corrected for satellite revisits, clouds, or MODIS–VIIRS differences.')
     return ' '.join(partes)
 
@@ -800,11 +800,11 @@ def _configuracion_automatica(st, raw:pd.DataFrame,prefijo:str, nombre:str) -> d
         st.success(f"{nombre}: date and location columns detected automatically.")
     else:
         st.warning(f"{nombre}: some fields need manual mapping. Open “Adjust columns”.")
-    with st.expander(f"Ajustar columnas de {nombre} (opcional si aparece el aviso verde)",expanded=not auto):
-        opciones=['— No disponible —']+cols
-        etiquetas={"fecha":"Fecha / fecha y hora", "hora":"Hora separada", "lat":"Latitud WGS84", "lon":"Longitud WGS84",
-                  "wkt":"Geometría WKT POINT alternativa", "id":"ID del evento",
-                  "detalle":"Tipo / descripción", "estado":"Estado de la observación", "origen":"Organismo o procedencia"}
+    with st.expander(f"Adjust {nombre} columns (optional if the green notice appears)",expanded=not auto):
+        opciones=['— Not available —']+cols
+        etiquetas={"fecha":"Date / date and time", "hora":"Separate time", "lat":"WGS84 latitude", "lon":"WGS84 longitude",
+                  "wkt":"Alternative WKT POINT geometry", "id":"Event ID",
+                  "detalle":"Type / description", "estado":"Observation status", "origen":"Agency or provenance"}
         for k in ('fecha','hora','lat','lon','wkt','id','detalle','estado','origen'):
             pred=config.get(k)
             o=st.selectbox(etiquetas[k],opciones,index=opciones.index(pred) if pred in opciones else 0,
@@ -819,17 +819,17 @@ def _leer_fuente(st, uploaded, categoria:str,prefijo:str) -> pd.DataFrame:
         raw=leer_tabla_bytes(uploaded.name,uploaded.getvalue())
         cols=_configuracion_automatica(st,raw,prefijo,categoria.replace('_',' / '))
         tz_sugerido='UTC' if cols['fecha'] and 'utc' in canon(cols['fecha']) else 'America/Montevideo'
-        with st.expander(f"Fecha, procedencia y controles de {categoria.replace('_',' / ')}"):
+        with st.expander(f"Date, provenance, and settings for {categoria.replace('_',' / ')}"):
             tz=st.selectbox('Time zone if the file has no explicit time zone',
                             ['America/Montevideo','UTC'],index=0 if tz_sugerido=='America/Montevideo' else 1,
                             key=f'fus_v2_tz_{prefijo}')
             marcado_auto=('simulad' in uploaded.name.lower() or 'sintet' in uploaded.name.lower())
-            marcar=st.checkbox('Marcar como SIMULADO (datos de ensayo)',value=marcado_auto,
+            marcar=st.checkbox('Mark as SYNTHETIC (test records)',value=marcado_auto,
                                key=f'fus_v2_sim_{prefijo}')
         data,resumen=adaptar_externo(raw,categoria,cols,tz)
         if not data.empty and (marcar or marcado_auto):
             data['es_simulado']=True
-            data['estado_origen']=data['estado_origen'].astype(str)+' · SIMULADO'
+            data['estado_origen']=data['estado_origen'].astype(str)+' · SYNTHETIC'
         if resumen['omitidos']:
             st.warning(f"{categoria}: {resumen['omitidos']} rows lacking valid dates or WGS84 coordinates were excluded.")
         st.caption(f"{categoria}: {len(data)} valid records (out of {resumen['leidos']})")
@@ -940,24 +940,24 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
         c.setFillColor(C.white);c.setFont('Helvetica-Bold',12)
         c.drawString(1.55*cm,h-.86*cm,'IGNIS UY | SATELLITE–GROUND FUSION')
         c.setFillColor(C.HexColor('#b3dbf0'));c.setFont('Helvetica',8)
-        c.drawString(1.55*cm,h-1.24*cm,'Informe exploratorio de una celda seleccionada')
+        c.drawString(1.55*cm,h-1.24*cm,'Exploratory report for a selected grid cell')
         c.setStrokeColor(C.HexColor('#b6c7d9'));c.line(1.55*cm,1.36*cm,w-1.55*cm,1.36*cm)
         c.setFillColor(C.HexColor('#586678'));c.setFont('Helvetica',7)
         c.drawString(1.55*cm,1.05*cm,
                      'Names and logos identify sources; they do not imply validation or institutional endorsement.')
         c.drawRightString(w-1.55*cm,1.05*cm,f'Page {doc_.page}')
 
-    partes.append(Paragraph('Ficha de observations y evidencia asociada',estilo['IGNISTitle']))
+    partes.append(Paragraph('Observation record and associated evidence',estilo['IGNISTitle']))
     periodo='Full historical archive' if ano_filtro is None else str(ano_filtro)
-    partes.append(Paragraph(f'<b>Celda de 0,2 grados:</b> {zona_texto} &nbsp; | &nbsp; '
+    partes.append(Paragraph(f'<b>0.2-degree grid cell:</b> {zona_texto} &nbsp; | &nbsp; '
                              f'<b>Display period:</b> {periodo}',estilo['IGNISSmall']))
     simulado=bool((not bom_celda.empty and bom_celda.es_simulado.any()) or
                   (not sin_celda.empty and sin_celda.es_simulado.any()) or
-                  (not asociaciones.empty and asociaciones.simulado.astype(str).str.startswith('SÍ').any()))
+                  (not asociaciones.empty and asociaciones.simulado.astype(str).str.startswith(('SÍ','YES')).any()))
     if simulado:
         partes.append(Paragraph('<b>DEMONSTRATION WITH SYNTHETIC DATA.</b> '
                                  'Observed matches do not confirm real ground detections.',estilo['IGNISSmall']))
-    partes.append(Paragraph('1. Resumen de la celda',estilo['IGNISH2']))
+    partes.append(Paragraph('1. Grid-cell summary',estilo['IGNISH2']))
     def n(x):return f'{int(x):,}'.replace(',','.')
     resumen_data=[['FIRMS observations in period','Years with FIRMS signals in archive','Days with FIRMS records'],
                   [n(len(nasa_periodo)),n(nasa_hist.fecha_utc.dt.year.nunique() if not nasa_hist.empty else 0),
@@ -976,15 +976,15 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
                                  sin_mapeado if sin_mapeado is not None else sin_celda)
     partes.append(RLImage(io.BytesIO(graf),width=17.6*cm,height=9.65*cm))
     partes.append(Paragraph('Colors = calendar years with at least one thermal anomaly in the cell. '
-                             'Recuentos no corregidos por cobertura, revisita, nubosidad ni diferencias MODIS/VIIRS. '
-                             'No representan cantidad de incendios ni superficies quemadas.',estilo['IGNISNote']))
+                             'Counts are not adjusted for coverage, revisits, cloud cover, or MODIS/VIIRS differences. '
+                             'They do not represent wildfire counts or burned area.',estilo['IGNISNote']))
     partes.append(PageBreak())
-    partes.append(Paragraph('3. Observaciones cargadas y contraste',estilo['IGNISTitle']))
+    partes.append(Paragraph('3. Uploaded observations and comparisons',estilo['IGNISTitle']))
     def fuente_fila(nombre,df):
-        if df is None or df.empty:return [nombre,'0','Sin registros cargados para la celda','—']
+        if df is None or df.empty:return [nombre,'0','No records uploaded for this cell','—']
         yini,yfin=int(df.fecha_utc.dt.year.min()),int(df.fecha_utc.dt.year.max())
         return [nombre,n(len(df)),f'{yini}–{yfin}', 'Synthetic' if df.es_simulado.any() else 'Declared origin']
-    rows=[['Fuente','Events in cell','Event years','Status']]
+    rows=[['Source','Events in cell','Event years','Status']]
     rows.extend([fuente_fila('Bomberos / PAIF',bom_celda),fuente_fila('SINAE / MIRA',sin_celda)])
     tt=Table([[Paragraph(str(x),estilo['IGNISCell']) for x in row] for row in rows],
               colWidths=[4.0*cm,2.9*cm,6.1*cm,4.7*cm],repeatRows=1)
@@ -998,10 +998,10 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
     if coincidencias.empty:
         estado='No satellite–ground matches were found within the uploaded data selection.'
     else:
-        estado=f'{len(coincidencias)} evento(s) con proximidad espacial y temporal FIRMS en el filtro elegido.'
+        estado=f'{len(coincidencias)} event(s) with FIRMS spatial and temporal proximity under selected filters.'
     partes.append(Paragraph(estado,estilo['IGNISSmall']))
     if not asociaciones.empty:
-        tabl=[['Fecha evento (UTC)','Fuente(s)','FIRMS cerca','Resultado exploratorio']]
+        tabl=[['Event date (UTC)','Source(s)','Nearby FIRMS','Exploratory result']]
         for r in asociaciones.head(12).itertuples():
             tabl.append([str(r.fecha_utc)[:16],str(r.fuentes)[:38],str(r.n_firms),str(r.resultado)[:80]])
         # Wrap in paragraphs to preserve readability.
@@ -1013,9 +1013,9 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
                                ('VALIGN',(0,0),(-1,-1),'TOP')]))
         partes.append(t)
         if len(asociaciones)>12:
-            partes.append(Paragraph(f'Informe abreviado: se muestran 12 de {len(asociaciones)} eventos. '
+            partes.append(Paragraph(f'Abbreviated report: showing 12 of {len(asociaciones)} events. '
                                      'Use the results CSV for full details.',estilo['IGNISNote']))
-    partes.append(Paragraph('4. Histórico anual de observations FIRMS',estilo['IGNISH2']))
+    partes.append(Paragraph('4. Annual FIRMS observation history',estilo['IGNISH2']))
     if not nasa_hist.empty:
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -1032,33 +1032,33 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
         image_buffer=io.BytesIO()
         FigureCanvasAgg(ff).print_png(image_buffer)
         partes.append(RLImage(io.BytesIO(image_buffer.getvalue()),width=17.3*cm,height=4.37*cm))
-        partes.append(Paragraph('La evolución del recuento no puede interpretarse como tendencia '
-                                'de incidencia sin normalizar cambios de sensores y cobertura.',estilo['IGNISNote']))
+        partes.append(Paragraph('Count changes must not be interpreted as trends '
+                                'in wildfire incidence without normalizing sensor and coverage changes.',estilo['IGNISNote']))
     partes.append(Paragraph('5. Nearby documented wildfires',estilo['IGNISH2']))
     if casos:
         for caso,dist in casos:
-            partes.append(Paragraph(f'<b>{escape(caso["nombre"])}</b> – localidad a aproximadamente {dist:.1f} km '
-                                     f'del centro de la celda; consultar fuente oficial y fechas del episodio. '
+            partes.append(Paragraph(f'<b>{escape(caso["nombre"])}</b> – town approximately {dist:.1f} km '
+                                     f'from the cell center; consult official sources and event dates. '
                                      'The location is approximate, NOT the ignition point.',estilo['IGNISSmall']))
     else:
-        partes.append(Paragraph('Sin caso incorporado a la biblioteca limitada de IGNIS para esta celda. '
-                                 'No equivale a ausencia de incendios ni de registros de otras instituciones.',estilo['IGNISSmall']))
-    partes.append(Paragraph('6. Criterio, cobertura y limitaciones',estilo['IGNISH2']))
+        partes.append(Paragraph('No cases from the limited IGNIS documentary library are included for this cell. '
+                                 'This does not imply an absence of wildfires or records from other institutions.',estilo['IGNISSmall']))
+    partes.append(Paragraph('6. Criteria, coverage, and limitations',estilo['IGNISH2']))
     notas=[
-        f'Spatial association: {umbral_km:g} km. Si ambos registros incluyen hora: hasta {umbral_h:g} horas; '
-        f'si falta hora: coincidencia de fecha local con margen de {dias} día(s).',
+        f'Spatial association: {umbral_km:g} km. If both records have timestamps: up to {umbral_h:g} hours; '
+        f'if a timestamp is missing: local-date match within {dias} day(s).',
         'NASA FIRMS detects thermal anomalies, not necessarily confirmed wildfires. '
         'A match between sources does not establish independence or early detection.',
-        'El CSV abierto del SINAE/MIRA publicado en 2022 cubre marzo de 2018 a junio de 2022. '
+        'The open SINAE/MIRA CSV published in 2022 covers March 2018 through June 2022. '
         'Records from other years must be submitted and verified separately.',
         'Referenced coastal cameras are approximate towns, NOT verified tower locations or coverage. '
-        'No se describen posiciones individuales de la red PAIF.',
+        'Individual PAIF tower positions are not documented.',
         'This is not an operational warning or dispatch system. Synthetic records are NOT real evidence.'
     ]
     for nota in notas:partes.append(Paragraph('• '+escape(nota),estilo['IGNISNote']))
     partes.append(Paragraph('<b>Public sources:</b> NASA FIRMS; '
-                             f'<link href="{FUENTE_MIRA}" color="blue">SINAE/MIRA (conjunto 2018–2022)</link>; '
-                             f'<link href="{FUENTE_CAMARAS}" color="blue">Ministerio del Interior (Bomberos)</link>.',estilo['IGNISNote']))
+                             f'<link href="{FUENTE_MIRA}" color="blue">SINAE/MIRA (2018–2022 dataset)</link>; '
+                             f'<link href="{FUENTE_CAMARAS}" color="blue">Ministry of the Interior (Fire Service)</link>.',estilo['IGNISNote']))
     doc.build(partes,onFirstPage=pagina,onLaterPages=pagina)
     return buf.getvalue()
 
@@ -1094,7 +1094,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
                 nasa=pd.concat([nasa,nuevo],ignore_index=True).drop_duplicates(
                     subset=['fecha_utc','lat','lon','instrumento']).reset_index(drop=True)
                 nasa=forzar_fechas_utc(nasa,'NASA adicional').reset_index(drop=True)
-                st.success(f"NASA ready: {len(nasa):,} observations únicas en el recorte amplio.")
+                st.success(f"NASA ready: {len(nasa):,} unique observations within the extended area.")
             except Exception as exc:
                 st.error(f"Additional NASA: {type(exc).__name__}: {exc}")
         cb,cs=st.columns(2)
@@ -1103,14 +1103,14 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
             b_file=st.file_uploader('CSV, JSON, or GeoJSON ground events',
                                     type=['csv','json','geojson'],key='fus_v2_bomberos')
             st.download_button('Download sample synthetic CSV',tabla_ejemplo('terrestre'),
-                               file_name='IGNIS_BOMBEROS_DEMO_SIMULADO.csv',mime='text/csv',
+                               file_name='IGNIS_BOMBEROS_DEMO_SYNTHETIC.csv',mime='text/csv',
                                key='fus_v2_plantilla_bomberos')
         with cs:
             st.markdown('**SINAE / MIRA**')
             s_file=st.file_uploader('CSV, JSON, or GeoJSON institutional events',
                                     type=['csv','json','geojson'],key='fus_v2_sinae')
             st.download_button('Download sample synthetic CSV',tabla_ejemplo('sinae'),
-                               file_name='IGNIS_SINAE_DEMO_SIMULADO.csv',mime='text/csv',
+                               file_name='IGNIS_SINAE_DEMO_SYNTHETIC.csv',mime='text/csv',
                                key='fus_v2_plantilla_sinae')
             st.markdown(f'[Official SINAE/MIRA CSV (March 2018–June 2022, published in 2022)]({FUENTE_MIRA})')
             st.caption('For 2023–2026, later authorized records must be imported: '
@@ -1177,14 +1177,14 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
                '· ◇ Blue: reference TOWN (NOT a camera location) '
                '· ○ Pink: documented wildfire town (NOT exact location).')
     if ano is not None:
-        st.caption('Las celdas con borde amarillo contienen observations en el año elegido; '
+        st.caption('Cells with yellow outlines contain observations from the selected year; '
                    'their interior color shows historical recurrence.')
     st.caption('Click a colored cell. If your browser does not support selection, '
                'choose it from the list below.')
 
     # Si no hay observations dentro de la zona/período, no arriesgar un index inválido.
     if visible.empty:
-        st.warning('No hay celdas con observations FIRMS para esa selección; '
+        st.warning('No grid cells contain FIRMS observations for this selection; '
                    'this does not prove that no wildfires occurred.')
         return
     opciones=list(zip(visible.ilat.astype(int),visible.ilon.astype(int)))
@@ -1305,7 +1305,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
         xx.metric('External events in area',len(fusion))
         yy.metric('Near NASA observations',n_match)
         zz.metric('Three-source matches',n_triple)
-        if fusion.simulado.astype(str).str.startswith('SÍ').any():
+        if fusion.simulado.astype(str).str.startswith(('SÍ','YES')).any():
             st.warning('Includes synthetic records. A simulated match only tests the software's matching logic, '
                        'not its operational ability to detect wildfires.')
         if not celda_fusion.empty:
@@ -1349,46 +1349,46 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
         if eventos_tabla:
             display_dataframe(pd.DataFrame(eventos_tabla),use_container_width=True,hide_index=True)
     else:
-        st.info('No se importaron registros de Bomberos/PAIF ni SINAE/MIRA dentro de '
-                'esta cuadrícula y período. Esto NO implica que no haya habido incendios.')
+        st.info('No Fire Service/PAIF or SINAE/MIRA records were imported within '
+                'this cell and period. This does NOT imply no wildfires occurred.')
     if not salida_local.empty and salida_local.n_firms.gt(0).any():
-        st.success('Hay al menos un evento aportado con observación FIRMS cercana en la '
-                   'ventana configurada. Es una coincidencia para revisión, NO confirmación de incendio.')
+        st.success('Hay al menos un evento aportado con observación Nearby FIRMSna en la '
+                   'the configured window. This is a match for review, NOT wildfire confirmation.')
     elif not bom_cell.empty or not sin_cell.empty:
-        st.warning('Hay eventos importados, pero no se comprobó una coincidencia FIRMS '
-                   'en esta celda con los umbrales elegidos.')
-    if not salida_local.empty and salida_local.simulado.astype(str).str.startswith('SÍ').any():
-        st.warning('RESULTADO DEMOSTRATIVO: incluye datos sintéticos, '
-                   'no confirma observations reales de Bomberos ni SINAE.')
+        st.warning('Events were imported, but no FIRMS match was established '
+                   'in this cell within the selected thresholds.')
+    if not salida_local.empty and salida_local.simulado.astype(str).str.startswith(('SÍ','YES')).any():
+        st.warning('DEMONSTRATION RESULT: includes synthetic data, '
+                   'does not confirm actual Fire Service or SINAE observations.')
     try:
         pdf_celda=generar_informe_pdf_celda(
             visible,seleccion_celda,t_hist,t_per,bom_cell,sin_cell,salida_local,
             casos,ano,float(radio),float(horas),int(dias),b_vista,s_vista)
-        st.download_button('📄 Descargar INFORME PDF de esta cuadrícula',pdf_celda,
+        st.download_button('📄 Download PDF report for this cell',pdf_celda,
             file_name=f'IGNIS_informe_celda_{abs(int(seleccion_celda[0]))}_{abs(int(seleccion_celda[1]))}_'
                       f'{ano or "historico"}.pdf',
             mime='application/pdf',key='fus_v3_pdf_celda')
-        st.caption('PDF de análisis exploratorio con mapa, historial NASA, registros institucionales '
-                   'aportados y fuentes. No equivale a un reporte de incidente confirmado.')
+        st.caption('Exploratory PDF report with map, NASA history, institutional records, '
+                   'and sources. This is not a confirmed incident report.')
     except Exception as exc:
-        st.warning(f'No se pudo construir el PDF de esta selección: {type(exc).__name__}: {exc}')
-    st.download_button('⬇️ Descargar ficha de la celda (CSV)',
+        st.warning(f'Could not generate the PDF for this selection: {type(exc).__name__}: {exc}')
+    st.download_button('⬇️ Download cell record (CSV)',
         resumen.to_csv(index=False).encode('utf-8-sig'),
         file_name='IGNIS_CELDA_ELEGIDA_EXPLORATORIA.csv',mime='text/csv',key='fus_v2_ficha')
-    with st.expander('Metodología, procedencia y limitaciones'):
+    with st.expander('Methodology, provenance, and limitations'):
         st.markdown(
-            f"- NASA FIRMS: histórico realmente incorporado al Maestro; no equivale a incendios confirmados.\n"
-            f"- [Ministerio del Interior — red costera de Bomberos]({FUENTE_CAMARAS}): "
-            "se documentan 20 cámaras, pero NO hay lista verificada de sus coordenadas en el proyecto. "
-            "Los diamantes marcan centros de localidades de referencia, no torres ni radios reales de vigilancia.\n"
-            f"- [SINAE/MIRA — catálogo CSV histórico 2018–2022]({FUENTE_MIRA}); "
-            "los eventos pueden derivarse también de otras fuentes, incluso de observations espaciales.\n"
-            "- Biblioteca de casos: ubicaciones aproximadas de LOCALIDADES y fechas documentadas; "
-            "no se dispone de polígonos quemados, coordenadas de inicio ni cobertura exhaustiva.\n"
-            "- PAIF: otra red de 65 cámaras forestales (temporada 2025–2026); no se afirma "
-            "que haya ausencia de cobertura fuera de Colonia–Rocha.\n"
-            "- La malla es de 0,2°; los colores indican años con alguna observación, no tasas de incendio. "
-            "Los recortes de zona son APROXIMADOS, no límites departamentales.\n"
-            "- La correlación se basa en coincidencia temporal y espacial configurable: "
-            "no valida independencia de fuentes, precisión de sensores ni tiempos de alerta."
+            f"- NASA FIRMS: historical records actually imported into the Master dataset, not confirmed wildfires.\n"
+            f"- [Ministerio del Interior — Fire Service coastal network]({FUENTE_CAMARAS}): "
+            "20 cameras are documented, but the project has no verified list of their coordinates. "
+            "Diamonds indicate approximate town centers, not towers or verified monitoring ranges.\n"
+            f"- [SINAE/MIRA — historical CSV catalogue 2018–2022]({FUENTE_MIRA}); "
+            "events may also come from other sources, including satellite observations.\n"
+            "- Case library: approximate TOWN locations and documented dates; "
+            "burned-area polygons, ignition coordinates, and exhaustive coverage are unavailable.\n"
+            "- PAIF: another network of 65 forest cameras (2025–2026 season); this does not imply "
+            "an absence of coverage outside Colonia–Rocha.\n"
+            "- The grid is 0.2°; colors indicate years with observations, not wildfire rates. "
+            "Region selections are APPROXIMATE, not departmental boundaries.\n"
+            "- Associations use configurable temporal and spatial proximity: "
+            "this does not validate source independence, sensor accuracy, or alert lead times."
         )
