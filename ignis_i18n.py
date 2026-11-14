@@ -8,6 +8,13 @@ import streamlit as st
 
 COLUMN_LABELS = {
     "anio": "Year", "Año": "Year", "ano": "Year",
+    "Mes UTC": "UTC month", "Instrumento": "Instrument",
+    "Observaciones importadas": "Imported observations",
+    "Horarios válidos": "Valid timestamps", "FRP disponible": "Available FRP",
+    "Estado de datos": "Data status", "Cobertura orbital verificada": "Verified orbital coverage",
+    "Fechas UTC": "UTC dates", "Tipo": "Type", "Medio": "Publisher",
+    "Fechas del hecho": "Event dates", "Lugar reportado": "Reported location",
+    "Enlace": "Source URL", "Fuentes externas": "External sources",
     "mes": "Month", "Mes": "Month",
     "dia": "Day", "Día": "Day",
     "instrumento": "Instrument", "Instrumento": "Instrument",
@@ -66,8 +73,39 @@ def english_view(data):
                              pd.api.types.is_string_dtype(shown["Month"])):
         shown = shown.copy()
         shown["Month"] = shown["Month"].replace(MONTHS)
+    if "Data status" in shown:
+        shown = shown.copy()
+        shown["Data status"] = shown["Data status"].replace(VALUE_LABELS)
+    if "Verified orbital coverage" in shown:
+        shown = shown.copy()
+        shown["Verified orbital coverage"] = shown["Verified orbital coverage"].replace(VALUE_LABELS)
     return shown
 
 
 def display_dataframe(data, *args, **kwargs):
     return st.dataframe(english_view(data), *args, **kwargs)
+
+
+VALUE_LABELS = {
+    "CON DETECCIONES IMPORTADAS": "IMPORTED DETECTIONS",
+    "SIN REGISTROS IMPORTADOS": "NO RECORDS IMPORTED",
+    "NO": "No",
+}
+
+
+def english_quality_notice(message: str) -> str:
+    """Translate quality diagnostics at display time, preserving scientific outputs."""
+    import re
+    if message.startswith("Sin registros importados:"):
+        return "No records imported: satellite coverage or absence of thermal activity cannot be inferred."
+    if message.startswith("No se han verificado oportunidades"):
+        return "Observation opportunities, cloud cover, and instrument coverage have not been verified."
+    match = re.fullmatch(r"([\d,]+) de ([\d,]+) registros sin (.+) válida\.", message)
+    if match:
+        names = {"coordenadas": "coordinates", "fechas": "dates",
+                 "horarios UTC": "UTC timestamps", "familia instrumental": "instrument family"}
+        return f"{match.group(1)} of {match.group(2)} records have missing or invalid {names.get(match.group(3), match.group(3))}."
+    match = re.fullmatch(r"Hay ([\d,]+) IDs repetidos en esta tabla\.", message)
+    if match:
+        return f"There are {match.group(1)} duplicate IDs in this table."
+    return message
