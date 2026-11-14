@@ -13,6 +13,7 @@ Salida: asociaciones exploratorias espaciales y temporales, NO detección
 validada, no predicción de incendios ni alerta operativa.
 """
 from __future__ import annotations
+from ignis_i18n import display_dataframe
 
 import io
 import hashlib
@@ -1226,7 +1227,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
             st.bar_chart(por_anio.set_index('Año'))
         with x2:
             st.markdown('**Sensors in period**')
-            st.dataframe(instrumentos,use_container_width=True,hide_index=True)
+            display_dataframe(instrumentos,use_container_width=True,hide_index=True)
     else:
         st.info('No satellite observations in this cell for the active period.')
     # Cruce anual solo descriptivo: una fila por año, nunca significa que hubo un incendio confirmado.
@@ -1246,7 +1247,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
         for col in hist_anual.columns:
             hist_anual[col]=hist_anual[col].astype(int)
         with st.expander('📅 Compare years: NASA vs. uploaded institutional records',expanded=False):
-            st.dataframe(hist_anual,use_container_width=True,hide_index=True)
+            display_dataframe(hist_anual,use_container_width=True,hide_index=True)
             st.caption('These counts come from sources with different resolutions. '
                        'Zero for SINAE or Fire Service means zero records IMPORTED into this cell, '
                        'not zero wildfires. Open MIRA data only cover 2018–2022.')
@@ -1308,7 +1309,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
             st.warning('Includes synthetic records. A simulated match only tests the software's matching logic, '
                        'not its operational ability to detect wildfires.')
         if not celda_fusion.empty:
-            st.dataframe(celda_fusion,use_container_width=True,hide_index=True)
+            display_dataframe(celda_fusion,use_container_width=True,hide_index=True)
         else:
             st.info('No external events were uploaded for the selected cell; '
                     'matches in other cells can be downloaded.')
@@ -1346,7 +1347,7 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
                     'Declared status':str(r.estado_origen)[:100],
                     'Status':'SYNTHETIC' if bool(r.es_simulado) else 'Declared in file'})
         if eventos_tabla:
-            st.dataframe(pd.DataFrame(eventos_tabla),use_container_width=True,hide_index=True)
+            display_dataframe(pd.DataFrame(eventos_tabla),use_container_width=True,hide_index=True)
     else:
         st.info('No se importaron registros de Bomberos/PAIF ni SINAE/MIRA dentro de '
                 'esta cuadrícula y período. Esto NO implica que no haya habido incendios.')
