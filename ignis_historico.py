@@ -738,19 +738,19 @@ if current_section==NAV_PAGES[5]:
             a,b,c,d=st.columns(4)
             a.metric('Overlap years',len(armonia['overlap_years']))
             b.metric(f'Comparable months {selected}',armonia['selected_overlap_months'])
-            c.metric(f'Celdas coincidentes {selected}',armonia['selected_coincident_cells'])
+            c.metric(f'Matching grid cells {selected}',armonia['selected_coincident_cells'])
             d.metric('Instruments present',sample.instrumento.nunique())
             st.markdown('##### Sensor timeline')
             if armonia['periods']:st.dataframe(pd.DataFrame(armonia['periods']),use_container_width=True,hide_index=True)
             if not armonia['table'].empty:
                 st.markdown('##### Exploratory matching for the selected year')
                 st.dataframe(armonia['table'],use_container_width=True,hide_index=True)
-            else:st.info(f'En el año {selected} shows overall historical overlap, but there are no comparable months with simultaneous MODIS and VIIRS observations in the active selection.')
+            else:st.info(f'Year {selected} shows overall historical overlap, but there are no comparable months with simultaneous MODIS and VIIRS observations in the active selection.')
             q1,q2=st.columns(2)
             with q1:
-                st.markdown("""<div style='background:linear-gradient(135deg,rgba(10,88,126,.42),rgba(20,43,76,.72));border:1px solid #4ed8ff;border-radius:16px;padding:16px 18px;margin-top:8px'><h4 style='margin:0 0 10px 0;color:#74e2ff'>What is currently supported</h4><ul style='margin:0 0 0 18px'><li>Visualizar continuidad histórica</li><li>Identificar coexistencia de sensores</li><li>Comparar meses con presencia simultánea</li><li>Detectar coincidencias exploratorias MODIS–VIIRS</li><li>Documentar el estado del sistema en el PDF</li></ul></div>""",unsafe_allow_html=True)
+                st.markdown("""<div style='background:linear-gradient(135deg,rgba(10,88,126,.42),rgba(20,43,76,.72));border:1px solid #4ed8ff;border-radius:16px;padding:16px 18px;margin-top:8px'><h4 style='margin:0 0 10px 0;color:#74e2ff'>What is currently supported</h4><ul style='margin:0 0 0 18px'><li>Visualize historical continuity</li><li>Identify overlapping sensors</li><li>Compare months with simultaneous observations</li><li>Detect exploratory MODIS–VIIRS matches</li><li>Document the current system status in the PDF</li></ul></div>""",unsafe_allow_html=True)
             with q2:
-                st.markdown("""<div style='background:linear-gradient(135deg,rgba(82,34,106,.42),rgba(20,43,76,.72));border:1px solid #d58fff;border-radius:16px;padding:16px 18px;margin-top:8px'><h4 style='margin:0 0 10px 0;color:#efb8ff'>What is not supported yet</h4><ul style='margin:0 0 0 18px'><li>No sumar MODIS y VIIRS como incendios equivalentes</li><li>No confirmar incendios operativos</li><li>No estimar superficie quemada</li><li>No compensar cobertura satelital de forma cuantitativa</li><li>No reemplazar la validación científica final</li></ul></div>""",unsafe_allow_html=True)
+                st.markdown("""<div style='background:linear-gradient(135deg,rgba(82,34,106,.42),rgba(20,43,76,.72));border:1px solid #d58fff;border-radius:16px;padding:16px 18px;margin-top:8px'><h4 style='margin:0 0 10px 0;color:#efb8ff'>What is not supported yet</h4><ul style='margin:0 0 0 18px'><li>Do not add MODIS and VIIRS as equivalent wildfires</li><li>Do not claim operational wildfire confirmation</li><li>Do not estimate burned area</li><li>Do not claim quantitative satellite coverage correction</li><li>Do not replace scientific validation</li></ul></div>""",unsafe_allow_html=True)
             st.caption('Exploratory method used in the app: same active region, UTC day, and approximate 0.20° grid cell. This supports historical continuity analysis, not definitive calibration.')
             st.divider()
             st.markdown('#### Second test: geographic and temporal proximity (experimental)')
@@ -759,9 +759,9 @@ if current_section==NAV_PAGES[5]:
             minutos=st.slider('Maximum time difference (minutes)',5,120,30,5,key='ignis_tiempo_min')
             pares=emparejar(sample,selected,km,minutos)
             p1,p2,p3=st.columns(3)
-            p1.metric('Pares instrumentales candidatos',len(pares))
+            p1.metric('Candidate instrument pairs',len(pares))
             p2.metric('Days with matches',pares.fecha_utc.nunique() if len(pares) else 0)
-            p3.metric('Distancia mediana',f'{pares.distancia_km.median():.2f} km' if len(pares) else 'No matches')
+            p3.metric('Median distance',f'{pares.distancia_km.median():.2f} km' if len(pares) else 'No matches')
             if len(pares):
                 st.dataframe(resumir_pares(pares),use_container_width=True,hide_index=True)
                 st.download_button('Download candidate pairs (CSV)',pares.to_csv(index=False).encode('utf-8-sig'),file_name=f'IGNIS_pares_{selected}.csv',mime='text/csv')
@@ -770,10 +770,10 @@ if current_section==NAV_PAGES[5]:
 
 
         st.divider()
-        with st.expander('Laboratorio de sensibilidad espacial · 0,05° a 0,40° (exploratorio)', expanded=False):
+        with st.expander('Spatial sensitivity laboratory · 0.05° to 0.40° (exploratory)', expanded=False):
             st.caption(
-                'Compara la misma regla celda-día a distintas escalas usando exclusivamente '
-                'el Maestro y los filtros activos. No calibra cobertura, FRP ni probabilidad de incendio.'
+                'Compares the same day-cell matching rule across spatial scales, using only '
+                'the Master dataset and active filters. It does not calibrate coverage, FRP, or wildfire probability.'
             )
             comparabilidad = diagnostico_comparabilidad(sample)
             ca, cb, cc = st.columns(3)
@@ -789,13 +789,13 @@ if current_section==NAV_PAGES[5]:
                 mime='text/csv',
                 key='ignis_sensibilidad_descarga',
             )
-            cuentas = tabla_sensibilidad['Grid-cell days with both'].unique()
+            cuentas = tabla_sensibilidad['Celdas-día con ambos'].unique()
             if len(cuentas) > 1:
                 st.info('The number of matches varies with scale; the method is sensitive to grid-cell size.')
             else:
-                st.info('En este recorte la cantidad de coincidencias no cambia entre las escalas probadas; esto no valida la regla ni su cobertura.')
+                st.info('The number of matches remains constant at the tested scales for this selection; this does not validate the rule or its coverage.')
             st.warning(
-                'Los ceros significan ausencia de detecciones en los archivos importados, '
+                'Zeros indicate no detections in imported files, '
                 'not that a satellite observed the area without fire. These counts are NOT a calibrated series. '
                 'Instrument observation opportunities have not been verified.'
             )
@@ -809,7 +809,7 @@ if current_section==NAV_PAGES[5]:
         aq1.metric('Audited records', f"{audit['filas']:,}")
         aq2.metric('Valid coordinates', f"{audit['coordenadas_validas']:,}")
         aq3.metric('Valid UTC time', f"{audit['horarios_validos']:,}")
-        aq4.metric('FRP disponible', f"{audit['frp_disponible']:,}")
+        aq4.metric('Available FRP', f"{audit['frp_disponible']:,}")
         for aviso in lectura_diagnostica(audit):
             st.caption('• ' + aviso)
         if selected is not None:
@@ -829,9 +829,9 @@ if current_section==NAV_PAGES[5]:
                 st.warning('Days with detections ≠ days of verified sensor coverage. Months without imported records do not prove absence of wildfires.')
         with st.expander('V5 matching · unique pairs across UTC midnight (experimental)', expanded=False):
             st.write(
-                'A diferencia del método original por día UTC, esta alternativa permite coincidencias '
-                'a ambos lados de la medianoche y utiliza como máximo una vez cada observación '
-                'MODIS y VIIRS en el resultado completo.'
+                'Unlike the original same-UTC-day method, this alternative allows matches '
+                'across midnight and uses each observation at most once across '
+                'the entire MODIS–VIIRS result set.'
             )
             pkm = st.slider('V5 matching: maximum distance (km)', 1, 20, 5, 1, key='ignis_v5_radio')
             pmin = st.slider('V5 matching: maximum time difference (min)', 5, 120, 30, 5, key='ignis_v5_minutos')
@@ -847,7 +847,7 @@ if current_section==NAV_PAGES[5]:
                     parejas = emparejar_global(sample, ano=selected, radio_km=pkm, ventana_min=pmin)
                     st.session_state['ignis_pareo_v5_resultado'] = {'firma': firma, 'tabla': parejas}
                 except (ValueError, TypeError) as error:
-                    st.error(f'No se pudo ejecutar el pareo V5: {error}')
+                    st.error(f'Could not execute V5 matching: {error}')
             resultado = st.session_state.get('ignis_pareo_v5_resultado')
             if resultado and resultado['firma'] == firma:
                 parejas = resultado['tabla']
@@ -855,7 +855,7 @@ if current_section==NAV_PAGES[5]:
                 r1, r2, r3 = st.columns(3)
                 r1.metric('Unique pairs', rp['pares'])
                 r2.metric('UTC day crossings', rp['cruces_medianoche'])
-                r3.metric('Distancia mediana', f"{rp['distancia_mediana_km']:.2f} km" if rp['distancia_mediana_km'] is not None else 'No matches')
+                r3.metric('Median distance', f"{rp['distancia_mediana_km']:.2f} km" if rp['distancia_mediana_km'] is not None else 'No matches')
                 if len(parejas):
                     st.dataframe(parejas, use_container_width=True, hide_index=True)
                     st.download_button(
@@ -868,7 +868,7 @@ if current_section==NAV_PAGES[5]:
                 else:
                     st.info('No pairs with valid timestamps meet both thresholds.')
             st.caption(
-                'El emparejamiento es voraz por diferencia horaria y distancia, '
+                'Matching uses a greedy ordering by time difference and distance, '
                 'not a global minimum-cost assignment solution. '
                 'Candidate pairs are neither confirmed wildfires nor calibrated FRP.'
             )
@@ -892,7 +892,7 @@ if current_section == NAV_PAGES[6]:
                 st.info('No valid coordinates for this year.')
             else:
                 dias = sorted(observables['fecha'].dropna().astype(str).unique(), reverse=True)
-                dia = st.selectbox('Día UTC', dias, key='ignis_worldview_dia')
+                dia = st.selectbox('UTC day', dias, key='ignis_worldview_dia')
                 del_dia = observables[observables['fecha'].astype(str) == dia].sort_values('instrumento').head(500).reset_index(drop=True)
                 if len(del_dia):
                     indice = st.selectbox(
@@ -931,19 +931,19 @@ if current_section==NAV_PAGES[7]:
         current=alert_df[alert_df['Año']==int(selected)].copy() if len(alert_df) and selected is not None else pd.DataFrame()
         m1,m2,m3=st.columns(3)
         m1.metric('Historical candidates',int(len(alert_df)))
-        m2.metric(f'Candidatos {selected}',int(len(current)))
+        m2.metric(f'Candidates {selected}',int(len(current)))
         m3.metric('Flagged sensors',int(current['Sensor'].nunique()) if len(current) else 0)
         if len(current):
-            st.markdown(f'''<div class="ignis-alerta" role="status"><h2>🚨 ATENCIÓN · {len(current)} señales estadísticas en {selected}</h2><p>Meses con actividad inusual respecto a la referencia histórica del mismo sensor. <b>Review recommended.</b> No implica incendios confirmados ni alerta operativa.</p></div>''',unsafe_allow_html=True)
+            st.markdown(f'''<div class="ignis-alerta" role="status"><h2>🚨 ATTENTION · {len(current)} statistical signals in {selected}</h2><p>Months with unusual activity compared with the same sensor's historical reference. <b>Review recommended.</b> These are neither confirmed wildfires nor operational alerts.</p></div>''',unsafe_allow_html=True)
             current=current.copy(); current['Mes']=current['Mes'].map({1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'})
             st.dataframe(current[['Mes','Sensor','Detecciones','Mediana otros años','Índice frente a mediana']],use_container_width=True,hide_index=True)
         elif len(alert_df):
-            st.markdown(f'''<div class="ignis-neutral" role="status"><strong>✅ {selected}: sin candidatos según el criterio piloto</strong><p>El histórico sí contiene <b>{len(alert_df)} señales estadísticas</b> para inspección. Esto no certifica ausencia de riesgo ni cobertura completa.</p></div>''',unsafe_allow_html=True)
+            st.markdown(f'''<div class="ignis-neutral" role="status"><strong>✅ {selected}: no candidates under the pilot criterion</strong><p>The archive still contains <b>{len(alert_df)} statistical signals</b> for review. This does not certify an absence of risk or complete coverage.</p></div>''',unsafe_allow_html=True)
             st.markdown(f'#### 🚨 {len(alert_df)} historical signals that warrant review')
         else:st.info('No candidates were identified under the pilot method, or comparable years are missing. This does NOT imply no risk.')
         if len(alert_df):
             annual_alerts=alert_df.groupby('Año').size().reset_index(name='candidatos')
-            fig=px.bar(annual_alerts,x='Año',y='candidatos',template='plotly_dark',labels={'candidatos':'Candidatos exploratorios'})
+            fig=px.bar(annual_alerts,x='Año',y='candidatos',template='plotly_dark',labels={'candidatos':'Exploratory candidates'})
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',height=320,margin=dict(l=10,r=10,t=35,b=10))
             st.plotly_chart(fig,use_container_width=True,key='alertas_por_ano')
             with st.expander('View all exploratory historical signals'):
@@ -965,7 +965,7 @@ if current_section==NAV_PAGES[8]:
         st.write('Historical calendar by month and sensor. Includes only data imported into the Master dataset.')
         for i,sensor in enumerate(sorted(sample.instrumento.unique())):heatmap_mensual(sample[sample.instrumento==sensor],sensor,f'calendario_final_mensual_{i}')
         if selected is not None:
-            st.subheader(f'Calendario diario · {selected}')
+            st.subheader(f'Daily calendar · {selected}')
             daily=sample[sample.anio==selected].groupby(['dia','instrumento']).size().reset_index(name='detecciones')
             st.dataframe(daily,use_container_width=True,hide_index=True)
             st.download_button('Download daily calendar CSV',daily.to_csv(index=False).encode('utf-8-sig'),file_name=f'IGNIS_calendario_{selected}.csv')
@@ -988,7 +988,7 @@ if current_section==NAV_PAGES[9]:
         col_a.metric('Selected year',str(selected))
         col_b.metric('Yearly detections',f'{sum(sample.anio==selected):,}')
         col_c.metric('Historical years with records',sample.anio.nunique())
-        st.caption(f'Recorte: {reg} · Instrumentos: {", ".join(sens)} · Histórico disponible: {sample.anio.min()}–{sample.anio.max()}.')
+        st.caption(f'Selection: {reg} · Instruments: {", ".join(sens)} · Historical data available: {sample.anio.min()}–{sample.anio.max()}.')
         preview=st.checkbox('Preview report contents',value=False)
         if preview:
             st.markdown('**Sections:** 1. Yearly summary · 2. Daily and monthly calendars · 3. Historical context · 4. Thermal map · 5. MODIS–VIIRS harmonization · 6. Exploratory signals · 7. Documentary traceability · 8. Provenance and limitations.')
@@ -997,7 +997,7 @@ if current_section==NAV_PAGES[9]:
             archivo_pdf=construir_pdf(sample,int(selected),reg,sens)
             st.download_button('⬇️ Generate and download PDF report',data=archivo_pdf,file_name=f'IGNIS_{selected}_{reg.split(" (")[0].replace(" ","_")}_informe.pdf',mime='application/pdf',type='primary')
         except Exception as e:
-            st.error(f'No pudo generarse el PDF: {type(e).__name__}: {e}')
+            st.error(f'Could not generate PDF: {type(e).__name__}: {e}')
         st.warning('Exploratory report: observations from different platforms have not been quantitatively harmonized; combined totals must not be interpreted as wildfire counts.')
 
 # Consulta opcional, aislada del Maestro y sin peticiones automáticas.
