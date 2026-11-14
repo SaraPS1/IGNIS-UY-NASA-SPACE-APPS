@@ -14,7 +14,7 @@ RUTA_MAESTRO_HISTORICO = Path(__file__).resolve().parent / "catalogo_fuentes_200
 
 def normalizar_catalogo(catalogo):
     if not isinstance(catalogo, dict):
-        raise ValueError("El maestro documental debe ser un objeto JSON.")
+        raise ValueError("The documentary master must be a JSON object.")
     fuentes = catalogo.get("fuentes")
     casos = catalogo.get("casos")
     if isinstance(fuentes, list) and fuentes:
@@ -108,7 +108,7 @@ def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = Non
                 st.session_state["maestro_documental_2000_2026"] = candidato
                 st.success(f"Documentary master loaded: {len(candidato['casos'])} year-specific cases.")
             except (UnicodeDecodeError, json.JSONDecodeError, AttributeError, ValueError) as error:
-                st.error(f"No se pudo importar el Maestro documental: {error}")
+                st.error(f"Could not import documentary Master dataset: {error}")
 
     try:
         catalogo_sesion = st.session_state.get("maestro_documental_2000_2026")
@@ -142,10 +142,10 @@ def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = Non
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Fuentes externas", len(caso.get("fuentes", [])))
-    col2.metric("Registros FIRMS en carga actual", cantidad)
+    col2.metric("FIRMS records in current upload", cantidad)
     col3.metric("Documentary association", "Regional/temporal match" if coincide else "No match in current upload")
 
-    st.write(caso.get("resumen", "Sin resumen disponible."))
+    st.write(caso.get("resumen", "No summary available."))
     st.caption("The following counts and dates come from the historical catalogue and may differ from uploaded observations.")
     display_dataframe(pd.DataFrame([{
         "Fechas UTC": ", ".join(caso.get("fechas_utc", [])),

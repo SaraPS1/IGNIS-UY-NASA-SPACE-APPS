@@ -395,7 +395,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
 
           try {{
             if (!window.WebGLRenderingContext) {{
-              throw new Error('WebGL no disponible en este navegador.');
+              throw new Error('WebGL is not available in this browser.');
             }}
             if (!root || !shell) {{
               throw new Error('The 3D view container is missing.');
@@ -864,7 +864,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
                 format_func=lambda item: {
                     "uruguay": "🇺🇾 Uruguay",
                     "south_america": "🌎 South America",
-                    "global": "🌍 Tierra completa",
+                    "global": "🌍 Full Earth",
                     "selected": "📍 Zona seleccionada",
                 }.get(item, item),
             )
@@ -904,7 +904,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
             q1.metric("Records", f"{len(frame):,}" if len(frame) else "—")
             q2.metric("Fechas", len(date_options))
             q3, q4 = st.columns(2, gap="small")
-            q3.metric("Sensores", frame["instrumento"].nunique() if len(frame) else "—")
+            q3.metric("Sensors", frame["instrumento"].nunique() if len(frame) else "—")
             q4.metric("Modo orbital", "TLE" if orbit_mode == "TLE actuales" else "Esquema")
         st.markdown(
             '<div class="ignis-orbit-guide"><strong>How to interpret the lines</strong>'

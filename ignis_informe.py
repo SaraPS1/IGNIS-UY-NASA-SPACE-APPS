@@ -218,7 +218,7 @@ def map_figure(df):
     ax.set(xlim=(-58.85,-52.65),ylim=(-35.45,-29.75),xlabel='Longitud',ylabel='Latitud')
     ax.tick_params(colors=WHITE,labelsize=7)
     for spine in ax.spines.values(): spine.set_color('#35527b')
-    cbar=fig.colorbar(img,ax=ax,shrink=.7,label='Densidad visual relativa (no calibrada)')
+    cbar=fig.colorbar(img,ax=ax,shrink=.7,label='Relative visual density (not calibrated)')
     cbar.ax.yaxis.label.set_color(WHITE); cbar.ax.tick_params(colors=WHITE)
     fig.tight_layout()
     return plot_buffer(fig)
