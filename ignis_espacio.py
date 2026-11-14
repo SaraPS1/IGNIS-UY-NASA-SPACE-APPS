@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import requests
 import streamlit as st
+from ignis_i18n import display_dataframe
 import streamlit.components.v1 as components
 
 try:
@@ -969,7 +970,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
             with st.expander("View observations for the selected date", expanded=False):
                 fields = ["fecha", "latitude", "longitude", "instrumento",
                           "satellite", "frp", "confidence"]
-                st.dataframe(filtered_frame[fields], use_container_width=True,
+                display_dataframe(filtered_frame[fields], use_container_width=True,
                              hide_index=True, height=260)
 
     st.caption(
