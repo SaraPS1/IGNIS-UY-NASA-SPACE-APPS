@@ -79,8 +79,8 @@ class CinematicObservatoryTests(unittest.TestCase):
         self.assertEqual(embedded["points"]["year"], [2024, 2025, 2025])
 
     def test_design_is_visually_prominent_and_primary_navigation(self):
-        self.assertIn("st.columns([3.2, 1]", self.dashboard_source)
-        self.assertIn("height=770", self.dashboard_source)
+        self.assertIn("st.columns([2, 1]", self.dashboard_source)
+        self.assertIn("height=740", self.dashboard_source)
         self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[1])', self.app_source)
         self.assertIn("Uruguay · Geospatial Observatory", self.dashboard_source)
 
