@@ -1296,6 +1296,9 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
             fusion=pd.DataFrame()
     else:
         fusion=pd.DataFrame()
+    # Expose the current calculated associations to the 3D control center.
+    # This is derived from uploaded records; do not create synthetic matches.
+    st.session_state['ignis_fusion_results'] = fusion if not fusion.empty else None
     if not fusion.empty:
         celda_fusion=fusion.loc[fusion.lat.ge(lat0)&fusion.lat.lt(lat1)&
                                fusion.lon.ge(lon0)&fusion.lon.lt(lon1)].copy()
