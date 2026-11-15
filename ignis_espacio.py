@@ -498,12 +498,19 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             const camera = new THREE.PerspectiveCamera(46, root.clientWidth / root.clientHeight, 0.1, 2000);
             camera.position.set(3.9, -3.5, 5.4);
 
+            let rendererLost=false;
             const renderer = new THREE.WebGLRenderer({{ antialias: true, alpha: false }});
             renderer.toneMapping=THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure=1.12;
             renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.75));
             renderer.setSize(root.clientWidth, root.clientHeight);
             root.appendChild(renderer.domElement);
+            renderer.domElement.addEventListener('webglcontextlost',(event)=>{{
+              event.preventDefault();
+              rendererLost=true;
+              window.__ignisGlobeReady=false;
+              window.__ignisRenderFallback?.('WebGL graphics context lost. Showing 2D map.');
+            }},{{passive:false}});
 
             const controls = new OrbitControls(camera, renderer.domElement);
           controls.enableDamping = true;
@@ -641,7 +648,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           let textureFailures=0;
           let sceneReady=false;
           function reportSceneStatus(){{
-            if(!sceneReady)return;
+            if(!sceneReady||rendererLost)return;
             const incomplete=textureFailures>0 || textureCount<2;
             setStatus(incomplete?'3D active with fallback visuals':'3D ready · Earth textures loaded');
           }}
@@ -1018,6 +1025,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           }}
           let priorFrame=performance.now();
           function animate(){{
+            if(rendererLost)return;
             requestAnimationFrame(animate);
             const now=performance.now(),delta=Math.min(0.12,(now-priorFrame)/1000);
             priorFrame=now;
