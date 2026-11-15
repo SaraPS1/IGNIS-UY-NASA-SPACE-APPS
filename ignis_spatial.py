@@ -51,6 +51,44 @@ def render_spatial_3d(data: Optional[pd.DataFrame], year: Optional[int] = None,
     )
 
 
+def _empty_scientific_outline_png() -> bytes:
+    """Report-ready reference geography when no observations are loaded.
+
+    No hotspots, sensor coverage, or invented ground incidents are drawn.
+    """
+    import io
+    import json
+    from pathlib import Path
+    from matplotlib.figure import Figure
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+    geo = json.loads((Path(__file__).resolve().parent / "uruguay_contorno.geojson")
+                     .read_text(encoding="utf-8"))
+    ring = geo["features"][0]["geometry"]["coordinates"][0]
+    fig = Figure(figsize=(7, 5.5), facecolor="#081728")
+    ax = fig.add_axes([.13, .13, .79, .76], facecolor="#081728")
+    ax.fill([p[0] for p in ring], [p[1] for p in ring],
+            color="#15364c", alpha=.9)
+    ax.plot([p[0] for p in ring], [p[1] for p in ring],
+            color="#62d7eb", linewidth=1.5)
+    ax.set_xlim(-58.85, -52.65)
+    ax.set_ylim(-35.45, -29.75)
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_title("Uruguay · reference geography", color="#dff8ff", fontsize=12)
+    ax.set_xlabel("Longitude", color="#b8d2e4", fontsize=8)
+    ax.set_ylabel("Latitude", color="#b8d2e4", fontsize=8)
+    ax.text(.5, .03, "No imported FIRMS records · not evidence of no wildfires",
+            color="#d9d2bc", fontsize=7, ha="center", transform=ax.transAxes,
+            bbox={"facecolor": "#0d2a3d", "edgecolor": "none", "pad": 5})
+    ax.tick_params(colors="#a1bfd2", labelsize=7)
+    ax.grid(color="#294b62", alpha=.2)
+    for spine in ax.spines.values():
+        spine.set_color("#31566c")
+    buffer = io.BytesIO()
+    FigureCanvasAgg(fig).print_png(buffer)
+    return buffer.getvalue()
+
+
 def render_report_map(data: Optional[pd.DataFrame],
                       associations: Optional[pd.DataFrame] = None):
     """Generate precisely the same static 2D map used by IGNIS PDF reports.
@@ -60,10 +98,10 @@ def render_report_map(data: Optional[pd.DataFrame],
     """
     frame = to_scene_frame(data)
     if frame.empty:
-        return None
+        return _empty_scientific_outline_png()
     from ignis_informe import map_figure
     stream = map_figure(frame, associations=associations)
-    return stream.getvalue() if stream is not None else None
+    return stream.getvalue() if stream is not None else _empty_scientific_outline_png()
 
 
 def render_spatial_pair(data: Optional[pd.DataFrame], year: Optional[int] = None,
@@ -88,13 +126,15 @@ def render_spatial_pair(data: Optional[pd.DataFrame], year: Optional[int] = None
                              height=height, live_connection=live_connection)
     with right:
         st.markdown("**2D · Scientific report map**")
+        if frame.empty:
+            st.info("No imported thermal observations for this selection. The 2D map shows the national outline only.")
         png = render_report_map(frame, associations)
         if png is None:
             st.info("No georeferenced FIRMS observations for the selected filters. "
                     "The empty map does not imply absence of fire.")
         else:
             st.image(png, use_container_width=True,
-                     caption="Same filtered records as 3D · visual density is not calibrated")
+                     caption=("No FIRMS observations · reference outline only" if frame.empty else "Same filtered records as 3D · visual density is not calibrated"))
             st.download_button("Download 2D report map (PNG)", data=png,
                                file_name=f"IGNIS_{context}_2d_report.png",
                                mime="image/png", key=f"ignis_{context}_2d_png",
