@@ -971,6 +971,26 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
                 index=1, key="ignis_orbit_source",
                 help="Current TLE data cannot reconstruct orbits on historical FIRMS observation dates.",
             )
+
+            st.caption("The FIRMS observation date does not change orbital UTC.")
+            orbit_clock_mode = st.radio(
+                "Orbital UTC clock", ["Current UTC", "Selected UTC"],
+                index=0, key="ignis_orbit_clock_mode",
+                help="Use a current TLE only near its epoch. Distant historical dates require archived elements.",
+            )
+            if orbit_clock_mode == "Selected UTC":
+                now_utc = datetime.now(timezone.utc)
+                orbital_date = st.date_input(
+                    "Orbital date (UTC)", now_utc.date(), key="ignis_orbit_custom_date")
+                orbital_time = st.time_input(
+                    "Orbital time (UTC)", now_utc.time().replace(microsecond=0),
+                    key="ignis_orbit_custom_time")
+                st.session_state["ignis_orbit_selected_utc"] = datetime.combine(
+                    orbital_date, orbital_time, tzinfo=timezone.utc).isoformat()
+                st.caption("A historical TLE archive is not connected. Distant dates correctly show unavailable.")
+            else:
+                st.session_state.pop("ignis_orbit_selected_utc", None)
+
         with st.container(border=True):
             st.caption("DATA LOADED IN THIS SESSION")
             q1, q2 = st.columns(2, gap="small")
@@ -1006,10 +1026,10 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
     )
 
     # Shared SGP4 source for both 3D views. FIRMS historical dates are separate.
-    from ignis_orbits import current_bundle
+    from ignis_orbits import shared_bundle
     use_live_tle = orbit_mode == "Current TLE data"
     if use_live_tle:
-        bundle = current_bundle()
+        bundle = shared_bundle()
         satellites = [
             {
                 "name": item["name"], "sensor": item["sensor"],
@@ -1041,6 +1061,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         "satellites": satellites,
         "orbit_mode": "sgp4" if use_live_tle else "illustrative",
         "orbit_reference_utc": bundle["reference_utc"],
+        "orbit_clock_mode": bundle.get("clock_mode", "current_utc"),
         "hotspots": hotspots,
         "hotspots_total": int(len(filtered_frame)),
         "outline": _uruguay_outline(),
