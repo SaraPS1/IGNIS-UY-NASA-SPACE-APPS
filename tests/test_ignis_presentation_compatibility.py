@@ -51,7 +51,7 @@ class PresentationCompatibilityTests(TestCase):
         keys=[
             'key="sidebar_region"', 'key="sidebar_sensores"',
             'st.link_button(\n        "🚀 NASA Space Apps 2026"',
-            'st.toggle("3D Explorer"', "ignis-side-footer",
+            'st.toggle("3D Explorer"', '<div class="ignis-side-footer">',
         ]
         offsets=[self.main.find(p) for p in keys]
         self.assertTrue(all(o>=0 for o in offsets),offsets)
