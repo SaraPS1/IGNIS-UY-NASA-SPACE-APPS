@@ -412,15 +412,15 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
                   ctx.fillStyle='#ff914e';ctx.fill();
                 }});
                 ctx.fillStyle='#e2f6ff';ctx.font='bold 17px Arial,sans-serif';ctx.textAlign='left';
-                ctx.fillText('URUGUAY · 2D OBSERVATION MAP',20,35);
+                ctx.fillText('URUGUAY · 2D OBSERVATION MAP',20,92);
                 ctx.font='12px Arial,sans-serif';ctx.fillStyle='#a8c4d5';
-                ctx.fillText('Imported FIRMS thermal anomalies · not confirmed wildfires',20,55);
+                ctx.fillText('Imported FIRMS thermal anomalies · not confirmed wildfires',20,113);
                 ctx.fillText(observations.length.toLocaleString()+' plotted observations · geographic reference outline',20,h-23);
               }}
               paint();
               if(window.ResizeObserver)new ResizeObserver(paint).observe(root);
               const button=document.createElement('button');button.type='button';button.textContent='Retry 3D';
-              button.style.cssText='position:absolute;top:18px;right:18px;border:1px solid #5fcadf;background:#10354a;color:#ecfcff;border-radius:4px;padding:9px 12px;cursor:pointer';
+              button.style.cssText='position:absolute;top:68px;right:18px;border:1px solid #5fcadf;background:#10354a;color:#ecfcff;border-radius:4px;padding:9px 12px;cursor:pointer';
               button.onclick=()=>window.location.reload();wrap.appendChild(button);
             }}
             window.__ignisRenderFallback=function(error){{
@@ -428,6 +428,8 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
               window.__ignisGlobeFallbackActive=true;
               console.warn('IGNIS 3D unavailable; using local 2D map',error);
               status.textContent='WebGL unavailable · showing local 2D map';
+              const help=document.querySelector('.ignis-globe-help');if(help)help.style.display='none';
+              const ctl=document.getElementById('ignis-orbit-ctl');if(ctl)ctl.style.display='none';
               status.style.borderColor='#f6ab71';status.style.color='#ffe1c8';
               drawScientificFallback();
             }};
@@ -475,10 +477,12 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             const scene = new THREE.Scene();
             scene.background = new THREE.Color(0x020812);
 
-            const camera = new THREE.PerspectiveCamera(35, root.clientWidth / root.clientHeight, 0.1, 2000);
-            camera.position.set(0, 1.2, 6.4);
+            const camera = new THREE.PerspectiveCamera(46, root.clientWidth / root.clientHeight, 0.1, 2000);
+            camera.position.set(3.9, -3.5, 5.4);
 
             const renderer = new THREE.WebGLRenderer({{ antialias: true, alpha: false }});
+            renderer.toneMapping=THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure=1.12;
             renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.75));
             renderer.setSize(root.clientWidth, root.clientHeight);
             root.appendChild(renderer.domElement);
@@ -487,18 +491,18 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           controls.enableDamping = true;
           controls.dampingFactor = 0.06;
           controls.enablePan = false;
-          controls.minDistance = 3.1;
-          controls.maxDistance = 12;
+          controls.minDistance = 4.4;
+          controls.maxDistance = 14;
           controls.enableZoom = true;
           controls.autoRotate = payload.orbit_mode==='illustrative';
           controls.autoRotateSpeed = 0.24;
-          controls.target.set(-0.1, -0.25, 0);
+          controls.target.set(0, 0, 0);
 
           const ambient = new THREE.AmbientLight(0x9bbdff, 1.15);
           scene.add(ambient);
 
           const sunLight = new THREE.DirectionalLight(0xffffff, 1.8);
-          sunLight.position.set(5, 3, 7);
+          sunLight.position.set(6, -2, 8);
           scene.add(sunLight);
 
           const starGeometry = new THREE.BufferGeometry();
@@ -528,14 +532,14 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           const cloudMapUrl = textureBase + 'earth_clouds_1024.png';
           const earthView = payload.earth_visualization || 'Blue Marble + Black Marble';
           function solidTex(color) {{
-            const tex = new THREE.DataTexture(new Uint8Array(color), 1, 1, THREE.RGBFormat);
+            const tex = new THREE.DataTexture(new Uint8Array([...color,255]), 1, 1, THREE.RGBAFormat);
             tex.colorSpace = THREE.SRGBColorSpace;
             tex.needsUpdate = true;
             return tex;
           }}
           const globeUniforms = {{
-            dayMap: {{value:solidTex([30,83,128])}},
-            nightMap: {{value:solidTex([2,4,10])}},
+            dayMap: {{value:solidTex([58,125,167])}},
+            nightMap: {{value:solidTex([12,31,55])}},
             sunDirection: {{value:sunLight.position.clone().normalize()}},
             mode: {{value:earthView === 'Blue Marble (day)' ? 1 :
                     earthView === 'Black Marble (night)' ? 2 : 0}}
@@ -558,8 +562,8 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
                 'vec3 night=texture2D(nightMap,vMapUV).rgb;' +
                 'float solar=dot(normalize(vNormalWorld),normalize(sunDirection));' +
                 'float light=smoothstep(-0.12,0.22,solar);' +
-                'vec3 dayLit=day*(0.25+0.75*max(solar,0.0));' +
-                'vec3 nightLit=night*1.70+day*0.035;' +
+                'vec3 dayLit=day*(0.40+0.95*max(solar,0.0));' +
+                'vec3 nightLit=night*1.25+day*0.12;' +
                 'vec3 rgb=mix(nightLit,dayLit,light);' +
                 'if(mode==1)rgb=day*0.95;' +
                 'if(mode==2)rgb=night*1.70+day*0.015;' +
@@ -815,7 +819,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             camera.position.set(1.9, 0.8, 5.4);
             controls.target.set(-0.6, -0.2, 0.1);
           }} else {{
-            camera.position.set(0, 1.2, 6.4);
+            camera.position.set(3.9, -3.5, 5.4);
             controls.target.set(0, 0, 0);
           }}
           controls.update();
