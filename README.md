@@ -4,6 +4,14 @@
 
 > **Important:** A FIRMS detection does not represent a unique wildfire or confirm burned area. **Quantitative** cross-sensor harmonization and operational validation remain pending.
 
+## Super Intelligence (SI) use — public disclosure
+
+**SI tools were used in this project.** Generative AI/large-language-model tools assisted code design, implementation, debugging, documentation and illustrative interface artwork. The Home artwork is displayed with a visible **SI-generated illustration** watermark. Original NASA FIRMS MODIS/VIIRS source observations are **not SI-generated**; SI-assisted code processes, filters and summarizes external data. The exported IGNIS Master dataset records SI-assisted processing and source provenance in `manifest.json`.
+
+No AI-generated audio or video has been identified in the app. Any future SI audio requires descriptive-text **and** metadata acknowledgement; SI images/videos require **visible watermarks**, including on standalone exported media. The project must not use NASA insignia, flags or mission-identifier design elements in SI-generated content. IGNIS UY is independent; references to NASA FIRMS identify the public data source, not a NASA endorsement.
+
+See [detailed SI-use disclosure and release checklist](docs/SI_USAGE.md) and [machine-readable metadata](docs/si_usage.json). **A full binary-asset branding/provenance review is still required before competition submission.**
+
 ## Implemented features
 
 - Import NASA FIRMS MODIS/VIIRS CSV/ZIP files, deduplicate observations, and manually export/reimport the IGNIS Master dataset.

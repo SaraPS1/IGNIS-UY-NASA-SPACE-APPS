@@ -216,7 +216,13 @@ def leer_maestro(blob):
 
 def crear_maestro(df):
     bio=io.BytesIO()
-    manifest={'proyecto':'IGNIS UY','version_formato':'2','registros':len(df),'advertencia':'FIRMS observations, not confirmed wildfires. Original ZIP archives are not retained here.'}
+    manifest={'proyecto':'IGNIS UY','version_formato':'2','registros':len(df),
+              'advertencia':'FIRMS observations, not confirmed wildfires. Original ZIP archives are not retained here.',
+              'si_use': {'code_processing':'SI-assisted software development; reviewed by project team',
+                         'input_data':'NASA FIRMS externally sourced observations, not SI-generated or synthetic',
+                         'transformations':'Normalization, filtering and deduplication in SI-assisted Python code',
+                         'disclosure':'See docs/SI_USAGE.md in the IGNIS UY repository'},
+              'nasa_branding':'Independent project; no NASA endorsement claimed'}
     with zipfile.ZipFile(bio,'w',compression=zipfile.ZIP_DEFLATED) as z:
         z.writestr('observaciones.csv',df.to_csv(index=False))
         z.writestr('manifest.json',json.dumps(manifest,ensure_ascii=False,indent=2))
@@ -605,6 +611,8 @@ with st.sidebar:
         'Geospatial research platform.'
         '<br>Thermal hotspots are not confirmed wildfires.'
         '<br>Institutional links are informational and do not imply endorsement.'
+        '<br>SI-assisted code and explanatory text; SI-generated home illustrations '
+        'are visibly watermarked. Imported NASA FIRMS data is not SI-generated.'
         '</div>',
         unsafe_allow_html=True,
     )

@@ -380,6 +380,19 @@ def _reference_styles():
       position:relative!important;z-index:2!important;
     }
     .ignis-ui-card.ignis-has-background::after{display:none!important}
+    /* Space Apps SI disclosure: permanent visible watermarks on illustrative art. */
+    .ignis-ui-hero>.ignis-si-watermark.ignis-si-watermark,
+    .ignis-ui-card>.ignis-si-watermark.ignis-si-watermark{
+      position:absolute!important;right:12px!important;bottom:10px!important;
+      left:auto!important;top:auto!important;z-index:4!important;
+      display:block!important;width:max-content;max-width:calc(100% - 24px);
+      font:700 10px/1.35 "Inter","Segoe UI",sans-serif!important;
+      letter-spacing:.06em!important;text-transform:uppercase!important;
+      color:#fff!important;background:rgba(0,12,24,.87)!important;
+      border:1px solid rgba(140,230,247,.72)!important;
+      padding:5px 8px!important;pointer-events:none!important;
+    }
+
     @media(max-width:650px){
       .ignis-ui-hero>.ignis-bg-image{object-position:64% 42%!important}
       .ignis-ui-hero::after{
@@ -600,6 +613,8 @@ def _home_background_image(path, asset_uri, role):
         f'<img class="ignis-bg-image ignis-bg-image--{role}" '
         f'src="{uri}" alt="" aria-hidden="true" '
         f'{priority} decoding="async">'
+        '<span class="ignis-si-watermark" role="note">'
+        'SI-generated illustration</span>'
     )
 
 
@@ -693,7 +708,11 @@ def render_project_home(base, asset_uri, pages, navigate):
         "are digital illustrations, not dated satellite photographs "
         "or wildfire validation. Thermal anomalies are not "
         "confirmed wildfires; harmonization remains experimental "
-        "and coverage depends on the uploaded files."
+        "and coverage depends on the uploaded files. "
+        "SI disclosure: generative AI tools assisted code, documentation "
+        "and illustrative background artwork. Artwork is marked "
+        "SI-generated; imported NASA FIRMS records are external data, "
+        "not SI-generated observations. Provenance: docs/SI_USAGE.md."
     )
 
 

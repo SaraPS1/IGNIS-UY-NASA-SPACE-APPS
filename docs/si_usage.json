@@ -1,0 +1,57 @@
+{
+  "title": "IGNIS UY SI-use declaration",
+  "project": "IGNIS UY",
+  "status": "SI-assisted; human review required before final submission",
+  "independent_project": true,
+  "nasa_endorsement_claimed": false,
+  "categories": {
+    "code": {
+      "si_assisted": true,
+      "uses": [
+        "Python, JavaScript and HTML/CSS drafting",
+        "debugging",
+        "documentation"
+      ],
+      "review": "project team responsible"
+    },
+    "images": {
+      "si_assisted": true,
+      "policy": "visible SI-generated watermark required",
+      "web_display_assets": [
+        "assets/bg_portada.webp",
+        "assets/bg_observaciones.webp",
+        "assets/bg_atlas.webp",
+        "assets/bg_trazabilidad.webp"
+      ],
+      "standalone_assets_watermarked": false
+    },
+    "text": {
+      "si_assisted": true,
+      "review": "human verification of scientific claims required"
+    },
+    "data": {
+      "si_generated_source_observations": false,
+      "si_assisted_processing_code": true,
+      "source": "NASA FIRMS MODIS/VIIRS records supplied by external sources",
+      "outputs": "normalized, filtered, deduplicated source records and computed summaries"
+    },
+    "audio": {
+      "si_generated_assets_identified": false,
+      "requirement_if_added": "SI-generation acknowledgement in description and metadata"
+    },
+    "video": {
+      "si_generated_assets_identified": false,
+      "requirement_if_added": "visible SI-generated watermark on each released file"
+    }
+  },
+  "policy": {
+    "generated_artwork_must_not_contain_nasa_branding": true,
+    "prohibited_in_si_generated_artwork": [
+      "NASA logo or insignia",
+      "NASA flags",
+      "NASA mission patches or identifier design elements"
+    ],
+    "release_review_required": true
+  },
+  "documentation": "docs/SI_USAGE.md"
+}
