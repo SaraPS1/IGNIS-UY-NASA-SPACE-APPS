@@ -62,10 +62,10 @@ class Spatial3DTests(unittest.TestCase):
     def test_one_shared_utc_backend_for_both_satellite_views(self):
         main = (ROOT / "ignis_scene3d.py").read_text(encoding="utf-8")
         earth = (ROOT / "ignis_espacio.py").read_text(encoding="utf-8")
-        self.assertIn("from ignis_orbits import current_bundle", main)
-        self.assertIn("from ignis_orbits import current_bundle", earth)
-        self.assertIn('payload["orbit"] = current_bundle()', main)
-        self.assertIn("bundle = current_bundle()", earth)
+        self.assertIn("from ignis_orbits import shared_bundle", main)
+        self.assertIn("from ignis_orbits import shared_bundle", earth)
+        self.assertIn('payload["orbit"] = shared_bundle()', main)
+        self.assertIn("bundle = shared_bundle()", earth)
 
     def test_satellites_not_permanently_above_uruguay_in_scientific_mode(self):
         scene = (ROOT / "assets" / "ignis_scene3d.html").read_text(encoding="utf-8")
