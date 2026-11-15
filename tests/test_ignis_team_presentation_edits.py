@@ -33,17 +33,17 @@ class TeamRequestedUiChangesTests(unittest.TestCase):
         titles = [label.split(" ", 1)[1] for label in ast.literal_eval(nav.value)]
         self.assertEqual(titles[:4], [
             "Home · Discover IGNIS", "Data upload", "Dashboard",
-            "NASA Yearly Overview"])
-        self.assertEqual(len(titles), 15)
-        self.assertEqual(titles[9], "PDF Report")
-        self.assertEqual(titles[11], "3D Earth & Satellites")
-        self.assertEqual(titles[13], "Satellite–Ground Fusion")
+            "Historical Archive 2000–2026"])
+        self.assertEqual(len(titles), 14)
+        self.assertEqual(titles[8], "PDF Report")
+        self.assertEqual(titles[10], "3D Earth & Satellites")
+        self.assertEqual(titles[12], "Satellite–Ground Fusion")
 
     def test_main_routes_dispatch_to_correct_pages_after_reorder(self):
         self.assertRegex(self.main, r"if current_section==NAV_PAGES\[1\]:\s+st\.subheader\('Adding historical records'\)")
         self.assertRegex(self.main, r"if current_section == NAV_PAGES\[2\]:[\s\S]{0,400}?render_control_center\(")
         # The dashboard's special header is still handled by its own renderer.
-        self.assertIn("NAV_PAGES[2], NAV_PAGES[6], NAV_PAGES[14]", self.main)
+        self.assertIn("NAV_PAGES[2], NAV_PAGES[5], NAV_PAGES[13]", self.main)
 
     def test_home_buttons_keep_labels_and_destinations(self):
         self.assertRegex(self.visual, r'key="hero_to_dashboard", on_click=navigate, args=\(pages\[2\],\)')

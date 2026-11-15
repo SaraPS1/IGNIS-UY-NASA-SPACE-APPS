@@ -5,6 +5,7 @@ on:
     branches:
       - feat/pitch-safe-classic-navigation-3d-explorer
       - fix/globe-illustrative-default-swap-upload-dashboard
+      - fix/globe-default-illustrative-nav-order-pitch
   pull_request:
     paths:
       - ignis_modes.py
@@ -73,8 +74,10 @@ jobs:
               nav.click().run()
               assert not app.exception, [str(e.message) for e in app.exception]
               assert app.session_state["ignis_nav"].endswith(expected)
+          assert not any(w.label == "NASA Yearly Overview" for w in app.sidebar.button)
+          assert any("Selected-year overview" in item.value for item in app.subheader)
           # On a fresh 3D Earth page, the visual mode must be illustrative.
-          globe = next(w for w in app.get("button") if w.key == "ignis_nav_11")
+          globe = next(w for w in app.get("button") if w.key == "ignis_nav_10")
           globe.click().run()
           assert not app.exception, [str(e.message) for e in app.exception]
           trajectory = next(w for w in app.get("radio")

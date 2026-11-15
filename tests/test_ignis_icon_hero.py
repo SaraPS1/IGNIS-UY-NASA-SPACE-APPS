@@ -1,4 +1,4 @@
-"""Regresión del menú con 15 iconos únicos y del hero SVG de IGNIS."""
+"""Regresión del menú con 14 iconos únicos y del hero SVG de IGNIS."""
 import ast
 import copy
 from pathlib import Path
@@ -43,14 +43,14 @@ class PremiumIconAndHeroTests(unittest.TestCase):
         self.assertEqual(root.get("viewBox"), "0 0 1600 590")
 
     def test_sixteen_navigation_styles_are_not_needed(self):
-        # Exactly 15 pages; prevents an extra/missing icon.
+        # Exactly 14 pages; prevents an extra/missing icon.
         nav_start = self.main.index("NAV_PAGES = [")
         nav_end = self.main.index("]\n", nav_start)
         nav_lines = self.main[nav_start:nav_end].splitlines()
-        self.assertEqual(sum(line.strip().startswith('"') for line in nav_lines), 15)
+        self.assertEqual(sum(line.strip().startswith('"') for line in nav_lines), 14)
 
     def test_each_icon_is_targeted_at_stable_button_key(self):
-        for i in range(15):
+        for i in range(14):
             selector = f'div.st-key-ignis_nav_{i:02d} button::before'
             with self.subTest(i=i):
                 self.assertIn(selector, self.css)
@@ -59,8 +59,8 @@ class PremiumIconAndHeroTests(unittest.TestCase):
     def test_icons_are_distinct(self):
         # Each visual option should have a different embedded outline SVG.
         matches = re.findall(r'-webkit-mask-image:url\("data:image/svg\+xml,([^"]+)"\)', self.css)
-        self.assertGreaterEqual(len(matches), 18)  # 15 menu + 3 actions
-        self.assertEqual(len(set(matches[:15])), 15)
+        self.assertGreaterEqual(len(matches), 17)  # 14 menu + 3 actions
+        self.assertEqual(len(set(matches[:14])), 14)
 
     def test_menu_has_no_radio_circles_and_keyboard_focus(self):
         self.assertIn('key=f"ignis_nav_{i:02d}"', self.main)

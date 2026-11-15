@@ -36,14 +36,14 @@ class PresentationCompatibilityTests(TestCase):
                  if isinstance(item,ast.Assign)
                  and any(isinstance(x,ast.Name) and x.id=="NAV_PAGES" for x in item.targets))
         titles=ast.literal_eval(nav.value)
-        self.assertEqual(len(titles),15)
-        self.assertEqual([t.split(" ",1)[1] for t in titles[:7]],[
+        self.assertEqual(len(titles),14)
+        self.assertEqual([t.split(" ",1)[1] for t in titles[:6]],[
             "Home · Discover IGNIS","Data upload","Dashboard",
-            "NASA Yearly Overview","Historical Archive 2000–2026",
+            "Historical Archive 2000–2026",
             "MODIS–VIIRS Harmonization","Uruguay Map"])
-        self.assertEqual(titles[9].split(" ",1)[1],"PDF Report")
-        self.assertEqual(titles[11].split(" ",1)[1],"3D Earth & Satellites")
-        self.assertEqual(titles[13].split(" ",1)[1],"Satellite–Ground Fusion")
+        self.assertEqual(titles[8].split(" ",1)[1],"PDF Report")
+        self.assertEqual(titles[10].split(" ",1)[1],"3D Earth & Satellites")
+        self.assertEqual(titles[12].split(" ",1)[1],"Satellite–Ground Fusion")
         self.assertIn('key=f"ignis_nav_{i:02d}"',self.main)
         self.assertIn('on_click=_ignis_navigate_to',self.main)
 

@@ -467,7 +467,7 @@ def render_ask_ignis(datos):
         use_container_width=True,
         key='ignis_ask_contact',
         on_click=_ignis_navigate_to,
-        args=(NAV_PAGES[14],),
+        args=(NAV_PAGES[13],),
     )
 
 
@@ -496,7 +496,6 @@ NAV_PAGES = [
     "✨ Home · Discover IGNIS",
     "📂 Data upload",
     "🏠 Dashboard",
-    "📊 NASA Yearly Overview",
     "📚 Historical Archive 2000–2026",
     "🔄 MODIS–VIIRS Harmonization",
     "🗺️ Uruguay Map",
@@ -611,7 +610,7 @@ with st.sidebar:
     )
 
 # El Inicio, el Centro de control y el Atlas renderizan su cabecera específica.
-if current_section not in (NAV_PAGES[0], NAV_PAGES[2], NAV_PAGES[6], NAV_PAGES[14]):
+if current_section not in (NAV_PAGES[0], NAV_PAGES[2], NAV_PAGES[5], NAV_PAGES[13]):
     st.markdown(f"""<div class="ignis-topline"><div class="ignis-kicker">
        IGNIS UY · Research Tools</div>
        <h1>{current_section.split(' ',1)[1]}</h1>
@@ -728,20 +727,27 @@ if current_section == NAV_PAGES[2]:
     render_control_center(combined, sample, selected, BASE, mapa_ignis,
                           NAV_PAGES, _ignis_navigate_to, logo_uri=_logo_uri, live=_live)
 
+    st.subheader('Selected-year overview · NASA challenge essentials')
+    if sample.empty:
+        st.info('Upload data in Data upload and choose a region to generate the summary.')
+    else:
+        year_records = sample[sample.anio == selected]
+        detections, days, instruments = st.columns(3)
+        detections.metric(f'Detections {selected}', f'{len(year_records):,}')
+        days.metric('Days with observations', year_records.dia.nunique())
+        instruments.metric('Instruments detected', year_records.instrumento.nunique())
+        monthly_counts = (
+            year_records.groupby(['mes', 'instrumento']).size().reset_index(name='registros')
+            .rename(columns={'mes': 'Mes', 'instrumento': 'Sensor'})
+        )
+        display_dataframe(monthly_counts, use_container_width=True, hide_index=True)
+        st.caption('These numbers refer to the chosen calendar year and uploaded files. '
+                   'They are not wildfire rates or coverage-normalized data.')
+        st.download_button('Download yearly CSV',
+                           year_records[COLS].to_csv(index=False).encode('utf-8-sig'),
+                           file_name=f'IGNIS_{selected}_registros.csv')
 
 if current_section==NAV_PAGES[3]:
-    st.subheader('Selected-year overview · NASA challenge essentials')
-    if sample.empty:st.info('Upload data in the first tab and choose a region to generate the summary.')
-    else:
-        yr=sample[sample.anio==selected];a,b,c=st.columns(3)
-        a.metric(f'Detecciones {selected}',f'{len(yr):,}')
-        b.metric('Days with observations',yr.dia.nunique())
-        c.metric('Instruments detected',yr.instrumento.nunique())
-        display_dataframe(yr.groupby(['mes','instrumento']).size().reset_index(name='registros').rename(columns={'mes':'Mes','instrumento':'Sensor'}),use_container_width=True,hide_index=True)
-        st.caption('These numbers refer to the chosen calendar year and uploaded files. They are not wildfire rates or coverage-normalized data.')
-        st.download_button('Download yearly CSV',yr[COLS].to_csv(index=False).encode('utf-8-sig'),file_name=f'IGNIS_{selected}_registros.csv')
-
-if current_section==NAV_PAGES[4]:
     st.subheader('Accumulated historical records')
     if sample.empty:st.info('Import the Master dataset or upload NASA FIRMS ZIP files to view historical records.')
     else:
@@ -767,7 +773,7 @@ if current_section==NAV_PAGES[4]:
             st.download_button('Download seasonal summary',ss.to_csv(index=False).encode('utf-8-sig'),file_name='IGNIS_temporadas.csv')
         st.warning('Available records do not guarantee complete coverage. Raw MODIS and VIIRS counts must not be compared directly, and no validated climate trend is inferred.')
 
-if current_section==NAV_PAGES[5]:
+if current_section==NAV_PAGES[4]:
     st.subheader('MODIS–VIIRS harmonization · exploratory comparison')
     if sample.empty:st.info('Upload historical data and select a region, sensors, and year to explore harmonization.')
     else:
@@ -916,7 +922,7 @@ if current_section==NAV_PAGES[5]:
 
 
 # B — Atlas científico con mapa dominante, filtros y análisis lateral.
-if current_section == NAV_PAGES[6]:
+if current_section == NAV_PAGES[5]:
     render_scientific_atlas(sample, selected, BASE, mapa_ignis, COLS,
                             NAV_PAGES, _ignis_navigate_to)
     if not sample.empty and selected is not None:
@@ -955,7 +961,7 @@ if current_section == NAV_PAGES[6]:
 
 
 
-if current_section==NAV_PAGES[7]:
+if current_section==NAV_PAGES[6]:
     st.subheader('⚠️ Historical monitoring · signals requiring review')
     if is_explorer() and isinstance(sample, pd.DataFrame) and not sample.empty:
         st.markdown("#### Historical monitoring · 3D and 2D context")
@@ -1006,7 +1012,7 @@ if current_section==NAV_PAGES[7]:
         from ignis_evidencias import mostrar_evidencias
         mostrar_evidencias(combined if len(combined) else None, int(selected))
 
-if current_section==NAV_PAGES[8]:
+if current_section==NAV_PAGES[7]:
     st.subheader('Final calendar of observed thermal activity')
     if sample.empty:st.info('The calendar will appear after uploading data.')
     else:
@@ -1026,7 +1032,7 @@ def construir_pdf(datos, ano, region, sensores):
     from ignis_informe import generar_informe_pdf
     return generar_informe_pdf(datos, ano, region, sensores, alertas_func=resumen_estacional)
 
-if current_section==NAV_PAGES[9]:
+if current_section==NAV_PAGES[8]:
     st.subheader('📄 PDF report — selected year and historical context')
     st.write('Generate a reproducible report using **only** data uploaded or restored through the IGNIS Master dataset. It includes the selected area, year, sensors, and available historical context.')
     if sample.empty or selected is None:
@@ -1049,23 +1055,23 @@ if current_section==NAV_PAGES[9]:
         st.warning('Exploratory report: observations from different platforms have not been quantitatively harmonized; combined totals must not be interpreted as wildfire counts.')
 
 # Consulta opcional, aislada del Maestro y sin peticiones automáticas.
-if current_section==NAV_PAGES[10]:
+if current_section==NAV_PAGES[9]:
     from ignis_nrt import mostrar_monitoreo_nrt
     mostrar_monitoreo_nrt()
 
-if current_section==NAV_PAGES[11]:
+if current_section==NAV_PAGES[10]:
     render_space_tracker(combined)
 
-if current_section==NAV_PAGES[12]:
+if current_section==NAV_PAGES[11]:
     render_ask_ignis(combined)
 
 # Nueva pestaña aislada: NASA FIRMS + Bomberos/PAIF + SINAE/MIRA.
 # Utiliza el Maestro normalizado `combined` existente y no lo modifica.
-if current_section==NAV_PAGES[13]:
+if current_section==NAV_PAGES[12]:
     from ignis_fusion_terrestre import mostrar_fusion_terrestre
     mostrar_fusion_terrestre(combined)
 
-if current_section == NAV_PAGES[14]:
+if current_section == NAV_PAGES[13]:
     from ignis_feedback import mostrar_contacto_team
     mostrar_contacto_team()
 
