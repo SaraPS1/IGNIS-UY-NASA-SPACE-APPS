@@ -411,10 +411,11 @@ def render_premium_dashboard(combined: pd.DataFrame, sample: pd.DataFrame, selec
     stats = dashboard_stats(combined, sample, selected, len(documented_cases()), len(associations) if associations is not None else 0)
     render_stats_strip(stats)
 
-    st.markdown('<div class="ig-section"><h3>Uruguay · Geospatial Observatory</h3><span>interactive 3D · synchronized scientific 2D report view</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="ig-section"><h3>Uruguay · Geospatial Observatory</h3><span>full-width interactive 3D exploration</span></div>', unsafe_allow_html=True)
     from ignis_spatial import render_spatial_pair
     render_spatial_pair(sample if has else None, year=selected, associations=associations,
-                        height=740, live_connection=live, context="dashboard")
+                        height=740, live_connection=live, context="dashboard",
+                        show_report_map=False)
     if not has:
         st.markdown('<div class="ig-empty"><b>No observations loaded</b>The map uses the national reference outline. Import IGNIS Master or NASA FIRMS data to display real records.</div>', unsafe_allow_html=True)
         st.button("Go to Data upload", key="ig_dash_upload", type="primary",
