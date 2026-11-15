@@ -44,7 +44,12 @@ class IgnisVisualSmokeTests(unittest.TestCase):
     def test_no_fabricated_hotspots(self):
         content = (ROOT / "ignis_visual.py").read_text(encoding="utf-8")
         self.assertIn("if sample.empty:", content)
-        self.assertIn("if not view.empty:", content)
+        # The new dashboard delegates scientific payload creation to the data-only adapter.
+        self.assertIn("render_premium_dashboard(", content)
+        dashboard = (ROOT / "ignis_dashboard.py").read_text(encoding="utf-8")
+        self.assertIn("No demonstration figures are ever injected", dashboard)
+        self.assertIn("if has:", dashboard)
+        self.assertIn("No observations loaded", dashboard)
         self.assertIn("map_fn(mapped", content)
         self.assertIn("The absence of records", content)
 
