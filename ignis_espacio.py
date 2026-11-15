@@ -838,7 +838,6 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
 
           /* Scientific mode and last/next crossing replay use the SAME UTC
              timestamped ephemerides as the Uruguay mission-control scene. */
-          const scientific=payload.orbit_mode==='sgp4';
           let playing=!scientific,orbitT=0,orbitSpeed=1;
           let orbitalUtcMs=referenceUtcMs(),replayKind='current',replayTrack=null;
           let replaySelected=0;
