@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/pitch-safe-classic-navigation-3d-explorer
+      - fix/globe-default-illustrative-nav-order-pitch
   pull_request:
     paths:
       - ignis_modes.py
@@ -49,6 +50,10 @@ jobs:
           assert not app.exception, [str(e.message) for e in app.exception]
           assert app.session_state["ignis_3d_explorer"] is False
           assert app.session_state["ignis_nav"].endswith("Home · Discover IGNIS")
+          # The rendered navigation order changes; the original stable keys do not.
+          nav_keys = [button.key for button in app.get("button")
+                      if button.key and button.key.startswith("ignis_nav_")]
+          assert nav_keys[:3] == ["ignis_nav_00", "ignis_nav_02", "ignis_nav_01"], nav_keys
           controls = list(app.get("toggle"))
           toggle = next((w for w in controls if w.key == "ignis_3d_explorer"), None)
           assert toggle is not None, "Expected the view toggle in the sidebar"
@@ -61,5 +66,13 @@ jobs:
           assert not app.exception, [str(e.message) for e in app.exception]
           assert app.session_state["ignis_3d_explorer"] is False
           assert app.session_state["ignis_nav"].endswith("Home · Discover IGNIS")
-          print("Presentation ↔ 3D Explorer: same page, stable navigation and no app exceptions")
+          upload_button = next(button for button in app.get("button") if button.key == "ignis_nav_02")
+          upload_button.click().run()
+          assert not app.exception, [str(e.message) for e in app.exception]
+          assert app.session_state["ignis_nav"].endswith("Data upload")
+          dashboard_button = next(button for button in app.get("button") if button.key == "ignis_nav_01")
+          dashboard_button.click().run()
+          assert not app.exception, [str(e.message) for e in app.exception]
+          assert app.session_state["ignis_nav"].endswith("Dashboard")
+          print("Presentation mode, visual navigation order, and actual Data upload/Dashboard clicks verified")
           PY
