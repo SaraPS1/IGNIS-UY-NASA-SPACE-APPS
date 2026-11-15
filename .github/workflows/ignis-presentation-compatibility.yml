@@ -1,0 +1,65 @@
+name: IGNIS pitch-safe layout compatibility
+
+on:
+  push:
+    branches:
+      - feat/pitch-safe-classic-navigation-3d-explorer
+  pull_request:
+    paths:
+      - ignis_modes.py
+      - ignis_historico.py
+      - ignis_visual.py
+      - ignis_nrt.py
+      - ignis_espacio.py
+      - ignis_fusion_terrestre.py
+      - tests/test_ignis_presentation_compatibility.py
+      - .github/workflows/ignis-presentation-compatibility.yml
+
+permissions:
+  contents: read
+
+jobs:
+  presentation-compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install app dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Compile all updated Python modules
+        run: |
+          python -m compileall -q -f ignis_modes.py ignis_historico.py ignis_visual.py ignis_nrt.py ignis_espacio.py ignis_fusion_terrestre.py
+      - name: Run pitch layout and earlier UI regression tests
+        run: |
+          python -m unittest discover -s tests -p 'test_ignis_presentation_compatibility.py' -v
+          python -m unittest discover -s tests -p 'test_ignis_approved_landing.py' -v
+          python -m unittest discover -s tests -p 'test_ignis_premium_sidebar.py' -v
+          python -m unittest discover -s tests -p 'test_ignis_reference_fidelity.py' -v
+          python -m unittest discover -s tests -p 'test_ignis_cinematic_observatory.py' -v
+          python -m unittest discover -s tests -p 'test_ignis_icon_hero.py' -v
+          python -m unittest discover -s tests -p 'test_ignis_3d_map_routes.py' -v
+      - name: Test presentation default in real Streamlit state
+        run: |
+          python - <<'PY'
+          from streamlit.testing.v1 import AppTest
+          app = AppTest.from_file("principal.py", default_timeout=75).run()
+          assert not app.exception, [str(e.message) for e in app.exception]
+          assert app.session_state["ignis_3d_explorer"] is False
+          assert app.session_state["ignis_nav"].endswith("Home · Discover IGNIS")
+          controls = list(app.get("toggle"))
+          toggle = next((w for w in controls if w.key == "ignis_3d_explorer"), None)
+          assert toggle is not None, "Expected the view toggle in the sidebar"
+          toggle.set_value(True).run()
+          assert not app.exception, [str(e.message) for e in app.exception]
+          assert app.session_state["ignis_3d_explorer"] is True
+          assert app.session_state["ignis_nav"].endswith("Home · Discover IGNIS")
+          toggle = next(w for w in app.get("toggle") if w.key == "ignis_3d_explorer")
+          toggle.set_value(False).run()
+          assert not app.exception, [str(e.message) for e in app.exception]
+          assert app.session_state["ignis_3d_explorer"] is False
+          assert app.session_state["ignis_nav"].endswith("Home · Discover IGNIS")
+          print("Presentation ↔ 3D Explorer: same page, stable navigation and no app exceptions")
+          PY
