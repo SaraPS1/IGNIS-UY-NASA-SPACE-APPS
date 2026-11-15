@@ -2,6 +2,8 @@ import json
 import math
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 import numpy as np
@@ -249,8 +251,25 @@ def _country_regions_html() -> str:
     })
 
 
+@lru_cache(maxsize=1)
+def _world_geometries() -> List[Dict[str, Any]]:
+    """Bundled generalized Natural Earth polygons for a network-free Earth texture.
+
+    These are approximate cartographic boundaries, NOT legal or cadastral
+    claims. Never used as a wildfire detection or orbit calculation source.
+    """
+    path = Path(__file__).resolve().parent / "assets" / "world_coastlines_naturalearth.geojson"
+    try:
+        collection = json.loads(path.read_text(encoding="utf-8"))
+        return [feature["geometry"] for feature in collection.get("features", [])
+                if feature.get("geometry", {}).get("type") in ("Polygon", "MultiPolygon")]
+    except (OSError, ValueError, KeyError, TypeError):
+        return []
+
+
 def _render_globe_html(config: Dict[str, Any]) -> str:
-    payload = json.dumps(config)
+    # Do not let imported source text close the embedded JSON script element.
+    payload = json.dumps(config, allow_nan=False).replace("</", "<\\/")
     return f"""
     <html>
       <head>
@@ -313,9 +332,19 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           }}
           #ignis-orbit-ctl button, #ignis-orbit-ctl select {{
             background:#0b2237; color:#effcff; border:1px solid #326180;
-            border-radius:7px; padding:3px 9px; font:12px Arial,sans-serif;
-            cursor:pointer;
+            border-radius:7px; padding:8px 10px; font:11px Arial,sans-serif;
+            cursor:pointer; min-height:35px;
           }}
+          #ignis-orbit-ctl button:hover, #ignis-orbit-ctl select:hover {{border-color:#5ee5fc; background:#134061;}}
+          #ignis-orbit-ctl button:focus-visible, #ignis-orbit-ctl select:focus-visible {{outline:2px solid #67dffb;outline-offset:2px}}
+          #ignis-orbit-ctl button:disabled, #ignis-orbit-ctl select:disabled {{opacity:.43;cursor:not-allowed}}
+          #ignis-orbit-ctl label {{font-size:10px;color:#acd9e9;font-weight:700;letter-spacing:.06em}}
+          #ignis-orbit-ctl {{box-shadow:0 12px 48px #0009;border:1px solid #244c68;max-width:calc(100% - 250px)}}
+          #globe-shell {{border:1px solid rgba(72,165,198,.34);box-shadow:inset 0 0 80px #041020b0}}
+          #ignis-globe-status {{border-radius:6px;max-width:62%}}
+          @media(max-width:970px){{#ignis-orbit-ctl{{max-width:94%;bottom:65px}}.ignis-globe-help{{display:none}}}}
+          @media(prefers-reduced-motion:reduce){{#globe-shell *{{scroll-behavior:auto!important}}}}
+
         </style>
       </head>
       <body>
@@ -335,20 +364,99 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             Marker height ∝ FRP
           </div>
           <div id="ignis-orbit-ctl">
-            <select id="ignis-tracked-sat" aria-label="Choose satellite to replay"></select>
+            <label for="ignis-tracked-sat">SATELLITE</label><select id="ignis-tracked-sat" aria-label="Choose satellite to replay"></select>
             <button id="ignis-last-pass" type="button">Last pass</button>
             <button id="ignis-next-pass" type="button">Next pass</button>
             <button id="ignis-current" type="button">Current UTC</button>
             <button id="ignis-play" type="button">⏸ Pause</button>
-            <select id="ignis-speed" aria-label="Orbital playback speed">
-              <option value="1">1×</option>
+            <label for="ignis-speed">REPLAY SPEED</label><select id="ignis-speed" aria-label="Orbital playback speed">
+              <option value="1" selected>1×</option>
+              <option value="5">5×</option>
               <option value="10">10×</option>
-              <option value="60" selected>60×</option>
+              <option value="30">30×</option>
+              <option value="60">60×</option>
             </select>
             <span id="ignis-orbit-clock" aria-live="polite"></span>
           </div>
           <div id="globe-root"></div>
         </div>
+        <script>
+          (function(){{
+            const data={payload};
+            const root=document.getElementById('globe-root');
+            const status=document.getElementById('ignis-globe-status');
+            window.__ignisGlobeReady=false;
+            window.__ignisGlobeFallbackActive=false;
+            function drawScientificFallback(){{
+              if(!root)return;
+              root.replaceChildren();
+              const wrap=document.createElement('div');
+              wrap.style.cssText='width:100%;height:100%;display:flex;align-items:center;justify-content:center;position:relative;background:radial-gradient(ellipse at 50% 38%,#10324d,#040e1b 75%)';
+              const cv=document.createElement('canvas');
+              cv.style.cssText='display:block;max-width:100%;max-height:100%';
+              wrap.appendChild(cv);root.appendChild(wrap);
+              const ring=(Array.isArray(data.outline)&&data.outline.length>3)?data.outline:[[-58.4,-34.9],[-58.1,-34.2],[-57.2,-33.5],[-56.4,-32.8],[-55.8,-32],[-54.7,-31.6],[-54.3,-32.2],[-54.7,-33],[-55.5,-34],[-56.1,-34.8]];
+              const observations=Array.isArray(data.hotspots)?data.hotspots:[];
+              const bounds={{lon0:-59.1,lon1:-52.4,lat0:-35.7,lat1:-29.6}};
+              function point(lon,lat,w,h){{
+                const size=Math.min(w*.84,h*.82);
+                const sx=(Number(lon)-bounds.lon0)/(bounds.lon1-bounds.lon0);
+                const sy=(Number(lat)-bounds.lat0)/(bounds.lat1-bounds.lat0);
+                const scale=Math.min(size/6.7,(h*.80)/6.1);
+                return [w*.5+(sx-.5)*6.7*scale,h*.5-(sy-.5)*6.1*scale];
+              }}
+              function paint(){{
+                const w=Math.max(340,root.clientWidth||800),h=Math.max(350,root.clientHeight||640);
+                const ratio=Math.min(window.devicePixelRatio||1,2);
+                cv.width=Math.round(w*ratio);cv.height=Math.round(h*ratio);
+                cv.style.width=w+'px';cv.style.height=h+'px';
+                const ctx=cv.getContext('2d');ctx.setTransform(ratio,0,0,ratio,0,0);
+                const bg=ctx.createLinearGradient(0,0,w,h);
+                bg.addColorStop(0,'#0a233a');bg.addColorStop(1,'#050e1e');
+                ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+                ctx.strokeStyle='rgba(101,210,235,.10)';ctx.lineWidth=1;
+                for(let x=w*.15;x<w;x+=Math.max(55,w/15)){{ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}}
+                for(let y=h*.16;y<h;y+=Math.max(55,h/11)){{ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}}
+                if(ring.length){{
+                  ctx.beginPath();
+                  ring.forEach((p,i)=>{{const q=point(p[0],p[1],w,h);i===0?ctx.moveTo(q[0],q[1]):ctx.lineTo(q[0],q[1]);}});
+                  ctx.closePath();ctx.fillStyle='rgba(21,79,95,.72)';ctx.fill();
+                  ctx.shadowColor='#31d6ed';ctx.shadowBlur=12;ctx.strokeStyle='#69ddf0';ctx.lineWidth=2;ctx.stroke();ctx.shadowBlur=0;
+                }}
+                observations.slice(0,4000).forEach(p=>{{
+                  const x=Number(p.lon),y=Number(p.lat);if(!Number.isFinite(x)||!Number.isFinite(y))return;
+                  const q=point(x,y,w,h);
+                  ctx.beginPath();ctx.arc(q[0],q[1],Math.max(2,Math.min(6,Math.sqrt(Math.max(0,Number(p.frp)||0))*.38+2)),0,2*Math.PI);
+                  ctx.fillStyle='#ff914e';ctx.fill();
+                }});
+                ctx.fillStyle='#e2f6ff';ctx.font='bold 17px Arial,sans-serif';ctx.textAlign='left';
+                ctx.fillText('URUGUAY · 2D OBSERVATION MAP',20,92);
+                ctx.font='12px Arial,sans-serif';ctx.fillStyle='#a8c4d5';
+                ctx.fillText('Imported FIRMS thermal anomalies · not confirmed wildfires',20,113);
+                ctx.fillText(observations.length.toLocaleString()+' plotted observations · geographic reference outline',20,h-23);
+              }}
+              paint();
+              if(window.ResizeObserver)new ResizeObserver(paint).observe(root);
+              const button=document.createElement('button');button.type='button';button.textContent='Retry 3D';
+              button.style.cssText='position:absolute;top:68px;right:18px;border:1px solid #5fcadf;background:#10354a;color:#ecfcff;border-radius:4px;padding:9px 12px;cursor:pointer';
+              button.onclick=()=>window.location.reload();wrap.appendChild(button);
+            }}
+            window.__ignisRenderFallback=function(error){{
+              if(window.__ignisGlobeReady||window.__ignisGlobeFallbackActive)return;
+              window.__ignisGlobeFallbackActive=true;
+              console.warn('IGNIS 3D unavailable; using local 2D map',error);
+              status.textContent='WebGL unavailable · showing local 2D map';
+              const help=document.querySelector('.ignis-globe-help');if(help)help.style.display='none';
+              const ctl=document.getElementById('ignis-orbit-ctl');if(ctl)ctl.style.display='none';
+              status.style.borderColor='#f6ab71';status.style.color='#ffe1c8';
+              drawScientificFallback();
+            }};
+            // Handles failed import maps/CDNs, where a module never reaches its try/catch.
+            window.setTimeout(()=>{{
+              if(!window.__ignisGlobeReady)window.__ignisRenderFallback('Renderer or dependencies did not become ready');
+            }},14000);
+          }})();
+        </script>
         <script type="importmap">
           {{
             "imports": {{
@@ -358,9 +466,6 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           }}
         </script>
         <script type="module">
-          import * as THREE from "three";
-          import {{ OrbitControls }} from "three/addons/controls/OrbitControls.js";
-
           const payload = {payload};
           const status = document.getElementById('ignis-globe-status');
           const shell = document.getElementById('globe-shell');
@@ -373,6 +478,9 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           }};
 
           try {{
+            // Catch network/CORS/module failures in this same error boundary.
+            const THREE = await import("three");
+            const {{ OrbitControls }} = await import("three/addons/controls/OrbitControls.js");
             if (!window.WebGLRenderingContext) {{
               throw new Error('WebGL is not available in this browser.');
             }}
@@ -387,30 +495,39 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             const scene = new THREE.Scene();
             scene.background = new THREE.Color(0x020812);
 
-            const camera = new THREE.PerspectiveCamera(35, root.clientWidth / root.clientHeight, 0.1, 2000);
-            camera.position.set(0, 1.2, 6.4);
+            const camera = new THREE.PerspectiveCamera(46, root.clientWidth / root.clientHeight, 0.1, 2000);
+            camera.position.set(3.9, -3.5, 5.4);
 
+            let rendererLost=false;
             const renderer = new THREE.WebGLRenderer({{ antialias: true, alpha: false }});
+            renderer.toneMapping=THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure=1.12;
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.75));
             renderer.setSize(root.clientWidth, root.clientHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             root.appendChild(renderer.domElement);
+            renderer.domElement.addEventListener('webglcontextlost',(event)=>{{
+              event.preventDefault();
+              rendererLost=true;
+              window.__ignisGlobeReady=false;
+              window.__ignisRenderFallback?.('WebGL graphics context lost. Showing 2D map.');
+            }},{{passive:false}});
 
             const controls = new OrbitControls(camera, renderer.domElement);
           controls.enableDamping = true;
           controls.dampingFactor = 0.06;
           controls.enablePan = false;
-          controls.minDistance = 3.1;
-          controls.maxDistance = 12;
+          controls.minDistance = 4.4;
+          controls.maxDistance = 14;
           controls.enableZoom = true;
-          controls.autoRotate = true;
-          controls.autoRotateSpeed = 0.5;
-          controls.target.set(-0.1, -0.25, 0);
+          controls.autoRotate = payload.orbit_mode==='illustrative';
+          controls.autoRotateSpeed = 0.24;
+          controls.target.set(0, 0, 0);
 
           const ambient = new THREE.AmbientLight(0x9bbdff, 1.15);
           scene.add(ambient);
 
           const sunLight = new THREE.DirectionalLight(0xffffff, 1.8);
-          sunLight.position.set(5, 3, 7);
+          sunLight.position.set(6, -2, 8);
           scene.add(sunLight);
 
           const starGeometry = new THREE.BufferGeometry();
@@ -440,14 +557,59 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           const cloudMapUrl = textureBase + 'earth_clouds_1024.png';
           const earthView = payload.earth_visualization || 'Blue Marble + Black Marble';
           function solidTex(color) {{
-            const tex = new THREE.DataTexture(new Uint8Array(color), 1, 1, THREE.RGBFormat);
+            const tex = new THREE.DataTexture(new Uint8Array([...color,255]), 1, 1, THREE.RGBAFormat);
             tex.colorSpace = THREE.SRGBColorSpace;
             tex.needsUpdate = true;
             return tex;
           }}
+          // Guaranteed offline Earth surface: approximate Natural Earth continents,
+          // rendered into a locally generated equirectangular texture in 2D canvas.
+          // Optional NASA imagery may improve detail but is never required for WebGL.
+          function localWorldTexture(night){{
+            const canvas=document.createElement('canvas');
+            canvas.width=1536;canvas.height=768;
+            const ctx=canvas.getContext('2d');
+            if(!ctx)return solidTex(night?[12,31,55]:[58,125,167]);
+            const sea=ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+            sea.addColorStop(0,night?'#0b1b32':'#103a5a');
+            sea.addColorStop(.6,night?'#10263d':'#21668a');
+            sea.addColorStop(1,night?'#0c2238':'#0f456d');
+            ctx.fillStyle=sea;ctx.fillRect(0,0,canvas.width,canvas.height);
+            const geometries=Array.isArray(payload.world_land)?payload.world_land:[];
+            function drawRing(ring){{
+              if(!Array.isArray(ring)||ring.length<3)return;
+              ctx.beginPath();
+              ring.forEach((point,i)=>{{
+                const x=(Number(point[0])+180)/360*canvas.width;
+                const y=(90-Number(point[1]))/180*canvas.height;
+                if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+              }});
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+            }}
+            ctx.fillStyle=night?'#26393b':'#427450';
+            ctx.strokeStyle=night?'rgba(82,119,126,.5)':'rgba(179,213,140,.37)';
+            ctx.lineWidth=.65;
+            for(const geom of geometries){{
+              if(!geom||!geom.coordinates)continue;
+              const polygons=geom.type==='Polygon'?[geom.coordinates]:
+                geom.type==='MultiPolygon'?geom.coordinates:[];
+              for(const polygon of polygons){{
+                if(!Array.isArray(polygon)||!polygon.length)continue;
+                drawRing(polygon[0]);
+              }}
+            }}
+            const tex=new THREE.CanvasTexture(canvas);
+            tex.colorSpace=THREE.SRGBColorSpace;
+            tex.wrapS=THREE.RepeatWrapping;
+            tex.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+            return tex;
+          }}
+
           const globeUniforms = {{
-            dayMap: {{value:solidTex([30,83,128])}},
-            nightMap: {{value:solidTex([2,4,10])}},
+            dayMap: {{value:localWorldTexture(false)}},
+            nightMap: {{value:localWorldTexture(true)}},
             sunDirection: {{value:sunLight.position.clone().normalize()}},
             mode: {{value:earthView === 'Blue Marble (day)' ? 1 :
                     earthView === 'Black Marble (night)' ? 2 : 0}}
@@ -470,8 +632,8 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
                 'vec3 night=texture2D(nightMap,vMapUV).rgb;' +
                 'float solar=dot(normalize(vNormalWorld),normalize(sunDirection));' +
                 'float light=smoothstep(-0.12,0.22,solar);' +
-                'vec3 dayLit=day*(0.25+0.75*max(solar,0.0));' +
-                'vec3 nightLit=night*1.70+day*0.035;' +
+                'vec3 dayLit=day*(0.40+0.95*max(solar,0.0));' +
+                'vec3 nightLit=night*1.25+day*0.12;' +
                 'vec3 rgb=mix(nightLit,dayLit,light);' +
                 'if(mode==1)rgb=day*0.95;' +
                 'if(mode==2)rgb=night*1.70+day*0.015;' +
@@ -482,16 +644,25 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             }})
           );
           earthGroup.add(earth);
-          let textureCount = 0;
-          function loadGlobeTexture(url, key) {{
-            textureLoader.load(url,(image) => {{
-              image.colorSpace = THREE.SRGBColorSpace;
-              image.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+          let textureCount=0;
+          let textureFailures=0;
+          let sceneReady=false;
+          function reportSceneStatus(){{
+            if(!sceneReady||rendererLost)return;
+            const incomplete=textureFailures>0 || textureCount<2;
+            setStatus(incomplete?'3D active with fallback visuals':'3D ready · Earth textures loaded');
+          }}
+          function loadGlobeTexture(url,key){{
+            textureLoader.load(url,(image)=>{{
+              image.colorSpace=THREE.SRGBColorSpace;
+              image.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);
               globeUniforms[key].value=image;
+              globeUniforms[key].value.needsUpdate=true;
               textureCount++;
-              if(textureCount === 2) setStatus('3D listo · Blue/Black Marble');
-            }},undefined,() => {{
-              setStatus('3D available · texture unavailable (check network)','error');
+              reportSceneStatus();
+            }},undefined,()=>{{
+              textureFailures++;
+              reportSceneStatus();
             }});
           }}
           loadGlobeTexture(blueMarbleUrl,'dayMap');
@@ -600,13 +771,15 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           let tleOrbits=0;
           const movers=[];
           const orbitalRecords=Array.isArray(payload.satellites)?payload.satellites:[];
-          if(showSatellites||showOrbits){{
-            orbitalRecords.forEach((sat,index)=>{{
-              const scientific=payload.orbit_mode==='sgp4';
+          // Must be in the module's top-level scene scope, NOT inside forEach.
+          // The playback controls and animation loop use these same references.
+          const scientific=payload.orbit_mode==='sgp4';
           const selectedUtc=payload.orbit_clock_mode==='selected_utc';
           const selectedMs=Date.parse(payload.orbit_reference_utc||'');
           const referenceUtcMs=()=>selectedUtc&&Number.isFinite(selectedMs)?selectedMs:Date.now();
           document.getElementById('ignis-current').textContent=selectedUtc?'Selected UTC':'Current UTC';
+          if(showSatellites||showOrbits){{
+            orbitalRecords.forEach((sat,index)=>{{
               const valid=scientific&&sat.mode==='sgp4'&&
                 Array.isArray(sat.positions)&&sat.positions.length>=2;
               const demo=payload.orbit_mode==='illustrative';
@@ -710,13 +883,15 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
 
           const region = payload.region || 'global';
           if (region === 'uruguay') {{
-            camera.position.set(0.9, 1.4, 5.5);
-            controls.target.set(-0.2, -0.2, 0.1);
+            // WGS84 Uruguay vector points into the southern +X/+Z hemisphere.
+            // Viewing it from above the Northern Hemisphere hid the country.
+            camera.position.set(3.5, -3.3, 5.1);
+            controls.target.set(0, 0, 0);
           }} else if (region === 'south_america') {{
-            camera.position.set(1.9, 0.8, 5.4);
-            controls.target.set(-0.6, -0.2, 0.1);
+            camera.position.set(3.2, -1.8, 6.3);
+            controls.target.set(0, 0, 0);
           }} else {{
-            camera.position.set(0, 1.2, 6.4);
+            camera.position.set(0, 1.3, 8.2);
             controls.target.set(0, 0, 0);
           }}
           controls.update();
@@ -735,12 +910,11 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             renderer.render(scene, camera);
           }}, 180);
 
-          setStatus('Loading Blue/Black Marble textures…');
+          setStatus('Initializing 3D · optional textures are loading…');
 
           /* Scientific mode and last/next crossing replay use the SAME UTC
              timestamped ephemerides as the Uruguay mission-control scene. */
-          const scientific=payload.orbit_mode==='sgp4';
-          let playing=!scientific,orbitT=0,orbitSpeed=60;
+          let playing=!scientific,orbitT=0,orbitSpeed=1;
           let orbitalUtcMs=referenceUtcMs(),replayKind='current',replayTrack=null;
           let replaySelected=0;
           const orbitClock=document.getElementById('ignis-orbit-clock');
@@ -769,8 +943,9 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             document.getElementById('ignis-next-pass').disabled=!trackedPass('next');
             document.getElementById('ignis-current').disabled=!scientific;
             playButton.disabled=scientific&&replayKind==='current';
+            speedSelect.disabled=scientific&&replayKind==='current';
             if(!scientific)playButton.textContent=playing?'⏸ Pause':'▶ Play';
-            else playButton.textContent=replayKind==='current'?'Current UTC':playing?'⏸ Pause':'▶ Play';
+            else playButton.textContent=replayKind==='current'?'▶ Replay':playing?'⏸ Pause':'▶ Play';
           }}
           function replayPass(kind){{
             const pass=trackedPass(kind);
@@ -850,6 +1025,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           }}
           let priorFrame=performance.now();
           function animate(){{
+            if(rendererLost)return;
             requestAnimationFrame(animate);
             const now=performance.now(),delta=Math.min(0.12,(now-priorFrame)/1000);
             priorFrame=now;
@@ -876,14 +1052,15 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           const hotspotNote = (showHotspots && totalHotspots > shownHotspots)
             ? ' · hotspots: ' + shownHotspots + ' of ' + totalHotspots + ' (highest FRP)'
             : (showHotspots && shownHotspots ? ' · hotspots: ' + shownHotspots : '');
-          setStatus('3D ready'+orbitStatus+hotspotNote);
+          sceneReady=true;
+          window.__ignisGlobeReady=true;
+          renderer.render(scene,camera);
+          reportSceneStatus();
           }} catch (error) {{
             console.error('IGNIS 3D error:', error);
             const message = error && error.message ? error.message : 'Unknown error while initializing the 3D view.';
             setStatus('Error 3D: ' + message, 'error');
-            if (root) {{
-              root.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:2rem;color:#fce5e5;text-align:center;font:14px Arial,sans-serif;background:linear-gradient(180deg,#0b1220,#090d18);">Could not initialize the 3D view. Check your browser WebGL support or reload this page.</div>';
-            }}
+            window.__ignisRenderFallback?.(message);
           }}
         </script>
       </body>
@@ -917,7 +1094,13 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
     # la línea temporal. El iframe se rellena luego de leer los filtros.
     controls_col, globe_col = st.columns([1, 3.1], gap="medium")
     with globe_col:
-        globe_slot = st.empty()
+        globe_3d_col, globe_2d_col = st.columns([2.05, 1], gap="small")
+        with globe_3d_col:
+            st.markdown("**3D · Earth orbital explorer**")
+            globe_slot = st.empty()
+        with globe_2d_col:
+            st.markdown("**2D · Scientific report view**")
+            globe_2d_slot = st.empty()
         with st.container(border=True):
             st.caption("TIMELINE · FIRMS OBSERVATIONS")
             if date_options:
@@ -1069,10 +1252,26 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         "hotspots": hotspots,
         "hotspots_total": int(len(filtered_frame)),
         "outline": _uruguay_outline(),
+        "world_land": _world_geometries(),
     }
 
     with globe_slot:
         components.html(_render_globe_html(config), height=690, scrolling=False)
+
+    with globe_2d_slot:
+        from ignis_spatial import render_report_map
+        static_map = render_report_map(filtered_frame)
+        if static_map is not None:
+            st.image(static_map, use_container_width=True,
+                     caption="Same selected FIRMS date and sensor as 3D · not a confirmed wildfire map")
+            st.download_button("Download 2D report map (PNG)", static_map,
+                               file_name="IGNIS_earth_2d_report_map.png", mime="image/png",
+                               key="ignis_globe_2d_download", use_container_width=True)
+        else:
+            st.info("No imported FIRMS observations at the selected date and sensor. "
+                    "The lack of records does not prove the absence of fires.")
+        st.caption("The 2D map uses IGNIS's static PDF map renderer. "
+                   "It works independently of WebGL and external Earth textures.")
 
     with globe_col:
         count = len(filtered_frame)

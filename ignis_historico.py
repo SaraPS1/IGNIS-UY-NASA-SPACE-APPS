@@ -737,9 +737,9 @@ if current_section==NAV_PAGES[4]:
     if sample.empty:st.info('Import the Master dataset or upload NASA FIRMS ZIP files to view historical records.')
     else:
         x,y,z=st.columns(3);x.metric('Records in selection',f'{len(sample):,}');y.metric('Years with records',sample.anio.nunique());z.metric('Sensors present',sample.instrumento.nunique())
-        st.markdown("#### 3D historical archive · Uruguay")
-        from ignis_spatial import render_spatial_3d
-        render_spatial_3d(sample, year=selected, height=580)
+        st.markdown("#### Historical archive · interactive 3D and printable 2D")
+        from ignis_spatial import render_spatial_pair
+        render_spatial_pair(sample, year=None, height=580, context="history")
         st.caption("Orbital tracking uses current UTC and is independent of the selected historical FIRMS year.")
 
         sensors=sorted(sample.instrumento.unique())
@@ -947,10 +947,10 @@ if current_section == NAV_PAGES[6]:
 if current_section==NAV_PAGES[7]:
     st.subheader('⚠️ Historical monitoring · signals requiring review')
     if isinstance(sample, pd.DataFrame) and not sample.empty:
-        st.markdown("#### 3D scientific observation context")
-        from ignis_spatial import render_spatial_3d
-        render_spatial_3d(sample[sample.anio == selected] if selected is not None else sample,
-                          year=selected, height=550)
+        st.markdown("#### Historical monitoring · 3D and 2D context")
+        from ignis_spatial import render_spatial_pair
+        render_spatial_pair(sample[sample.anio == selected] if selected is not None else sample,
+                            year=selected, height=550, context="alerts")
         st.caption("Thermal anomalies are not verified emergencies; no risk probability or alert level is inferred.")
 
     st.markdown('''<style>

@@ -1130,6 +1130,8 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
 
     # La visualización se centra en el mapa, no en la configuración de columnas.
     st.markdown('### 🗺️ Historical map of Uruguay · choose a grid cell')
+    st.caption("The interactive 3D map and synchronized 2D report map are available in "
+               "the Satellite–Ground Fusion comparison below this cell-selection grid.")
     years=sorted(int(v) for v in nasa.fecha_utc.dt.year.dropna().unique())
     col_z,col_y=st.columns([2,1])
     zona=col_z.selectbox('Study area',list(ZONAS),key='fus_v2_zona')
@@ -1299,12 +1301,15 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
     # Expose the current calculated associations to the 3D control center.
     # This is derived from uploaded records; do not create synthetic matches.
     st.session_state['ignis_fusion_results'] = fusion if not fusion.empty else None
-    st.markdown("### 3D spatial fusion · NASA observations and imported evidence")
-    from ignis_spatial import render_spatial_3d
-    render_spatial_3d(periodo, year=ano,
-                      associations=fusion if not fusion.empty else None, height=650)
-    st.caption("3D terrain is illustrative. Satellite–ground proximity is for review, "
-               "not validated fire confirmation. Use the 2D grid chart above to select a cell.")
+    st.markdown("### Satellite–Ground Fusion · interactive 3D / printable 2D")
+    from ignis_spatial import render_spatial_pair
+    render_spatial_pair(periodo, year=ano,
+                        associations=fusion if not fusion.empty else None,
+                        height=650, context="fusion")
+    st.caption("Both maps show the same selected FIRMS observations. Imported ground-event "
+               "candidate positions are indicated separately when association data exists. "
+               "Proximity is for scientific review, not verified wildfire confirmation. "
+               "The historical 2D recurrence grid above retains its clickable cell selection.")
     if not fusion.empty:
         celda_fusion=fusion.loc[fusion.lat.ge(lat0)&fusion.lat.lt(lat1)&
                                fusion.lon.ge(lon0)&fusion.lon.lt(lon1)].copy()
@@ -1369,6 +1374,13 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
     if not salida_local.empty and salida_local.simulado.astype(str).str.startswith(('SÍ','YES')).any():
         st.warning('DEMONSTRATION RESULT: includes synthetic data, '
                    'does not confirm actual Fire Service or SINAE observations.')
+    # Display the exact 2D image embedded in the selected-cell PDF.
+    # This complements the same-period, side-by-side 2D science map above.
+    st.markdown("**Selected-cell 2D map · identical to PDF illustration**")
+    st.image(
+        _mapa_estatico_para_pdf(visible, seleccion_celda, b_vista, s_vista),
+        use_container_width=True,
+        caption="Static scientific grid / imported institutional positions, used by the cell PDF")
     try:
         pdf_celda=generar_informe_pdf_celda(
             visible,seleccion_celda,t_hist,t_per,bom_cell,sin_cell,salida_local,

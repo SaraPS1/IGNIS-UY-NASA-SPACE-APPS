@@ -654,7 +654,7 @@ def render_project_home(base, asset_uri, pages, navigate):
         st.button("Upload data", use_container_width=True,
                   key="hero_to_upload", on_click=navigate, args=(pages[2],))
     st.markdown(
-        '<h2 class="ignis-home-section-title">What you can do with IGNIS</h2>',
+        '<h2 class="ignis-home-section-title" style="padding-left:clamp(24px,2.5vw,40px)">What you can do with IGNIS</h2>',
         unsafe_allow_html=True,
     )
     cards = [
@@ -740,10 +740,9 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
         with st.container(border=True):
             st.markdown("#### 🗺️ Geographic distribution")
             if not mapped.empty:
-                from ignis_spatial import render_spatial_3d
-                render_spatial_3d(mapped, year=selected, height=620)
-                with st.expander("2D scientific chart / accessible fallback"):
-                    map_fn(mapped,"ignis_atlas_scientific")
+                from ignis_spatial import render_spatial_pair
+                render_spatial_pair(mapped, year=None if selector=="All uploaded historical records" else selected,
+                                    height=620, context="atlas")
             else:
                 st.info("No points for the selected period.")
                 _empty_uruguay_outline(base,"ignis_atlas_selection_empty")

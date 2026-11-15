@@ -1,0 +1,72 @@
+name: IGNIS globe runtime and paired-map validation
+
+on:
+  push:
+    branches:
+      - fix/ignis-globe-dual-map-audit-20261115
+  pull_request:
+    paths:
+      - ignis_espacio.py
+      - ignis_spatial.py
+      - ignis_informe.py
+      - ignis_visual.py
+      - ignis_dashboard.py
+      - ignis_historico.py
+      - ignis_nrt.py
+      - ignis_fusion_terrestre.py
+      - tests/browser_globe_runtime.py
+      - tests/create_globe_browser_fixture.py
+      - tests/test_ignis_dual_map_globe.py
+      - .github/workflows/ignis-globe-runtime.yml
+
+permissions:
+  contents: read
+
+jobs:
+  globe-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install scientific runtime and browser tooling
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install "playwright>=1.48,<2.0"
+          npm install --no-save three@0.160.0
+      - name: Python and JavaScript syntax checks
+        run: |
+          python -m compileall -q -f ignis_espacio.py ignis_spatial.py ignis_informe.py ignis_historico.py ignis_fusion_terrestre.py ignis_dashboard.py ignis_nrt.py ignis_visual.py
+          python -m unittest discover -s tests -p 'test_ignis_globe_3d.py' -v
+          python -m unittest discover -s tests -p 'test_ignis_dual_map_globe.py' -v
+          python -m unittest discover -s tests -p 'test_ignis_3d_map_routes.py' -v
+          python -m unittest discover -s tests -p 'test_ignis_cinematic_observatory.py' -v
+      - name: Streamlit startup smoke test
+        run: |
+          python - <<'PY'
+          from streamlit.testing.v1 import AppTest
+          app=AppTest.from_file("principal.py", default_timeout=60).run()
+          assert not app.exception, [str(e.message) for e in app.exception]
+          print("Streamlit startup test passed")
+          PY
+      - name: Real Chrome WebGL / blocked-texture / CDN-failure tests
+        run: |
+          command -v google-chrome
+          python tests/browser_globe_runtime.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ignis-globe-real-browser-tests
+          path: |
+            preview/ignis-globe-webgl.png
+            preview/ignis-globe-no-textures.png
+            preview/ignis-globe-fallback2d.png
+            preview/ignis-globe-context-lost2d.png
+            preview/ignis-globe-runtime-results.json
+            preview/ignis-globe-synthetic.html
+          if-no-files-found: ignore

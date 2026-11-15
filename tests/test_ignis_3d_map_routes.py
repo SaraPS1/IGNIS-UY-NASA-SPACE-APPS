@@ -54,7 +54,7 @@ class Spatial3DTests(unittest.TestCase):
                      "ignis_nrt.py","ignis_fusion_terrestre.py","ignis_historico.py"):
             text = (ROOT / file).read_text(encoding="utf-8")
             with self.subTest(file=file):
-                self.assertIn("render_spatial_3d(", text)
+                self.assertIn("render_spatial_pair(", text)
         scene = (ROOT / "ignis_spatial.py").read_text(encoding="utf-8")
         self.assertIn("render_uruguay_scene(", scene)
         self.assertIn("to_scene_frame(data)", scene)
