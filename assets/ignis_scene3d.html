@@ -116,6 +116,82 @@
     #status{display:none}
   }
   @media (prefers-reduced-motion:reduce){.badge.live i,#intro .ring{animation:none}}
+
+  /* IGNIS cinematic mission deck — deliberately calm, data-first typography */
+  #stage{isolation:isolate;background:radial-gradient(ellipse at 53% 37%,#15374d 0%,#071725 42%,#030a12 100%)}
+  #gl,#flat{z-index:0}
+  #ambient{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden;
+    background:radial-gradient(ellipse at 69% 15%,rgba(0,188,222,.075),transparent 38%),
+               radial-gradient(ellipse at 25% 80%,rgba(255,106,26,.045),transparent 35%),
+               linear-gradient(0deg,rgba(1,9,19,.55),transparent 28%);
+    box-shadow:inset 0 0 125px 26px rgba(1,7,16,.48)}
+  #ambient::before{content:"";position:absolute;inset:-30%;opacity:.21;
+    background:repeating-linear-gradient(0deg,transparent 0,transparent 55px,rgba(125,235,255,.055) 56px),
+               repeating-linear-gradient(90deg,transparent 0,transparent 55px,rgba(125,235,255,.05) 56px);
+    transform:perspective(900px) rotateX(58deg) translateY(15%)}
+  #ambient::after{content:"";position:absolute;width:48%;aspect-ratio:1;left:23%;top:1%;
+    border:1px solid rgba(125,235,255,.14);border-radius:50%;
+    box-shadow:0 0 45px rgba(0,217,245,.035),inset 0 0 48px rgba(0,217,245,.035);
+    animation:ignis-orbit-halo 24s ease-in-out infinite alternate}
+  @keyframes ignis-orbit-halo{from{transform:scale(.94) rotate(-8deg);opacity:.32}to{transform:scale(1.18) rotate(8deg);opacity:.7}}
+  .reduce #ambient::after{animation:none}
+  .panel{background:linear-gradient(155deg,rgba(12,33,49,.88),rgba(5,15,28,.83));
+    border:1px solid rgba(114,189,208,.19);box-shadow:0 18px 44px rgba(0,0,0,.36),inset 0 1px rgba(206,245,255,.065)}
+  #hud-top{z-index:3;border-left:2px solid var(--cyan);box-shadow:0 12px 28px rgba(0,0,0,.25)}
+  #layers{z-index:3;max-height:calc(100% - 192px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#305567 transparent}
+  #info,#mission{z-index:3}
+  #mission{position:absolute;right:14px;top:66px;width:262px;padding:14px 15px 12px;transition:opacity .3s,transform .3s}
+  #mission .mission-kicker{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#90b6c8;
+    font-size:9.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+  #mission .mission-kicker::before{content:"";display:block;width:5px;height:5px;border-radius:50%;
+    background:var(--cyan);box-shadow:0 0 9px rgba(0,217,245,.65);margin-right:1px}
+  #mission .mission-kicker b{margin-left:auto;color:var(--ice);font-size:9px}
+  #mission .mission-title{font-size:10.5px;color:var(--slate);margin-top:14px}
+  #mission .mission-year{display:flex;align-items:baseline;gap:8px}
+  #mission-year{font-size:37px;line-height:1.13;letter-spacing:-.045em;font-weight:750;font-variant-numeric:tabular-nums}
+  #mission .mission-year small{font-size:10px;letter-spacing:.04em;color:#aec4d0}
+  #mission-bars{display:flex;align-items:end;gap:3px;height:31px;padding-bottom:2px;margin:6px 0 12px;
+    border-bottom:1px solid rgba(125,235,255,.12)}
+  #mission-bars button{appearance:none;border:0;flex:1;min-width:2px;background:linear-gradient(#286a7a,#194457);
+    height:var(--h,3px);padding:0;cursor:pointer;opacity:.72;transition:background .2s,opacity .2s,height .32s}
+  #mission-bars button.has{background:linear-gradient(#f79b55,#8c431f)}
+  #mission-bars button.selected{background:linear-gradient(#a4f4ff,var(--cyan));opacity:1;box-shadow:0 0 10px rgba(0,217,245,.35)}
+  #mission-bars button:hover,#mission-bars button:focus-visible{opacity:1;background:var(--ice);outline:0}
+  #mission .mission-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  #mission .mission-kpis div{padding:9px 8px;background:rgba(12,39,56,.48);border:1px solid rgba(125,235,255,.1)}
+  #mission .mission-kpis small{display:block;color:#91acbd;font-size:8.5px;line-height:1.25;letter-spacing:.09em}
+  #mission .mission-kpis strong{display:block;margin-top:5px;font-size:16px;font-weight:750;font-variant-numeric:tabular-nums}
+  #mission .mission-note{color:#9eb5c3;font-size:10px;line-height:1.5;margin:10px 0}
+  #mission .mission-actions{display:flex;gap:7px}
+  #mission button.mission-act{flex:1;min-height:33px;padding:6px 7px;background:rgba(0,217,245,.075);
+    border:1px solid rgba(125,235,255,.26);color:var(--white);font-size:10px;font-weight:650;
+    cursor:pointer;transition:background .2s,border-color .2s,transform .2s}
+  #mission button.mission-act:first-child{background:linear-gradient(105deg,rgba(0,191,225,.25),rgba(8,86,115,.23));color:#d8fbff}
+  #mission button.mission-act:hover{border-color:var(--cyan);background:rgba(0,217,245,.22);transform:translateY(-1px)}
+  #mission button.mission-act:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .inspect #mission,.cine #mission{opacity:0;pointer-events:none;transform:translateY(8px)}
+  #tl{z-index:3;left:258px;right:294px;bottom:14px;max-width:none}
+  #legend{z-index:3}
+  #status{z-index:3}
+  #satlabels{position:absolute;inset:0;pointer-events:none;z-index:2}
+  #satlabels div{pointer-events:auto}
+  #mission[data-touring="true"] #mission-tour{border-color:var(--orange);background:rgba(255,106,26,.14);color:#ffcbab}
+  #stage.compact #mission{display:none}
+  #stage.compact #tl{left:14px;right:14px;bottom:75px}
+  #stage.compact #layers{width:205px}
+  #stage.compact #legend{display:none}
+  @media (max-width:620px){
+    #hud-top{left:9px;right:9px;padding:7px 9px;font-size:10px;gap:5px;flex-wrap:wrap}
+    #hud-top .illus{display:none}
+    #layers{left:9px;top:90px;max-height:52%;width:182px;padding:7px}
+    #layers .tg{padding:4px 3px;font-size:10px}
+    #tl,#stage.compact #tl{left:8px;right:8px;bottom:72px;padding:8px}
+    #tl .row{flex-wrap:wrap;gap:5px}
+    #year{font-size:17px}
+    #slider{min-width:85px}
+    #radial{right:12px;bottom:8px}
+  }
+
 </style>
 </head>
 <body>
@@ -123,6 +199,7 @@
   <canvas id="gl" aria-label="Interactive 3D map of Uruguay with NASA FIRMS thermal observations" role="img" tabindex="0"></canvas>
   <canvas id="flat" aria-label="2D map of Uruguay with NASA FIRMS thermal observations" role="img"></canvas>
 
+  <div id="ambient" aria-hidden="true"></div>
   <div id="intro"><div class="ring"></div><p>Preparing Earth · Uruguay</p></div>
 
   <div id="hud-top" class="panel">
@@ -144,6 +221,22 @@
     <label class="tg"><span class="lbl"><i class="dot" style="background:var(--cyan)"></i><span>Illustrative orbit trails</span></span><span class="sw"><input type="checkbox" id="tgOrbits" checked><span></span></span></label>
     <label class="tg" style="border-top:1px solid var(--glass-border);margin-top:4px;padding-top:8px"><span class="lbl"><span>Reduce motion<small>disables decorative animation</small></span></span><span class="sw"><input type="checkbox" id="tgReduce"><span></span></span></label>
   </div>
+
+  <section id="mission" class="panel" aria-label="Historical observation mission deck">
+    <div class="mission-kicker">Mission brief <b id="mission-mode">HISTORICAL</b></div>
+    <div class="mission-title">Selected observation interval</div>
+    <div class="mission-year"><strong id="mission-year">2026</strong><small id="mission-range">Selected year</small></div>
+    <div id="mission-bars" aria-label="Imported records by year"></div>
+    <div class="mission-kpis">
+      <div><small>FIRMS OBSERVATIONS</small><strong id="mission-count">0</strong></div>
+      <div><small>MODIS / VIIRS</small><strong id="mission-split">0 / 0</strong></div>
+    </div>
+    <p class="mission-note">Imported thermal anomalies, not confirmed wildfires. Orbital geometry and terrain relief are illustrative.</p>
+    <div class="mission-actions">
+      <button id="mission-tour" class="mission-act" type="button" title="Animated flyover of actual imported observations">Guided flyover</button>
+      <button id="mission-focus" class="mission-act" type="button" title="Focus a displayed observation with FRP metadata">Explore signal</button>
+    </div>
+  </section>
 
   <div id="info" class="panel" aria-live="polite"></div>
   <div id="tip" role="tooltip"></div>
@@ -225,6 +318,51 @@ const years = Object.keys(D.yearCounts).map(Number);
 const [Y0, Y1] = D.yearRange;
 let year = Math.min(Math.max(D.selectedYear || Y1, Y0), Y1);
 let mode = 'year';
+
+/* Mission deck: all displayed figures use the full imported dataset counts.
+   Camera tours visit only actual, currently displayed observations. */
+const missionNodes = {};
+for (const name of ['mission-year','mission-range','mission-count','mission-split','mission-mode','mission-bars','mission-tour','mission-focus']) missionNodes[name] = $(name);
+function buildMissionBars(){
+  const barRoot=missionNodes['mission-bars']; const maximum=Math.max(1,...Object.values(D.yearCounts||{}));
+  for(let y=Y0;y<=Y1;y++){
+    const value=D.yearCounts[y]||0;
+    const b=document.createElement('button'); b.type='button'; b.dataset.year=y;
+    b.className=value?'has':'';
+    b.style.setProperty('--h',(value?Math.max(4,Math.round(26*Math.sqrt(value/maximum))):2)+'px');
+    b.title=y+': '+value.toLocaleString()+' imported records';
+    b.setAttribute('aria-label',b.title);
+    b.onclick=()=>setYear(y); barRoot.appendChild(b);
+  }
+}
+function currentCounts(){
+  const range=mode==='all'?[Y0,Y1]:mode==='cum'?[Y0,year]:[year,year];
+  let sum=0,mod=0,vii=0;
+  for(let y=range[0];y<=range[1];y++){
+    const fam=D.yearFamilyCounts[y]||[0,0,0];
+    mod+=fam[0]||0; vii+=fam[1]||0;
+    sum+=D.yearCounts[y]||0;
+  }
+  if(!$('tgModis').checked)mod=0;
+  if(!$('tgViirs').checked)vii=0;
+  return [mod+vii,mod,vii,sum];
+}
+function updateMission(){
+  const [visible,mod,vii,total]=currentCounts();
+  missionNodes['mission-year'].textContent=mode==='all'?'ALL':year;
+  missionNodes['mission-range'].textContent=mode==='all'?(Y0+'—'+Y1):(mode==='cum'?'Cumulative':'Selected year');
+  missionNodes['mission-count'].textContent=visible.toLocaleString();
+  missionNodes['mission-split'].textContent=mod.toLocaleString()+' / '+vii.toLocaleString();
+  missionNodes['mission-mode'].textContent=D.liveConnection?'NRT AVAILABLE':'ARCHIVE';
+  for(const b of missionNodes['mission-bars'].children) b.classList.toggle('selected',mode!=='all' && +b.dataset.year===year);
+  const hasDisplayed=activeIndices().length>0;
+  missionNodes['mission-focus'].disabled=!hasDisplayed||!glOK;
+  missionNodes['mission-tour'].disabled=!hasDisplayed||!glOK;
+  missionNodes['mission-count'].title='Filtered observations in imported files: '+visible.toLocaleString()+
+    '; total record count including other instruments: '+total.toLocaleString();
+}
+buildMissionBars();
+
 let THREE = null, OrbitControls = null, loadError = '';
 try { THREE = await import('three'); ({ OrbitControls } = await import('three/addons/controls/OrbitControls.js')); }
 catch (e) { loadError = 'Three.js could not be loaded: ' + (e && e.message ? e.message : e); }
@@ -251,7 +389,7 @@ if (glOK) {
 function start2D(reason){
   $('gl').style.display='none'; const cv=$('flat'); cv.style.display='block';
   setStatus('WebGL unavailable · 2D fallback (' + reason + ')');
-  ['tgBeams','tgAtmo','tgOrbits','rRotate','rView','rLayer'].forEach(id=>{ const el=$(id); if(el){ el.disabled=true; el.style.opacity=.35; }});
+  ['tgBeams','tgAtmo','tgOrbits','rRotate','rView','rLayer','mission-tour','mission-focus'].forEach(id=>{ const el=$(id); if(el){ el.disabled=true; el.style.opacity=.35; }});
   const ctx = cv.getContext('2d');
   function draw(){
     const w = cv.width = cv.clientWidth*devicePixelRatio, h = cv.height = cv.clientHeight*devicePixelRatio;
@@ -298,6 +436,7 @@ function updateTimelineText(){
   const left = mode==='year' ? `<b>${total.toLocaleString()}</b> imported observations in ${year}` : mode==='cum' ? `<b>${total.toLocaleString()}</b> imported observations up to ${year}` : `<b>${total.toLocaleString()}</b> imported observations, all years`;
   $('tlLeft').innerHTML = left + (shown<total ? ` · ${shown.toLocaleString()} markers drawn (highest FRP)` : '');
   $('tlRight').innerHTML = total===0 ? '<span class="warn">No imported observations for this interval — this does not prove that no wildfire occurred.</span>' : (D.stats.first_year? `Imported coverage ${D.stats.first_year}–${D.stats.last_year}` : '');
+  updateMission();
 }
 (function buildTicks(){ const t=$('ticks'); for (let y=Y0;y<=Y1;y++){ const s=document.createElement('span'); s.dataset.y=y; s.style.left=((y-Y0)/(Y1-Y0)*100)+'%'; const n=D.yearCounts[y]||0; s.style.height=(n? Math.max(4, Math.min(16, 4+Math.log10(n+1)*4)) : 3)+'px'; if(n) s.classList.add('has'); s.title=`${y}: ${n.toLocaleString()} records`; s.addEventListener('click',()=>setYear(y)); t.appendChild(s);} })();
 
@@ -493,7 +632,7 @@ async function init3D(){
 
   /* ---------- info / tooltip ---------------------------------------------- */
   const info=$('info'), tip=$('tip');
-  function showInfo(html){ info.innerHTML = html + '<button id="infoClose">Close</button>'; info.classList.add('show'); $('infoClose').onclick=()=>info.classList.remove('show'); }
+  function showInfo(html){ info.innerHTML = html + '<button id="infoClose">Close</button>'; info.classList.add('show'); stage.classList.add('inspect'); $('infoClose').onclick=()=>{info.classList.remove('show');stage.classList.remove('inspect');}; }
   function showSatInfo(s){ showInfo(`<div class="ttl">${s.name} · ${s.sensor}</div><div class="kv"><span>Instrument</span><span>${s.sensor}</span><span>Orbit shown</span><span>Schematic animation</span><span>Role</span><span>${s.sensor==='MODIS'?'Terra/Aqua MODIS thermal anomalies (1 km)':'VIIRS I-band thermal anomalies (375 m)'}</span></div><div class="note">This orbit is illustrative and is not a historical overpass. Verified TLE-based trajectories are available in “3D Earth & Satellites”.</div>`); }
   function pointHtml(i){ const frp = P.frp[i]==null ? 'not available' : `${P.frp[i]} MW`; return `<b>${P.inst[i]||(P.fam[i]===0?'MODIS':'VIIRS')}</b>${D.satellites[P.sat[i]]?' · '+D.satellites[P.sat[i]]:''}<br>${P.day[i]}<br>${P.lat[i].toFixed(4)}°, ${P.lon[i].toFixed(4)}°<br>FRP ${frp}${P.conf[i]?' · confidence '+P.conf[i]:''}<br><span style="color:var(--slate)">Thermal anomaly · not a confirmed fire</span>`; }
   const rc=new THREE.Raycaster(); rc.params.Line.threshold=0.05; const mouse=new THREE.Vector2(); let hover=null;
@@ -515,6 +654,45 @@ async function init3D(){
   function tweenTo(pos,tgt,dur){ if(reduceMotion){ camera.position.copy(pos); controls.target.copy(tgt); return; } tween={ p0:camera.position.clone(), t0:controls.target.clone(), p1:pos, t1:tgt, s:performance.now(), d:dur }; }
   const VIEWS=[HOME, { pos:new THREE.Vector3(0,16,0.01), tgt:new THREE.Vector3(0,0,0) }, { pos:new THREE.Vector3(9,3.2,9), tgt:new THREE.Vector3(0,0.2,0) }, { pos:new THREE.Vector3(-10,5,-7), tgt:new THREE.Vector3(0,0,0) }]; let viewIdx=0;
 
+
+  /* Guided camera narrative based strictly on displayed FIRMS records. */
+  let tourTimer=null,tourQueue=[],tourStep=0;
+  function stopTour(){
+    if(tourTimer!==null)clearTimeout(tourTimer);
+    tourTimer=null;tourQueue=[];missionNodes['mission-tour'].textContent='Guided flyover';
+    $('mission').dataset.touring='false';
+  }
+  function signalOrder(){
+    const indices=activeIndices().slice().sort((a,b)=>(P.frp[b]??-1)-(P.frp[a]??-1));
+    const list=[];
+    for(const i of indices){
+      if(list.every(j=>Math.hypot((P.lon[i]-P.lon[j])*COS,P.lat[i]-P.lat[j])>.24))list.push(i);
+      if(list.length>=5)break;
+    }
+    if(!list.length&&indices.length)list.push(indices[0]);
+    return list;
+  }
+  function focusSignal(i){
+    if(i==null)return;
+    flyTo(toXZ(P.lon[i],P.lat[i]),5.8,1550);
+    showInfo('<div class="ttl">Imported FIRMS observation</div><div class="note">'+pointHtml(i)+'</div>');
+    setStatus('Exploring an imported observation · not a confirmed wildfire');
+  }
+  function nextTourStep(){
+    if(tourStep>=tourQueue.length){stopTour();return;}
+    focusSignal(tourQueue[tourStep++]);
+    tourTimer=setTimeout(nextTourStep,3600);
+  }
+  missionNodes['mission-tour'].onclick=()=>{
+    if(tourTimer!==null){stopTour();return;}
+    if(reduceMotion){setStatus('Guided animations are disabled by Reduce motion.');return;}
+    tourQueue=signalOrder();if(!tourQueue.length)return;
+    tourStep=0;missionNodes['mission-tour'].textContent='Stop flyover';
+    $('mission').dataset.touring='true';nextTourStep();
+  };
+  missionNodes['mission-focus'].onclick=()=>{stopTour();const order=signalOrder();if(order.length)focusSignal(order[0]);};
+  renderer.domElement.addEventListener('pointerdown',stopTour);
+
   /* ---------- UI wiring --------------------------------------------------- */
   ['tgModis','tgViirs'].forEach(id=>$(id).addEventListener('change', rebuildInstances));
   $('tgGrid').addEventListener('change', e=>gridGroup.visible=e.target.checked);
@@ -522,7 +700,7 @@ async function init3D(){
   $('tgCases').addEventListener('change', e=>caseGroup.visible=e.target.checked);
   $('tgAssoc').addEventListener('change', e=>assocGroup.visible=e.target.checked);
   $('tgAtmo').addEventListener('change', e=>{ atmo.visible=haze.visible=clouds.visible=e.target.checked; scene.fog.density=e.target.checked?0.012:0.004; });
-  $('tgReduce').addEventListener('change', e=>{ reduceMotion=e.target.checked; stage.classList.toggle('reduce',reduceMotion); if(reduceMotion){ controls.autoRotate=false; stopPlay(); } });
+  $('tgReduce').addEventListener('change', e=>{ reduceMotion=e.target.checked; stage.classList.toggle('reduce',reduceMotion); if(reduceMotion){ controls.autoRotate=false; stopPlay(); stopTour(); } });
   const radial=$('radial'); $('rCore').addEventListener('click',()=>{ const o=radial.classList.toggle('open'); $('rCore').setAttribute('aria-expanded',o); });
   $('rRotate').addEventListener('click',()=>{ controls.autoRotate=!controls.autoRotate; controls.autoRotateSpeed=0.6; });
   $('rZoomIn').addEventListener('click',()=>zoomBy(0.8)); $('rZoomOut').addEventListener('click',()=>zoomBy(1.25));
@@ -531,13 +709,13 @@ async function init3D(){
   $('rReset').addEventListener('click',()=>{ viewIdx=0; tweenTo(HOME.pos.clone(),HOME.tgt.clone(),1200); controls.autoRotate=false; });
   $('rLayer').addEventListener('click',()=>{ surfIdx=(surfIdx+1)%surfOrder.length; top.material=surfMats[surfOrder[surfIdx]]; setStatus(`Surface style: ${surfOrder[surfIdx]} (illustrative)`); });
   $('rFull').addEventListener('click',()=>{ const el=document.documentElement; if(document.fullscreenElement){ document.exitFullscreen&&document.exitFullscreen(); return; } (el.requestFullscreen||el.webkitRequestFullscreen||function(){ setStatus('Full screen is blocked by the embedding frame; use the browser full-screen shortcut.'); }).call(el)?.catch?.(()=>setStatus('Full screen not allowed in this frame.')); });
-  function setCine(on){ stage.classList.toggle('cine',on); radial.classList.remove('open'); if(on){ controls.autoRotate=!reduceMotion; controls.autoRotateSpeed=0.35; info.classList.remove('show'); } else { controls.autoRotate=false; } }
+  function setCine(on){ stage.classList.toggle('cine',on); radial.classList.remove('open'); if(on){ stopTour(); controls.autoRotate=!reduceMotion; controls.autoRotateSpeed=0.35; info.classList.remove('show'); } else { controls.autoRotate=false; } }
   $('rCine').addEventListener('click',()=>setCine(true)); $('cine-exit').addEventListener('click',()=>setCine(false));
   window.addEventListener('keydown', ev=>{ if(ev.key==='Escape') setCine(false); if(ev.key===' '&&ev.target.tagName!=='SELECT'&&ev.target.tagName!=='INPUT'){ ev.preventDefault(); togglePlay(); } if(ev.key==='ArrowLeft') setYear(year-1); if(ev.key==='ArrowRight') setYear(year+1); });
   wireTimeline(rebuildInstances);
 
   /* ---------- resize / quality ------------------------------------------- */
-  function resize(){ const w=stage.clientWidth, h=stage.clientHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+  function resize(){ const w=stage.clientWidth, h=stage.clientHeight;stage.classList.toggle('compact',w<760); renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
   new ResizeObserver(resize).observe(stage); resize();
   let frames=0, lowSince=0, quality=2;
   function adapt(dt){ frames++; const fps=1/Math.max(dt,1e-4); if(fps<38){ lowSince+=dt; if(lowSince>2 && quality>0){ quality--; lowSince=0; if(quality===1){ pixelRatio=Math.min(pixelRatio,1.25); renderer.setPixelRatio(pixelRatio); setStatus('Adaptive quality: reduced resolution'); } else { renderer.shadowMap.enabled=false; sun.castShadow=false; halos.visible=false; setStatus('Adaptive quality: shadows off'); } } } else lowSince=Math.max(0,lowSince-dt*.5); }
@@ -564,7 +742,7 @@ async function init3D(){
   raf=requestAnimationFrame(animate);
 
   /* ---------- cleanup ------------------------------------------------------ */
-  function dispose(){ cancelAnimationFrame(raf); scene.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{ for(const k in m){ if(m[k]&&m[k].isTexture) m[k].dispose(); } m.dispose(); }); } }); renderer.dispose(); renderer.forceContextLoss&&renderer.forceContextLoss(); }
+  function dispose(){ stopTour(); stopPlay(); cancelAnimationFrame(raf); scene.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{ for(const k in m){ if(m[k]&&m[k].isTexture) m[k].dispose(); } m.dispose(); }); } }); renderer.dispose(); renderer.forceContextLoss&&renderer.forceContextLoss(); }
   window.addEventListener('pagehide', dispose, { once:true }); window.addEventListener('beforeunload', dispose, { once:true });
   renderer.domElement.addEventListener('webglcontextlost', e=>{ e.preventDefault(); setStatus('WebGL context lost · reload the page to restore the 3D view', true); });
 }
