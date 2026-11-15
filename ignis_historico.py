@@ -541,7 +541,7 @@ with st.sidebar:
     # El botón de cada sección tiene una clave única. No dependemos de la
     # estructura interna de st.radio ni de nth-child: se eliminan las casitas
     # duplicadas y los controles circulares visibles.
-    st.session_state.setdefault("ignis_nav", NAV_PAGES[1])
+    st.session_state.setdefault("ignis_nav", NAV_PAGES[0])
     if st.session_state["ignis_nav"] not in NAV_PAGES:
         _ignis_navigate_to(NAV_PAGES[0])
     current_section = st.session_state["ignis_nav"]
@@ -591,6 +591,14 @@ with st.sidebar:
         "🚀 NASA Space Apps 2026", "https://www.spaceappschallenge.org/2026/",
         use_container_width=True,
     )
+    # A display preference after the original navigation, filters and links.
+    # This never moves the rehearsed buttons or changes analytical state.
+    st.markdown('<div class="ignis-side-section-title">VIEW MODE</div>',
+                unsafe_allow_html=True)
+    st.session_state.setdefault("ignis_3d_explorer", False)
+    st.toggle("3D Explorer", key="ignis_3d_explorer",
+              help="Off: familiar 2D-first presentation. On: advanced 3D maps beside report-ready 2D views.")
+    st.caption("Presentation Mode keeps the original map and controls in their rehearsed positions.")
     st.markdown(
         '<div class="ignis-side-footer">'
         '<span class="ignis-side-footer-accent"></span>'
@@ -604,7 +612,7 @@ with st.sidebar:
 # El Inicio, el Centro de control y el Atlas renderizan su cabecera específica.
 if current_section not in (NAV_PAGES[0], NAV_PAGES[1], NAV_PAGES[6], NAV_PAGES[14]):
     st.markdown(f"""<div class="ignis-topline"><div class="ignis-kicker">
-       IGNIS UY · Herramientas de investigación</div>
+       IGNIS UY · Research Tools</div>
        <h1>{current_section.split(' ',1)[1]}</h1>
        </div>""", unsafe_allow_html=True)
 
