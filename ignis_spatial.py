@@ -107,7 +107,7 @@ def render_report_map(data: Optional[pd.DataFrame],
 def render_spatial_pair(data: Optional[pd.DataFrame], year: Optional[int] = None,
                         associations: Optional[pd.DataFrame] = None,
                         height: int = 590, live_connection: bool = False,
-                        context: str = "spatial") -> dict:
+                        context: str = "spatial", show_report_map: bool = True) -> dict:
     """Every science map is presented as synchronized interactive 3D + report-ready 2D.
 
     Both views and their downloadable PNG use the exact same normalized,
@@ -119,6 +119,17 @@ def render_spatial_pair(data: Optional[pd.DataFrame], year: Optional[int] = None
     frame = to_scene_frame(data)
     if year is not None and not frame.empty:
         frame = frame.loc[frame["fecha"].dt.year == int(year)].copy()
+    # The Dashboard has its own separate Uruguay Map page; show the 3D
+    # visualization at full available width there without a second map.
+    # All other callers keep the original paired 3D/2D rendering.
+    if not show_report_map:
+        st.markdown("**3D · Interactive exploration**")
+        render_uruguay_scene(frame, selected_year=year, associations=associations,
+                             height=height, live_connection=live_connection)
+        return {"source_records": int(len(frame)),
+                "selected_year": year,
+                "report_map_available": False}
+
     left, right = st.columns([1.85, 1], gap="medium")
     with left:
         st.markdown("**3D · Interactive exploration**")
