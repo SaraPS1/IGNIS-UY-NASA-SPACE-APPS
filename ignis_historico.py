@@ -29,6 +29,7 @@ import matplotlib.pyplot as plt
 from ignis_espacio import render_ignis_space_module
 from ignis_visual import (apply_visual_theme, render_project_home,
                           render_control_center, render_scientific_atlas)
+from ignis_modes import is_explorer
 
 def english_quality_notice(message: str) -> str:
     """Convert quality diagnostics to English without changing scientific outputs."""
@@ -745,10 +746,12 @@ if current_section==NAV_PAGES[4]:
     if sample.empty:st.info('Import the Master dataset or upload NASA FIRMS ZIP files to view historical records.')
     else:
         x,y,z=st.columns(3);x.metric('Records in selection',f'{len(sample):,}');y.metric('Years with records',sample.anio.nunique());z.metric('Sensors present',sample.instrumento.nunique())
-        st.markdown("#### Historical archive · interactive 3D and printable 2D")
-        from ignis_spatial import render_spatial_pair
-        render_spatial_pair(sample, year=None, height=580, context="history")
-        st.caption("Orbital tracking uses current UTC and is independent of the selected historical FIRMS year.")
+        # Do not place new 3D controls ahead of the historical charts the team rehearsed.
+        if is_explorer():
+            st.markdown("#### Historical archive · interactive 3D and printable 2D")
+            from ignis_spatial import render_spatial_pair
+            render_spatial_pair(sample, year=None, height=580, context="history")
+            st.caption("Orbital tracking uses current UTC and is independent of the selected historical FIRMS year.")
 
         sensors=sorted(sample.instrumento.unique())
         for i,sensor in enumerate(sensors):heatmap_mensual(sample[sample.instrumento==sensor],sensor,f'historico_mensual_{i}')
@@ -954,7 +957,7 @@ if current_section == NAV_PAGES[6]:
 
 if current_section==NAV_PAGES[7]:
     st.subheader('⚠️ Historical monitoring · signals requiring review')
-    if isinstance(sample, pd.DataFrame) and not sample.empty:
+    if is_explorer() and isinstance(sample, pd.DataFrame) and not sample.empty:
         st.markdown("#### Historical monitoring · 3D and 2D context")
         from ignis_spatial import render_spatial_pair
         render_spatial_pair(sample[sample.anio == selected] if selected is not None else sample,
