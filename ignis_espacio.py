@@ -758,44 +758,131 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
 
           setStatus('Loading Blue/Black Marble textures…');
 
-          let playing = true;
-          let orbitSpeed = 3;
-          let orbitT = 0;
-          const playButton = document.getElementById('ignis-play');
-          const speedSelect = document.getElementById('ignis-speed');
-          const orbitClock = document.getElementById('ignis-orbit-clock');
-          const anyTle = movers.some((m) => !m.schematic);
-          if (!movers.length) {{
-            document.getElementById('ignis-orbit-ctl').style.display = 'none';
-          }}
-          playButton.addEventListener('click', () => {{
-            playing = !playing;
-            playButton.textContent = playing ? '⏸ Pausa' : '▶ Reproducir';
+          /* Scientific mode and last/next crossing replay use the SAME UTC
+             timestamped ephemerides as the Uruguay mission-control scene. */
+          const scientific=payload.orbit_mode==='sgp4';
+          let playing=!scientific,orbitT=0,orbitSpeed=60;
+          let orbitalUtcMs=Date.now(),replayKind='current',replayTrack=null;
+          let replaySelected=0;
+          const orbitClock=document.getElementById('ignis-orbit-clock');
+          const playButton=document.getElementById('ignis-play');
+          const speedSelect=document.getElementById('ignis-speed');
+          const satSelect=document.getElementById('ignis-tracked-sat');
+          orbitalRecords.forEach((sat,index)=>{{
+            const opt=document.createElement('option');opt.value=String(index);
+            opt.textContent=sat.name+' · '+(sat.mode==='sgp4'?'SGP4':'unavailable');
+            satSelect.appendChild(opt);
           }});
-          speedSelect.addEventListener('change', () => {{ orbitSpeed = Number(speedSelect.value) || 1; }});
-
-          function updateMovers() {{
-            movers.forEach((m) => {{
-              const n = m.points.length;
-              const pos = m.points[Math.min(n - 1, Math.floor(((orbitT + m.phase) % 1) * (n - 1)))];
+          if(!orbitalRecords.length){{
+            const opt=document.createElement('option');opt.textContent='No satellite records';
+            satSelect.appendChild(opt);
+          }}
+          function trackedSat(){{return orbitalRecords[replaySelected]||null;}}
+          function trackedPass(kind){{
+            const sat=trackedSat();return scientific&&sat&&sat.mode==='sgp4'?sat[kind+'_pass']:null;
+          }}
+          function updatePassControls(){{
+            document.getElementById('ignis-last-pass').disabled=!trackedPass('last');
+            document.getElementById('ignis-next-pass').disabled=!trackedPass('next');
+            document.getElementById('ignis-current').disabled=!scientific;
+            playButton.disabled=scientific&&replayKind==='current';
+            if(!scientific)playButton.textContent=playing?'⏸ Pause':'▶ Play';
+            else playButton.textContent=replayKind==='current'?'Current UTC':playing?'⏸ Pause':'▶ Play';
+          }}
+          function replayPass(kind){{
+            const pass=trackedPass(kind);
+            if(!pass||!Array.isArray(pass.track)||pass.track.length<2)return;
+            replayKind=kind;
+            replayTrack=pass.track.map(p=>({{
+              t:Date.parse(p.t),
+              pos:latLonToVector3(p.lat,p.lon,2.2*(1+Math.max(0,p.alt_km)/6378.137))
+            }}));
+            orbitalUtcMs=replayTrack[0].t;playing=true;
+            movers.forEach(m=>{{
+              if(!m.orbitLine)return;
+              const same=m.sat===trackedSat();
+              m.orbitLine.visible=same;
+              if(same){{
+                m.orbitLine.geometry.dispose();
+                m.orbitLine.geometry=new THREE.BufferGeometry().setFromPoints(replayTrack.map(p=>p.pos));
+              }}
+            }});
+            updatePassControls();
+          }}
+          function restoreCurrent(){{
+            replayKind='current';replayTrack=null;orbitalUtcMs=Date.now();playing=false;
+            movers.forEach(m=>{{
+              if(!m.orbitLine)return;
+              m.orbitLine.geometry.dispose();
+              m.orbitLine.geometry=new THREE.BufferGeometry().setFromPoints(m.points);
+              m.orbitLine.visible=true;
+            }});
+            updatePassControls();
+          }}
+          document.getElementById('ignis-last-pass').onclick=()=>replayPass('last');
+          document.getElementById('ignis-next-pass').onclick=()=>replayPass('next');
+          document.getElementById('ignis-current').onclick=restoreCurrent;
+          satSelect.onchange=()=>{{replaySelected=Number(satSelect.value)||0;restoreCurrent();}};
+          playButton.onclick=()=>{{if(scientific&&replayKind==='current')return;
+            playing=!playing;updatePassControls();}};
+          speedSelect.onchange=()=>{{orbitSpeed=Number(speedSelect.value)||1;}};
+          updatePassControls();
+          function interpolateTime(points,times,ms){{
+            if(!points.length||ms<times[0]||ms>times[times.length-1])return null;
+            let lo=0,hi=times.length-1;
+            while(lo<hi){{const mid=(lo+hi)>>1;if(times[mid]<ms)lo=mid+1;else hi=mid;}}
+            if(lo===0)return points[0];
+            const a=times[lo-1],b=times[lo];
+            return points[lo-1].clone().lerp(points[lo],b===a?0:(ms-a)/(b-a));
+          }}
+          function updateMovers(){{
+            movers.forEach(m=>{{
+              let pos=null;
+              if(m.schematic){{
+                const n=m.points.length;
+                pos=m.points[Math.min(n-1,Math.floor(((orbitT+m.phase)%1)*(n-1)))];
+              }}else if(replayKind==='current'){{
+                pos=interpolateTime(m.points,m.times,orbitalUtcMs);
+              }}else if(m.sat===trackedSat()&&replayTrack){{
+                pos=interpolateTime(replayTrack.map(p=>p.pos),replayTrack.map(p=>p.t),orbitalUtcMs);
+              }}
+              const visible=!!pos;
+              m.marker.visible=visible;m.label.visible=visible;
+              if(!visible)return;
               m.marker.position.copy(pos);
               m.label.position.copy(pos).multiplyScalar(1.06);
-              m.label.position.y += .10;
+              m.label.position.y+=.10;
             }});
-            orbitClock.textContent = anyTle
-              ? 'Simulation: +' + Math.round(orbitT * 105) + ' min since the TLE request'
-              : 'Illustrative motion';
+            const sat=trackedSat();
+            if(!scientific){{
+              orbitClock.textContent='ILLUSTRATIVE MOTION · NOT REAL UTC TRACKING';
+            }}else if(!sat||sat.mode!=='sgp4'){{
+              orbitClock.textContent='Verified orbital position unavailable · '+(sat?.status||'No suitable TLE');
+            }}else{{
+              const prefix=replayKind==='current'?'SGP4 current UTC estimate':
+                replayKind==='last'?'Last ground-track replay':'Next ground-track replay';
+              orbitClock.textContent=prefix+' · '+new Date(orbitalUtcMs).toISOString().replace('.000Z','Z')+
+                ' · TLE epoch '+(sat.tle_epoch||'unknown')+' · NOT verified sensor coverage';
+            }}
           }}
-
-          function animate() {{
+          let priorFrame=performance.now();
+          function animate(){{
             requestAnimationFrame(animate);
-            if (playing && movers.length) {{
-              orbitT = (orbitT + 0.00035 * orbitSpeed) % 1;
+            const now=performance.now(),delta=Math.min(0.12,(now-priorFrame)/1000);
+            priorFrame=now;
+            if(scientific){{
+              if(replayKind==='current')orbitalUtcMs=Date.now();
+              else if(playing&&replayTrack){{
+                orbitalUtcMs+=delta*1000*orbitSpeed;
+                const end=replayTrack[replayTrack.length-1].t;
+                if(orbitalUtcMs>=end){{orbitalUtcMs=end;playing=false;updatePassControls();}}
+              }}
+            }}else if(playing&&movers.length){{
+              orbitT=(orbitT+delta*.025*orbitSpeed)%1;
             }}
             updateMovers();
-            // Rotar la cámara y no la textura: las detecciones permanecen georreferenciadas.
             controls.update();
-            renderer.render(scene, camera);
+            renderer.render(scene,camera);
           }}
           animate();
           const orbitStatus = (showOrbits && illustrativeOrbits > 0)
