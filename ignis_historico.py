@@ -719,17 +719,11 @@ else:
     reg = st.session_state.get('region', list(REGIONES)[0])
     sens = st.session_state.get('sensores', [])
 
-# C — Dashboard de monitoreo con datos de la selección compartida.
-if current_section == NAV_PAGES[2]:
-    _logo_uri = asset_uri(BASE / "logo_ignis.png") if (BASE / "logo_ignis.png").exists() else ""
-    _nrt_records = st.session_state.get("ignis_firms_vivos")
-    _live = isinstance(_nrt_records, pd.DataFrame) and not _nrt_records.empty
-    render_control_center(combined, sample, selected, BASE, mapa_ignis,
-                          NAV_PAGES, _ignis_navigate_to, logo_uri=_logo_uri, live=_live)
-
+# End of Data upload: move the compact year overview from Dashboard, preserving its metrics and CSV export.
+if current_section == NAV_PAGES[1]:
     st.subheader('Selected-year overview · NASA challenge essentials')
     if sample.empty:
-        st.info('Upload data in Data upload and choose a region to generate the summary.')
+        st.info('Upload a Master dataset or FIRMS records to generate the summary.')
     else:
         year_records = sample[sample.anio == selected]
         detections, days, instruments = st.columns(3)
@@ -746,6 +740,15 @@ if current_section == NAV_PAGES[2]:
         st.download_button('Download yearly CSV',
                            year_records[COLS].to_csv(index=False).encode('utf-8-sig'),
                            file_name=f'IGNIS_{selected}_registros.csv')
+
+# C — Dashboard de monitoreo con datos de la selección compartida.
+if current_section == NAV_PAGES[2]:
+    _logo_uri = asset_uri(BASE / "logo_ignis.png") if (BASE / "logo_ignis.png").exists() else ""
+    _nrt_records = st.session_state.get("ignis_firms_vivos")
+    _live = isinstance(_nrt_records, pd.DataFrame) and not _nrt_records.empty
+    render_control_center(combined, sample, selected, BASE, mapa_ignis,
+                          NAV_PAGES, _ignis_navigate_to, logo_uri=_logo_uri, live=_live)
+
 
 if current_section==NAV_PAGES[3]:
     st.subheader('Accumulated historical records')

@@ -74,8 +74,11 @@ jobs:
               nav.click().run()
               assert not app.exception, [str(e.message) for e in app.exception]
               assert app.session_state["ignis_nav"].endswith(expected)
+              # Teammate feedback moved the compact overview from Dashboard
+              # to the bottom of Data upload; verify each page accordingly.
+              overview_visible = any("Selected-year overview" in item.value for item in app.subheader)
+              assert overview_visible == (expected == "Data upload"), (expected, overview_visible)
           assert not any(w.label == "NASA Yearly Overview" for w in app.sidebar.button)
-          assert any("Selected-year overview" in item.value for item in app.subheader)
           # On a fresh 3D Earth page, the visual mode must be illustrative.
           globe = next(w for w in app.get("button") if w.key == "ignis_nav_10")
           globe.click().run()
