@@ -362,6 +362,81 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           </div>
           <div id="globe-root"></div>
         </div>
+        <script>
+          (function(){{
+            const data={payload};
+            const root=document.getElementById('globe-root');
+            const status=document.getElementById('ignis-globe-status');
+            window.__ignisGlobeReady=false;
+            window.__ignisGlobeFallbackActive=false;
+            function drawScientificFallback(){{
+              if(!root)return;
+              root.replaceChildren();
+              const wrap=document.createElement('div');
+              wrap.style.cssText='width:100%;height:100%;display:flex;align-items:center;justify-content:center;position:relative;background:radial-gradient(ellipse at 50% 38%,#10324d,#040e1b 75%)';
+              const cv=document.createElement('canvas');
+              cv.style.cssText='display:block;max-width:100%;max-height:100%';
+              wrap.appendChild(cv);root.appendChild(wrap);
+              const ring=(Array.isArray(data.outline)&&data.outline.length>3)?data.outline:[[-58.4,-34.9],[-58.1,-34.2],[-57.2,-33.5],[-56.4,-32.8],[-55.8,-32],[-54.7,-31.6],[-54.3,-32.2],[-54.7,-33],[-55.5,-34],[-56.1,-34.8]];
+              const observations=Array.isArray(data.hotspots)?data.hotspots:[];
+              const bounds={{lon0:-59.1,lon1:-52.4,lat0:-35.7,lat1:-29.6}};
+              function point(lon,lat,w,h){{
+                const size=Math.min(w*.84,h*.82);
+                const sx=(Number(lon)-bounds.lon0)/(bounds.lon1-bounds.lon0);
+                const sy=(Number(lat)-bounds.lat0)/(bounds.lat1-bounds.lat0);
+                const scale=Math.min(size/6.7,(h*.80)/6.1);
+                return [w*.5+(sx-.5)*6.7*scale,h*.5-(sy-.5)*6.1*scale];
+              }}
+              function paint(){{
+                const w=Math.max(340,root.clientWidth||800),h=Math.max(350,root.clientHeight||640);
+                const ratio=Math.min(window.devicePixelRatio||1,2);
+                cv.width=Math.round(w*ratio);cv.height=Math.round(h*ratio);
+                cv.style.width=w+'px';cv.style.height=h+'px';
+                const ctx=cv.getContext('2d');ctx.setTransform(ratio,0,0,ratio,0,0);
+                const bg=ctx.createLinearGradient(0,0,w,h);
+                bg.addColorStop(0,'#0a233a');bg.addColorStop(1,'#050e1e');
+                ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+                ctx.strokeStyle='rgba(101,210,235,.10)';ctx.lineWidth=1;
+                for(let x=w*.15;x<w;x+=Math.max(55,w/15)){{ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}}
+                for(let y=h*.16;y<h;y+=Math.max(55,h/11)){{ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}}
+                if(ring.length){{
+                  ctx.beginPath();
+                  ring.forEach((p,i)=>{{const q=point(p[0],p[1],w,h);i===0?ctx.moveTo(q[0],q[1]):ctx.lineTo(q[0],q[1]);}});
+                  ctx.closePath();ctx.fillStyle='rgba(21,79,95,.72)';ctx.fill();
+                  ctx.shadowColor='#31d6ed';ctx.shadowBlur=12;ctx.strokeStyle='#69ddf0';ctx.lineWidth=2;ctx.stroke();ctx.shadowBlur=0;
+                }}
+                observations.slice(0,4000).forEach(p=>{{
+                  const x=Number(p.lon),y=Number(p.lat);if(!Number.isFinite(x)||!Number.isFinite(y))return;
+                  const q=point(x,y,w,h);
+                  ctx.beginPath();ctx.arc(q[0],q[1],Math.max(2,Math.min(6,Math.sqrt(Math.max(0,Number(p.frp)||0))*.38+2)),0,2*Math.PI);
+                  ctx.fillStyle='#ff914e';ctx.fill();
+                }});
+                ctx.fillStyle='#e2f6ff';ctx.font='bold 17px Arial,sans-serif';ctx.textAlign='left';
+                ctx.fillText('URUGUAY · 2D OBSERVATION MAP',20,35);
+                ctx.font='12px Arial,sans-serif';ctx.fillStyle='#a8c4d5';
+                ctx.fillText('Imported FIRMS thermal anomalies · not confirmed wildfires',20,55);
+                ctx.fillText(observations.length.toLocaleString()+' plotted observations · geographic reference outline',20,h-23);
+              }}
+              paint();
+              if(window.ResizeObserver)new ResizeObserver(paint).observe(root);
+              const button=document.createElement('button');button.type='button';button.textContent='Retry 3D';
+              button.style.cssText='position:absolute;top:18px;right:18px;border:1px solid #5fcadf;background:#10354a;color:#ecfcff;border-radius:4px;padding:9px 12px;cursor:pointer';
+              button.onclick=()=>window.location.reload();wrap.appendChild(button);
+            }}
+            window.__ignisRenderFallback=function(error){{
+              if(window.__ignisGlobeReady||window.__ignisGlobeFallbackActive)return;
+              window.__ignisGlobeFallbackActive=true;
+              console.warn('IGNIS 3D unavailable; using local 2D map',error);
+              status.textContent='WebGL unavailable · showing local 2D map';
+              status.style.borderColor='#f6ab71';status.style.color='#ffe1c8';
+              drawScientificFallback();
+            }};
+            // Handles failed import maps/CDNs, where a module never reaches its try/catch.
+            window.setTimeout(()=>{{
+              if(!window.__ignisGlobeReady)window.__ignisRenderFallback('Renderer or dependencies did not become ready');
+            }},14000);
+          }})();
+        </script>
         <script type="importmap">
           {{
             "imports": {{
