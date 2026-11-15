@@ -875,9 +875,20 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
         with st.container(border=True):
             st.markdown("#### 🗺️ Geographic distribution")
             if not mapped.empty:
-                # Sara's zoom-and-inspect map belongs here only, rather than
-                # duplicating the Dashboard's illuminated density display.
-                render_zoomable_uruguay_map(mapped, base)
+                # Preserve the established paired 3D/report view for Explorer,
+                # and the rehearsed classic widget key for compatibility.
+                # Default 2D presentation uses Sara's zoomable inspection map.
+                if is_explorer():
+                    from ignis_spatial import render_spatial_pair
+                    render_spatial_pair(mapped, year=None if selector=="All uploaded historical records" else selected,
+                                        height=620, context="atlas")
+                elif st.checkbox("Use original scientific density view",
+                                 value=False, key="ignis_atlas_classic_density"):
+                    map_fn(mapped, "ignis_atlas_scientific")
+                    show_explorer_entry("ignis_atlas_explore_3d", "Explore this map in 3D")
+                else:
+                    render_zoomable_uruguay_map(mapped, base)
+                    show_explorer_entry("ignis_atlas_zoom_explore_3d", "Explore this map in 3D")
             else:
                 st.info("No points for the selected period.")
                 _empty_uruguay_outline(base,"ignis_atlas_selection_empty")
