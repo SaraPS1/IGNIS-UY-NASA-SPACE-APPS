@@ -34,7 +34,9 @@ class IgnisReferenceFidelityTests(unittest.TestCase):
     def test_nav_is_fifteen_distinct_buttons_not_radio(self):
         self.assertNotIn("current_section = st.radio(",self.main)
         self.assertIn('key=f"ignis_nav_{i:02d}"',self.main)
-        self.assertIn("for i, section in enumerate(NAV_PAGES):",self.main)
+        self.assertIn("for i in NAV_DISPLAY_ORDER:",self.main)
+        self.assertIn("section = NAV_PAGES[i]",self.main)
+        self.assertIn("NAV_DISPLAY_ORDER = [0, 2, 1, *range(3, len(NAV_PAGES))]",self.main)
         self.assertIn("on_click=_ignis_navigate_to",self.main)
         self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[0])',self.main)
 
