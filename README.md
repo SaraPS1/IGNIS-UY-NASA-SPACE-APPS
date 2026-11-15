@@ -39,6 +39,39 @@ python -m unittest discover -s tests -p "test_ignis_pareo_calidad_v5.py" -v
 
 Las pruebas sintéticas de sensibilidad no sustituyen validación con incendios confirmados.
 
+## Premium 3D control center (English UI)
+
+The **Control center** page is an interactive geospatial dashboard built on the
+existing Python/Streamlit backend:
+
+- `ignis_scene3d.py` + `assets/ignis_scene3d.html` — an isolated Three.js
+  component (loaded from a CDN inside `st.components.v1.html`, no build step)
+  that renders an extruded Uruguay with an illuminated outline, an Earth
+  backdrop with atmosphere and clouds, schematic satellites with orbit trails
+  and observation beams, instanced NASA FIRMS thermal observations (height ∝
+  FRP, tooltip with the real metadata), the 0.2° historical recurrence grid,
+  documented reference towns, satellite–ground associations from the fusion
+  page, a 2000–2026 timeline with play/pause/speed, a radial camera menu,
+  cinematic mode, a *Reduce motion* setting, adaptive quality and a 2D canvas
+  fallback when WebGL or the CDN is unavailable.
+- `ignis_dashboard.py` — design system (deep navy / electric cyan / wildfire
+  orange palette), top bar, animated metric strip, the integrated Ask IGNIS
+  panel and the analytics tabs (historical activity, spatial density, monthly
+  calendar, sensor comparison, satellite–ground fusion).
+
+Scientific integrity rules kept by the redesign:
+
+- Every marker and every number comes from the records imported in the
+  session; empty states say so instead of showing demonstration figures.
+- "Live" is shown only when a real NRT query has been executed; otherwise the
+  interface says *Historical data* with the latest imported timestamp.
+- Relief and orbits are explicitly labelled as illustrative. Verified
+  TLE-based trajectories remain in **3D Earth & Satellites**.
+- Department boundaries are drawn only if a verified GeoJSON is placed at
+  `assets/uruguay_departamentos.geojson` (Polygon/MultiPolygon features with
+  a `name` property); otherwise the toggle reports that no verified dataset is
+  available.
+
 ## Documentación y atribución
 
 | Documento | Contenido |

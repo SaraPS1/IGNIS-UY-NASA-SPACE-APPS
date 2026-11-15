@@ -270,6 +270,9 @@ def apply_visual_theme():
     }
     </style>""",unsafe_allow_html=True)
     st.markdown(_reference_styles(),unsafe_allow_html=True)
+    # Premium design system (palette, top bar, panels, widget polish).
+    from ignis_dashboard import apply_design_system
+    apply_design_system()
 
 
 
@@ -698,73 +701,23 @@ def render_project_home(base, asset_uri, pages, navigate):
     )
 
 
-def render_control_center(combined,sample,selected,base,map_fn,pages,navigate):
-    _header("Overview · Uruguay","Control center",
-            "Exploratory monitoring and historical analysis of NASA FIRMS observations.")
-    if isinstance(combined,pd.DataFrame) and not combined.empty and not sample.empty:
-        view=sample[sample.anio==selected] if selected is not None else sample
-    else:
+def render_control_center(combined,sample,selected,base,map_fn,pages,navigate,
+                          logo_uri="",live=False):
+    """Premium control center: 3D Uruguay scene, metric strip, Ask IGNIS, analytics.
+
+    Delegates to ignis_dashboard. Everything displayed is computed from the
+    records loaded in the session; the empty state never shows demo figures.
+    The absence of records does not mean the absence of fires.
+    """
+    from ignis_dashboard import render_premium_dashboard
+    if sample.empty:
         view=pd.DataFrame()
-    cards=[
-        ("Visible detections",f"{len(view):,}" if not view.empty else "No data"),
-        ("Years with records",str(sample.anio.nunique()) if not sample.empty else "—"),
-        ("Sensors present",str(view.instrumento.nunique()) if not view.empty else "—"),
-        ("Selected year",str(selected) if selected is not None else "—"),
-    ]
-    for column,(title,value) in zip(st.columns(4,gap="small"),cards):
-        column.metric(title,value)
-    st.write("")
-    left,right=st.columns([1.9,1],gap="medium")
-    with left:
-        with st.container(border=True):
-            st.markdown("#### 🗺️ Thermal activity · Uruguay")
-            if not view.empty:
-                map_fn(view,"ignis_control_map")
-            else:
-                st.caption("Import records to display the detections.")
-                _empty_uruguay_outline(base,"ignis_control_empty")
-    with right:
-        with st.container(border=True):
-            st.markdown("#### 📡 Instruments")
-            if view.empty:
-                st.info("There are no observations in this selection.")
-                st.button("📂 Import data",type="primary",
-                          use_container_width=True,key="control_upload",
-                          on_click=navigate,args=(pages[2],))
-            else:
-                counts=view.groupby("instrumento").size().sort_values()
-                fig=go.Figure(go.Bar(
-                    x=counts.values,y=counts.index.astype(str),orientation="h",
-                    marker_color="#44d1e4"))
-                fig.update_layout(height=245,margin=dict(l=12,r=12,t=15,b=28),
-                    paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#dceffa"),xaxis_title="Records")
-                st.plotly_chart(fig,use_container_width=True,key="ignis_control_sensors")
-                st.caption("Number of detections per instrument; they are not unique fires.")
-        with st.container(border=True):
-            st.markdown("#### 🛡️ External validation")
-            st.caption("Historical evidence and original references to review possible episodes.")
-            st.button("Check sources",use_container_width=True,key="control_evidence",
-                      on_click=navigate,args=(pages[7],))
-        with st.container(border=True):
-            st.markdown("#### 📚 Other tools")
-            st.button("Scientific atlas",use_container_width=True,key="control_atlas",
-                      on_click=navigate,args=(pages[6],))
-            st.button("MODIS–VIIRS harmonization",use_container_width=True,
-                      key="control_harmonization",on_click=navigate,args=(pages[5],))
+    else:
+        view=sample[sample.anio==selected] if selected is not None else sample
     if not view.empty:
-        st.markdown("#### 📈 Monthly evolution of the selected year")
-        months=view.groupby("mes").size().sort_index()
-        fig=go.Figure(go.Bar(
-            x=months.index.tolist(),y=months.values.tolist(),
-            marker=dict(color="#f28c52"),name="Detections"))
-        fig.update_layout(height=290,margin=dict(l=15,r=15,t=12,b=35),
-            paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#e4f3ff"),xaxis=dict(title="Month",dtick=1,range=[.5,12.5]),
-            yaxis_title="Records")
-        st.plotly_chart(fig,use_container_width=True,key="ignis_control_months")
-    st.caption("The absence of records does not mean the absence of fires, nor does it confirm "
-               "complete satellite coverage. This platform does not issue official alerts.")
+        st.session_state["ignis_control_view_rows"]=int(len(view))
+    render_premium_dashboard(combined,sample,selected,base,map_fn,pages,navigate,
+                             logo_uri=logo_uri,live=live)
 
 
 def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
