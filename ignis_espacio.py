@@ -621,49 +621,51 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             sprite.scale.set(.96,.24,1);
             return sprite;
           }}
-          let illustrativeOrbits = 0;
-          let tleOrbits = 0;
-          const movers = [];
-          if (payload.satellites && (showSatellites || showOrbits)) {{
-            payload.satellites.forEach((sat,index) => {{
-              const color = new THREE.Color(sat.color);
-              const valid = Array.isArray(sat.positions) && sat.positions.length >= 2;
-              const schematic = !valid;
-              const points = valid
-                ? sat.positions.map((p)=>latLonToVector3(
-                    p.lat,p.lon,2.2*(1+Math.max(0,Number(p.alt_km)||0)/6378.137)
-                  ))
-                : schematicOrbit(index);
-              if (showOrbits) {{
-                const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                const material = schematic
-                  ? new THREE.LineDashedMaterial({{color,transparent:true,opacity:.83,dashSize:.11,gapSize:.05}})
-                  : new THREE.LineBasicMaterial({{color,transparent:true,opacity:.95}});
-                const line = new THREE.Line(geometry,material);
-                if(schematic) line.computeLineDistances();
+          let illustrativeOrbits=0;
+          let tleOrbits=0;
+          const movers=[];
+          const orbitalRecords=Array.isArray(payload.satellites)?payload.satellites:[];
+          if(showSatellites||showOrbits){{
+            orbitalRecords.forEach((sat,index)=>{{
+              const scientific=payload.orbit_mode==='sgp4';
+              const valid=scientific&&sat.mode==='sgp4'&&
+                Array.isArray(sat.positions)&&sat.positions.length>=2;
+              const demo=payload.orbit_mode==='illustrative';
+              if(!valid&&!demo)return; // Never fabricate real-mode positions.
+              const color=new THREE.Color(sat.color);
+              const points=valid? sat.positions.map((p)=>latLonToVector3(
+                p.lat,p.lon,2.2*(1+Math.max(0,Number(p.alt_km)||0)/6378.137)
+              )):schematicOrbit(index);
+              if(showOrbits){{
+                const geometry=new THREE.BufferGeometry().setFromPoints(points);
+                const material=demo?
+                  new THREE.LineDashedMaterial({{color,transparent:true,opacity:.48,dashSize:.08,gapSize:.09}}):
+                  new THREE.LineBasicMaterial({{color,transparent:true,opacity:.73}});
+                const line=new THREE.Line(geometry,material);
+                if(demo)line.computeLineDistances();
                 earthGroup.add(line);
-                if(schematic) illustrativeOrbits++;
-                else tleOrbits++;
+                if(demo)illustrativeOrbits++;else tleOrbits++;
               }}
-              if (showSatellites && points.length) {{
-                // En modo ilustrativo las posiciones se distribuyen: NO son posiciones reales.
-                const markerIndex=schematic
-                  ? Math.floor(points.length*((index*.18+.07)%1))
-                  : 0;
-                const markerPoint=points[markerIndex];
-                const marker=new THREE.Mesh(
-                  new THREE.SphereGeometry(.063,18,18),
-                  new THREE.MeshBasicMaterial({{color}})
-                );
-                marker.position.copy(markerPoint);
-                earthGroup.add(marker);
+              if(showSatellites&&points.length){{
+                const marker=new THREE.Group();
+                marker.add(new THREE.Mesh(
+                  new THREE.BoxGeometry(.09,.065,.13),
+                  new THREE.MeshStandardMaterial({{color:0xdbe8f6,metalness:.72,roughness:.28}})
+                ));
+                const panelMaterial=new THREE.MeshStandardMaterial({{
+                  color:0x174f9e,metalness:.52,roughness:.33,emissive:0x092250,emissiveIntensity:.4}});
+                for(const side of [-1,1]){{
+                  const panel=new THREE.Mesh(new THREE.BoxGeometry(.19,.015,.075),panelMaterial);
+                  panel.position.x=side*.145;marker.add(panel);
+                }}
+                marker.position.copy(points[0]);earthGroup.add(marker);
                 const labelText=sat.name.replace(' (MODIS)','').replace(' (VIIRS)','');
                 const label=makeSatelliteLabel(labelText,sat.color);
-                label.position.copy(markerPoint).multiplyScalar(1.06);
-                label.position.y += .10;
-                earthGroup.add(label);
-                movers.push({{ marker, label, points, schematic,
-                  phase: schematic ? ((index*.18+.07)%1) : 0 }});
+                label.position.copy(points[0]).multiplyScalar(1.06);
+                label.position.y+=.10;earthGroup.add(label);
+                movers.push({{marker,label,points,sat,schematic:demo,
+                  phase:demo?((index*.18+.07)%1):0,
+                  times:valid?sat.positions.map(p=>Date.parse(p.t)):[]}});
               }}
             }});
           }}
