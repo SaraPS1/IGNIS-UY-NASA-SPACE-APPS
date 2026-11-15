@@ -55,6 +55,12 @@ def apply_visual_theme():
       color:#8daec2;font-size:.60rem;font-weight:750;
       letter-spacing:.115em;margin-top:.38rem;
     }
+    .ignis-side-brand-copy .ignis-side-logo-ai-note{
+      display:inline-block;align-self:flex-start;
+      color:#b9e8f1;font-size:.59rem;font-weight:750;
+      letter-spacing:.055em;line-height:1.25;
+      margin-top:.22rem;opacity:.92;
+    }
     .ignis-side-project{
       background:rgba(19,49,73,.48);border:1px solid rgba(83,141,170,.2);
       color:#a9d2e4;padding:8px 10px;margin:12px 0 19px;
