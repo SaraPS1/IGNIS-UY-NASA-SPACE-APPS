@@ -29,6 +29,7 @@ import matplotlib.pyplot as plt
 from ignis_espacio import render_ignis_space_module
 from ignis_visual import (apply_visual_theme, render_project_home,
                           render_control_center, render_scientific_atlas)
+from ignis_modes import is_explorer
 
 def english_quality_notice(message: str) -> str:
     """Convert quality diagnostics to English without changing scientific outputs."""
@@ -541,7 +542,7 @@ with st.sidebar:
     # El botón de cada sección tiene una clave única. No dependemos de la
     # estructura interna de st.radio ni de nth-child: se eliminan las casitas
     # duplicadas y los controles circulares visibles.
-    st.session_state.setdefault("ignis_nav", NAV_PAGES[1])
+    st.session_state.setdefault("ignis_nav", NAV_PAGES[0])
     if st.session_state["ignis_nav"] not in NAV_PAGES:
         _ignis_navigate_to(NAV_PAGES[0])
     current_section = st.session_state["ignis_nav"]
@@ -591,6 +592,14 @@ with st.sidebar:
         "🚀 NASA Space Apps 2026", "https://www.spaceappschallenge.org/2026/",
         use_container_width=True,
     )
+    # A display preference after the original navigation, filters and links.
+    # This never moves the rehearsed buttons or changes analytical state.
+    st.markdown('<div class="ignis-side-section-title">VIEW MODE</div>',
+                unsafe_allow_html=True)
+    st.session_state.setdefault("ignis_3d_explorer", False)
+    st.toggle("3D Explorer", key="ignis_3d_explorer",
+              help="Off: familiar 2D-first presentation. On: advanced 3D maps beside report-ready 2D views.")
+    st.caption("Presentation Mode keeps the original map and controls in their rehearsed positions.")
     st.markdown(
         '<div class="ignis-side-footer">'
         '<span class="ignis-side-footer-accent"></span>'
@@ -604,7 +613,7 @@ with st.sidebar:
 # El Inicio, el Centro de control y el Atlas renderizan su cabecera específica.
 if current_section not in (NAV_PAGES[0], NAV_PAGES[1], NAV_PAGES[6], NAV_PAGES[14]):
     st.markdown(f"""<div class="ignis-topline"><div class="ignis-kicker">
-       IGNIS UY · Herramientas de investigación</div>
+       IGNIS UY · Research Tools</div>
        <h1>{current_section.split(' ',1)[1]}</h1>
        </div>""", unsafe_allow_html=True)
 
@@ -737,10 +746,12 @@ if current_section==NAV_PAGES[4]:
     if sample.empty:st.info('Import the Master dataset or upload NASA FIRMS ZIP files to view historical records.')
     else:
         x,y,z=st.columns(3);x.metric('Records in selection',f'{len(sample):,}');y.metric('Years with records',sample.anio.nunique());z.metric('Sensors present',sample.instrumento.nunique())
-        st.markdown("#### Historical archive · interactive 3D and printable 2D")
-        from ignis_spatial import render_spatial_pair
-        render_spatial_pair(sample, year=None, height=580, context="history")
-        st.caption("Orbital tracking uses current UTC and is independent of the selected historical FIRMS year.")
+        # Do not place new 3D controls ahead of the historical charts the team rehearsed.
+        if is_explorer():
+            st.markdown("#### Historical archive · interactive 3D and printable 2D")
+            from ignis_spatial import render_spatial_pair
+            render_spatial_pair(sample, year=None, height=580, context="history")
+            st.caption("Orbital tracking uses current UTC and is independent of the selected historical FIRMS year.")
 
         sensors=sorted(sample.instrumento.unique())
         for i,sensor in enumerate(sensors):heatmap_mensual(sample[sample.instrumento==sensor],sensor,f'historico_mensual_{i}')
@@ -946,7 +957,7 @@ if current_section == NAV_PAGES[6]:
 
 if current_section==NAV_PAGES[7]:
     st.subheader('⚠️ Historical monitoring · signals requiring review')
-    if isinstance(sample, pd.DataFrame) and not sample.empty:
+    if is_explorer() and isinstance(sample, pd.DataFrame) and not sample.empty:
         st.markdown("#### Historical monitoring · 3D and 2D context")
         from ignis_spatial import render_spatial_pair
         render_spatial_pair(sample[sample.anio == selected] if selected is not None else sample,

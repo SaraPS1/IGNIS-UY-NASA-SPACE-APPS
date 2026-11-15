@@ -698,9 +698,89 @@ def render_project_home(base, asset_uri, pages, navigate):
     )
 
 
+def render_classic_control_center(combined,sample,selected,base,map_fn,pages,navigate):
+    """Restore the exact rehearsed pre-3D dashboard layout and button keys."""
+    _header("General overview · Uruguay","Dashboard",
+            "Exploratory monitoring and historical analysis of NASA FIRMS observations.")
+    if isinstance(combined,pd.DataFrame) and not combined.empty and not sample.empty:
+        view=sample[sample.anio==selected] if selected is not None else sample
+    else:
+        view=pd.DataFrame()
+    cards=[
+        ("Visible detections",f"{len(view):,}" if not view.empty else "No data"),
+        ("Years with observations",str(sample.anio.nunique()) if not sample.empty else "—"),
+        ("Sensors present",str(view.instrumento.nunique()) if not view.empty else "—"),
+        ("Selected year",str(selected) if selected is not None else "—"),
+    ]
+    for column,(title,value) in zip(st.columns(4,gap="small"),cards):
+        column.metric(title,value)
+    st.write("")
+    left,right=st.columns([1.9,1],gap="medium")
+    with left:
+        with st.container(border=True):
+            st.markdown("#### 🗺️ Thermal activity · Uruguay")
+            if not view.empty:
+                map_fn(view,"ignis_control_map")
+            else:
+                st.caption("Import records to visualize detections.")
+                _empty_uruguay_outline(base,"ignis_control_empty")
+        # An optional upgrade path; no original button is moved or renamed.
+        from ignis_modes import show_explorer_entry
+        show_explorer_entry("ignis_classic_explore_3d", "Explore this map in 3D")
+    with right:
+        with st.container(border=True):
+            st.markdown("#### 📡 Instruments")
+            if view.empty:
+                st.info("No observations in this selection.")
+                st.button("📂 Import data",type="primary",
+                          use_container_width=True,key="control_upload",
+                          on_click=navigate,args=(pages[2],))
+            else:
+                counts=view.groupby("instrumento").size().sort_values()
+                fig=go.Figure(go.Bar(
+                    x=counts.values,y=counts.index.astype(str),orientation="h",
+                    marker_color="#44d1e4"))
+                fig.update_layout(height=245,margin=dict(l=12,r=12,t=15,b=28),
+                    paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(color="#dceffa"),xaxis_title="Records")
+                st.plotly_chart(fig,use_container_width=True,key="ignis_control_sensors")
+                st.caption("Detections by instrument; these are not unique wildfires.")
+        with st.container(border=True):
+            st.markdown("#### 🛡️ External validation")
+            st.caption("Historical evidence and original references for reviewing potential events.")
+            st.button("Review sources",use_container_width=True,key="control_evidence",
+                      on_click=navigate,args=(pages[7],))
+        with st.container(border=True):
+            st.markdown("#### 📚 Other tools")
+            st.button("Scientific Atlas",use_container_width=True,key="control_atlas",
+                      on_click=navigate,args=(pages[6],))
+            st.button("MODIS–VIIRS harmonization",use_container_width=True,
+                      key="control_harmonization",on_click=navigate,args=(pages[5],))
+    if not view.empty:
+        st.markdown("#### 📈 Monthly trend for the selected year")
+        months=view.groupby("mes").size().sort_index()
+        fig=go.Figure(go.Bar(
+            x=months.index.tolist(),y=months.values.tolist(),
+            marker=dict(color="#f28c52"),name="Detections"))
+        fig.update_layout(height=290,margin=dict(l=15,r=15,t=12,b=35),
+            paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#e4f3ff"),xaxis=dict(title="Month",dtick=1,range=[.5,12.5]),
+            yaxis_title="Records")
+        st.plotly_chart(fig,use_container_width=True,key="ignis_control_months")
+    st.caption("The absence of records does not imply an absence of wildfires or confirm "
+               "complete satellite coverage. This platform does not issue official alerts.")
+
+
+
 def render_control_center(combined, sample, selected, base, map_fn, pages, navigate,
                           logo_uri="", live=False):
-    """Render the premium 3D observatory, retaining all other IGNIS views."""
+    """Presentation defaults to the rehearsed dashboard; 3D is opt-in."""
+    from ignis_modes import is_explorer, show_presentation_return
+    if not is_explorer():
+        render_classic_control_center(combined, sample, selected, base,
+                                      map_fn, pages, navigate)
+        return
+    show_presentation_return("ignis_dashboard_back_to_presentation")
     from ignis_dashboard import apply_design_system, render_premium_dashboard
 
     apply_design_system()
@@ -715,6 +795,9 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
     _header("Scientific Atlas · Spatial exploration",
             "Thermal activity Atlas",
             "Choose a time range and explore uploaded thermal observations for Uruguay.")
+    from ignis_modes import is_explorer, show_explorer_entry, show_presentation_return
+    if is_explorer():
+        show_presentation_return("ignis_atlas_back_to_presentation")
     if sample.empty:
         st.info("Import ZIP/CSV files or the IGNIS Master dataset before using the Atlas.")
         left,right=st.columns([2,1],gap="medium")
@@ -740,9 +823,14 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
         with st.container(border=True):
             st.markdown("#### 🗺️ Geographic distribution")
             if not mapped.empty:
-                from ignis_spatial import render_spatial_pair
-                render_spatial_pair(mapped, year=None if selector=="All uploaded historical records" else selected,
-                                    height=620, context="atlas")
+                if is_explorer():
+                    from ignis_spatial import render_spatial_pair
+                    render_spatial_pair(mapped, year=None if selector=="All uploaded historical records" else selected,
+                                        height=620, context="atlas")
+                else:
+                    # Original scientific map, with its established Plotly widget key.
+                    map_fn(mapped, "ignis_atlas_scientific")
+                    show_explorer_entry("ignis_atlas_explore_3d", "Explore this map in 3D")
             else:
                 st.info("No points for the selected period.")
                 _empty_uruguay_outline(base,"ignis_atlas_selection_empty")

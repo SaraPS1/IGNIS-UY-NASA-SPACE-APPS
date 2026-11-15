@@ -212,9 +212,16 @@ def mostrar_monitoreo_nrt():
     y.metric("Sources with detections", datos["producto"].nunique())
     z.metric("Latest available acquisition (UTC)",
              datos["adquisicion_utc"].max().strftime("%d/%m %H:%M") if datos["adquisicion_utc"].notna().any() else "No timestamp")
-    st.markdown("#### Interactive 3D · returned FIRMS thermal anomalies")
-    from ignis_spatial import render_spatial_pair
-    render_spatial_pair(datos, height=630, live_connection=False, context="recent_firms")
+    from ignis_modes import is_explorer, show_explorer_entry, show_presentation_return
+    if is_explorer():
+        st.markdown("#### Interactive 3D and scientific 2D · returned FIRMS observations")
+        show_presentation_return("ignis_nrt_back_to_presentation")
+        from ignis_spatial import render_spatial_pair
+        render_spatial_pair(datos, height=630, live_connection=False, context="recent_firms")
+    else:
+        # Retain the original data view, in its original location.
+        st.markdown("#### Locations of returned detections")
+        _mapa_liviano(datos)
     st.caption("On-demand NASA FIRMS results, not continuous live satellite coverage or confirmed fires.")
     # Acceso contextual a imágenes NASA, sin agregar solicitudes externas en la app.
     visibles = datos.dropna(subset=["adquisicion_utc", "latitude", "longitude"]).copy()
@@ -245,3 +252,6 @@ def mostrar_monitoreo_nrt():
     st.download_button("⬇️ Download recent query CSV", exportar.to_csv(index=False).encode("utf-8-sig"),
                        file_name="IGNIS_FIRMS_consulta_reciente.csv", mime="text/csv")
     st.warning("Thermal detection ≠ confirmed wildfire. Do not infer burned area, severity, complete coverage, or wildfire counts by summing sensors. Use official channels for emergencies.")
+    if not is_explorer():
+        # Present the extra 3D entry only after all original outputs and exports.
+        show_explorer_entry("ignis_nrt_explore_3d", "Explore detections in 3D")
