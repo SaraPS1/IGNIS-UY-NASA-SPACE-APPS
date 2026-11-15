@@ -194,7 +194,7 @@ def trend_figure(df):
     return plot_buffer(fig)
 
 
-def map_figure(df):
+def map_figure(df, associations=None):
     raw=json.loads((BASE/'uruguay_contorno.geojson').read_text(encoding='utf-8'))
     geometry=raw['features'][0]['geometry']; ring=geometry['coordinates'][0] if geometry['type']=='Polygon' else geometry['coordinates'][0][0]
     border=np.asarray(ring,dtype=float)
@@ -213,6 +213,28 @@ def map_figure(df):
     plot=clean.sample(min(1800,len(clean)),random_state=42)
     ax.scatter(plot.longitude,plot.latitude,s=2.4,color='#e8eaff',alpha=.4,zorder=3)
     ax.plot(border[:,0],border[:,1],color='#a5cfff',lw=1.5,zorder=4)
+
+    # Optional imported institutional positions and review-only associations.
+    # These never become verified wildfire markers merely by plotting them.
+    if isinstance(associations, pd.DataFrame) and not associations.empty:
+        names = (("lon", "lat"), ("longitude", "latitude"))
+        columns = next(((lo, la) for lo, la in names
+                        if lo in associations.columns and la in associations.columns), None)
+        if columns is not None:
+            candidate = associations[list(columns)].apply(pd.to_numeric, errors='coerce').dropna()
+            candidate = candidate[candidate[columns[0]].between(-59, -52)
+                                  & candidate[columns[1]].between(-36, -29)]
+            if not candidate.empty:
+                ax.scatter(candidate[columns[0]], candidate[columns[1]], s=22,
+                           marker='D', color='#ffb85c', edgecolors='#081321',
+                           linewidths=.4, alpha=.9, zorder=6,
+                           label='Imported ground reports / candidate links')
+                legend = ax.legend(loc='lower left', fontsize=6, frameon=True)
+                legend.get_frame().set_facecolor('#132b43')
+                legend.get_frame().set_edgecolor('#36536a')
+                for label in legend.get_texts():
+                    label.set_color(WHITE)
+
     for name,lon,lat in [('Artigas',-56.0,-30.45),('Durazno',-56.52,-33.22),('Canelones',-56.28,-34.55),('Maldonado',-54.95,-34.73),('Rocha',-54.32,-34.12)]:
         ax.text(lon,lat,name,color='white',fontsize=7,bbox=dict(facecolor='#14142f',alpha=.65,edgecolor='none',pad=2))
     ax.set(xlim=(-58.85,-52.65),ylim=(-35.45,-29.75),xlabel='Longitude',ylabel='Latitude')
