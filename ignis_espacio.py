@@ -1164,7 +1164,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
             orbit_mode = st.radio(
                 "Trajectory source",
                 ["Illustrative trajectories", "Current TLE data"],
-                index=1, key="ignis_orbit_source",
+                index=0, key="ignis_orbit_source",
                 help="Current TLE data cannot reconstruct orbits on historical FIRMS observation dates.",
             )
 
