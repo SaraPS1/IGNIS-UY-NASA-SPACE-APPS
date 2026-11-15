@@ -470,21 +470,21 @@ st.markdown("""<style>
 apply_visual_theme()
 
 NAV_PAGES = [
-    "✨ Home · Meet IGNIS",
+    "✨ Home",
     "🏠 Control center",
     "📂 Data upload",
     "📊 NASA summary by year",
-    "📚 Historical 2000–2026",
-    "🔄 MODIS–VIIRS harmonization",
-    "🗺️ Map of Uruguay",
-    "⚠️ Alerts and traceability",
-    "🗓️ Final calendar",
-    "📄 PDF report",
-    "🛰️ Recent monitoring",
-    "🌐 3D space and satellites",
-    "🤖 ASK IGNIS",
-    "🌎 Sky–ground fusion",
-    "💬 Team IGNIS · Questions and contributions",
+    "📚 Historical Archive",
+    "🔄 MODIS–VIIRS Harmonization",
+    "🗺️ Uruguay Map",
+    "⚠️ Alerts & Traceability",
+    "🗓️ Final Calendar",
+    "📄 PDF Report",
+    "🛰️ Recent Monitoring",
+    "🌐 3D Earth & Satellites",
+    "🤖 Ask IGNIS",
+    "🌎 Satellite–Ground Fusion",
+    "💬 Team & Contributions",
 ]
 
 def _ignis_navigate_to(section: str) -> None:
@@ -691,8 +691,10 @@ else:
 
 # C — Monitoring dashboard using the shared selection.
 if current_section == NAV_PAGES[1]:
+    _logo_uri = asset_uri(BASE / "logo_ignis.png") if (BASE / "logo_ignis.png").exists() else ""
+    _live = isinstance(st.session_state.get('ignis_firms_vivos'), pd.DataFrame) and not st.session_state['ignis_firms_vivos'].empty
     render_control_center(combined, sample, selected, BASE, mapa_ignis,
-                          NAV_PAGES, _ignis_navigate_to)
+                          NAV_PAGES, _ignis_navigate_to, logo_uri=_logo_uri, live=_live)
 
 
 if current_section==NAV_PAGES[3]:
