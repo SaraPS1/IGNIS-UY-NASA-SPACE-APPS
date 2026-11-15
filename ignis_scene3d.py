@@ -15,8 +15,8 @@ Scientific integrity
 * Thermal observations are NASA FIRMS thermal anomalies, not confirmed fires.
 * Terrain relief is an *illustrative* procedural surface; the repository has
   no elevation dataset, so no elevation measurements are claimed.
-* Satellite orbits in this scene are schematic animations. Verified
-  TLE-based trajectories live in the "3D Earth & Satellites" page.
+* Satellite positions and Uruguay ground-track pass events are supplied by
+  ignis_orbits.py (SGP4/WGS84). Illustrative orbits require explicit opt-in.
 * Department boundaries are drawn only if a verified GeoJSON is provided in
   ``assets/uruguay_departamentos.geojson``; otherwise the toggle reports
   that no verified data is available.
@@ -259,6 +259,10 @@ def render_uruguay_scene(df: Optional[pd.DataFrame], selected_year: Optional[int
     """Render the component inside Streamlit and return the payload stats."""
     import streamlit.components.v1 as components
     payload = build_scene_payload(df, selected_year, associations, live_connection=live_connection)
+    # The identical validated UTC orbit bundle is used by this dashboard and
+    # by the full Earth tracker; the FIRMS historical year is independent.
+    from ignis_orbits import current_bundle
+    payload["orbit"] = current_bundle()
     components.html(scene_html(payload), height=height, scrolling=False)
     return payload["stats"]
 
