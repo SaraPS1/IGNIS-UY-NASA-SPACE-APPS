@@ -212,8 +212,12 @@ def mostrar_monitoreo_nrt():
     y.metric("Sources with detections", datos["producto"].nunique())
     z.metric("Latest available acquisition (UTC)",
              datos["adquisicion_utc"].max().strftime("%d/%m %H:%M") if datos["adquisicion_utc"].notna().any() else "No timestamp")
-    st.markdown("#### Locations of returned detections")
-    _mapa_liviano(datos)
+    st.markdown("#### Interactive 3D · returned FIRMS thermal anomalies")
+    from ignis_spatial import render_spatial_3d
+    render_spatial_3d(datos, height=630, live_connection=False)
+    st.caption("On-demand NASA FIRMS results, not continuous live satellite coverage or confirmed fires.")
+    with st.expander("2D chart / accessible fallback"):
+        _mapa_liviano(datos)
     # Acceso contextual a imágenes NASA, sin agregar solicitudes externas en la app.
     visibles = datos.dropna(subset=["adquisicion_utc", "latitude", "longitude"]).copy()
     if not visibles.empty:
