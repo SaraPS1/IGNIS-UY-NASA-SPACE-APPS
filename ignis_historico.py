@@ -494,8 +494,8 @@ apply_visual_theme()
 
 NAV_PAGES = [
     "✨ Home · Discover IGNIS",
-    "🏠 Dashboard",
     "📂 Data upload",
+    "🏠 Dashboard",
     "📊 NASA Yearly Overview",
     "📚 Historical Archive 2000–2026",
     "🔄 MODIS–VIIRS Harmonization",
@@ -611,7 +611,7 @@ with st.sidebar:
     )
 
 # El Inicio, el Centro de control y el Atlas renderizan su cabecera específica.
-if current_section not in (NAV_PAGES[0], NAV_PAGES[1], NAV_PAGES[6], NAV_PAGES[14]):
+if current_section not in (NAV_PAGES[0], NAV_PAGES[2], NAV_PAGES[6], NAV_PAGES[14]):
     st.markdown(f"""<div class="ignis-topline"><div class="ignis-kicker">
        IGNIS UY · Research Tools</div>
        <h1>{current_section.split(' ',1)[1]}</h1>
@@ -623,7 +623,7 @@ if current_section == NAV_PAGES[0]:
     render_project_home(BASE, asset_uri, NAV_PAGES, _ignis_navigate_to)
 
 
-if current_section==NAV_PAGES[2]:
+if current_section==NAV_PAGES[1]:
     st.subheader('Adding historical records')
     st.write('Upload FIRMS ZIP/CSV files from one or more seasons, or query recent NRT detections. To **keep accumulated records across sessions**, download the updated **IGNIS Master dataset** and reimport it next time. Data **is not saved automatically to the cloud**.')
     st.markdown('#### Live data')
@@ -721,7 +721,7 @@ else:
     sens = st.session_state.get('sensores', [])
 
 # C — Dashboard de monitoreo con datos de la selección compartida.
-if current_section == NAV_PAGES[1]:
+if current_section == NAV_PAGES[2]:
     _logo_uri = asset_uri(BASE / "logo_ignis.png") if (BASE / "logo_ignis.png").exists() else ""
     _nrt_records = st.session_state.get("ignis_firms_vivos")
     _live = isinstance(_nrt_records, pd.DataFrame) and not _nrt_records.empty
