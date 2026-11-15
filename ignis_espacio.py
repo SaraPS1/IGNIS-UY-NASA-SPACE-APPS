@@ -1165,7 +1165,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
                 "Trajectory source",
                 ["Illustrative trajectories", "Current TLE data"],
                 index=0, key="ignis_orbit_source",
-                help="Current TLE data cannot reconstruct orbits on historical FIRMS observation dates.",
+                help="Illustrative trajectories are artistic demonstrations, NOT real satellite positions. Select Current TLE data for SGP4-based tracking when valid elements exist; historical dates need archived TLEs.",
             )
 
             st.caption("The FIRMS observation date does not change orbital UTC.")
