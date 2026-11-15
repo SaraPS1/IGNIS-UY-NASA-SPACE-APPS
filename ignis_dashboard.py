@@ -350,10 +350,8 @@ def render_analytics(sample: pd.DataFrame, selected: Optional[int], map_fn: Call
         if view.empty:
             st.markdown('<div class="ig-empty"><b>No observations for the selected year</b>Pick another year in the sidebar; absence of records is not absence of fire.</div>', unsafe_allow_html=True)
         else:
-            from ignis_spatial import render_spatial_3d
-            render_spatial_3d(view, year=selected, height=550)
-            with st.expander("2D density chart / accessible fallback"):
-                map_fn(view, "ig_an_density")
+            from ignis_spatial import render_spatial_pair
+            render_spatial_pair(view, year=selected, height=550, context="density")
 
     with tabs[2]:
         cal = sample.groupby(["anio", "mes"]).size().unstack(fill_value=0).reindex(columns=range(1, 13), fill_value=0).sort_index()
@@ -413,15 +411,18 @@ def render_premium_dashboard(combined: pd.DataFrame, sample: pd.DataFrame, selec
     stats = dashboard_stats(combined, sample, selected, len(documented_cases()), len(associations) if associations is not None else 0)
     render_stats_strip(stats)
 
-    left, right = st.columns([3.2, 1], gap="medium")
+    st.markdown('<div class="ig-section"><h3>Uruguay · Geospatial Observatory</h3><span>interactive 3D · synchronized scientific 2D report view</span></div>', unsafe_allow_html=True)
+    from ignis_spatial import render_spatial_pair
+    render_spatial_pair(sample if has else None, year=selected, associations=associations,
+                        height=740, live_connection=live, context="dashboard")
+    if not has:
+        st.markdown('<div class="ig-empty"><b>No observations loaded</b>The map uses the national reference outline. Import IGNIS Master or NASA FIRMS data to display real records.</div>', unsafe_allow_html=True)
+        st.button("Go to Data upload", key="ig_dash_upload", type="primary",
+                  on_click=navigate, args=(pages[2],))
+    left, right = st.columns([2, 1], gap="medium")
     with left:
-        st.markdown('<div class="ig-section"><h3>Uruguay · Geospatial Observatory</h3><span>interactive terrain · satellite trajectories · real FIRMS observations · guided flyover</span></div>', unsafe_allow_html=True)
-        if has:
-            render_uruguay_scene(sample, selected, associations, height=770, live_connection=live)
-        else:
-            render_uruguay_scene(None, None, None, height=690, live_connection=False)
-            st.markdown('<div class="ig-empty" style="margin-top:10px"><b>No observations loaded</b>The scene shows the national outline only. Import an IGNIS Master or NASA FIRMS ZIP/CSV files to display thermal observations.</div>', unsafe_allow_html=True)
-            st.button("Go to Data upload", key="ig_dash_upload", type="primary", on_click=navigate, args=(pages[2],))
+        st.markdown('<div class="ig-section"><h3>Interpretation</h3><span>data provenance and research context</span></div>', unsafe_allow_html=True)
+        st.caption("Thermal anomalies are imported satellite observations, not confirmed wildfire incidents. No records does not establish the absence of fire.")
     with right:
         with st.container(border=True):
             render_ask_panel(sample if has else pd.DataFrame(), navigate, pages[12])
