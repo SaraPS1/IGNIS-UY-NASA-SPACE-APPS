@@ -332,7 +332,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           }}
           #ignis-orbit-ctl {{
             position:absolute; left:50%; bottom:19px; transform:translateX(-50%);
-            z-index:10; display:flex; gap:8px; align-items:center;
+            z-index:10; display:flex; flex-wrap:wrap; justify-content:center; max-width:90%; gap:7px; align-items:center;
             padding:6px 12px; border-radius:10px; color:#c8e0ef;
             background:rgba(3,14,28,.76); font:12px Arial,sans-serif;
           }}
@@ -345,28 +345,32 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
       </head>
       <body>
         <div id="globe-shell">
-          <div id="ignis-globe-status">Preparando globo 3D...</div>
+          <div id="ignis-globe-status">Preparing 3D globe…</div>
           <div class="ignis-globe-watermark">
-            IGNIS UY <span>· EXPLORADOR 3D</span>
+            IGNIS UY <span>· 3D ORBITAL EXPLORER</span>
           </div>
           <div class="ignis-globe-help">Drag to rotate · Scroll to zoom · Hover over a column</div>
           <div id="ignis-tip"></div>
           <div id="ignis-legend">
-            <b>Potencia radiativa (FRP)</b><br>
+            <b>Fire Radiative Power (FRP)</b><br>
             <i style="background:#f7b267"></i>&lt; 25 MW<br>
             <i style="background:#ffd166"></i>25–70 MW<br>
             <i style="background:#ff9f43"></i>70–150 MW<br>
             <i style="background:#ff5d73"></i>&gt; 150 MW<br>
-            Altura de la columna ∝ FRP
+            Marker height ∝ FRP
           </div>
           <div id="ignis-orbit-ctl">
-            <button id="ignis-play" type="button">⏸ Pausa</button>
-            <select id="ignis-speed" aria-label="Velocidad orbital">
-              <option value="1">×1</option>
-              <option value="3" selected>×3</option>
-              <option value="8">×8</option>
+            <select id="ignis-tracked-sat" aria-label="Choose satellite to replay"></select>
+            <button id="ignis-last-pass" type="button">Last pass</button>
+            <button id="ignis-next-pass" type="button">Next pass</button>
+            <button id="ignis-current" type="button">Current UTC</button>
+            <button id="ignis-play" type="button">⏸ Pause</button>
+            <select id="ignis-speed" aria-label="Orbital playback speed">
+              <option value="1">1×</option>
+              <option value="10">10×</option>
+              <option value="60" selected>60×</option>
             </select>
-            <span id="ignis-orbit-clock"></span>
+            <span id="ignis-orbit-clock" aria-live="polite"></span>
           </div>
           <div id="globe-root"></div>
         </div>
