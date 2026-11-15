@@ -32,7 +32,18 @@ def run_case(browser, name, blocked=None):
     if blocked:
         page.route(blocked, lambda route: route.abort())
     page.goto(PAGE, wait_until="domcontentloaded", timeout=30000)
-    if name == "blocked-modules":
+    if name == "context-lost":
+        page.wait_for_function("window.__ignisGlobeReady===true", timeout=23000)
+        page.evaluate("""() => {
+            const canvas = document.querySelector('#globe-root canvas');
+            canvas.dispatchEvent(new Event('webglcontextlost', {cancelable:true}));
+        }""")
+        page.wait_for_function("window.__ignisGlobeFallbackActive===true", timeout=5000)
+        assert_test(page.locator("#ignis-globe-status").inner_text().startswith("WebGL unavailable"),
+                    "WebGL context loss must gracefully switch to 2D")
+        assert_test(page.locator("#globe-root canvas").count() > 0, "Local 2D canvas missing after context loss")
+        shot = "ignis-globe-context-lost2d.png"
+    elif name == "blocked-modules":
         page.wait_for_function("window.__ignisGlobeFallbackActive===true", timeout=21000)
         assert_test(page.locator("#ignis-globe-status").inner_text().startswith("WebGL unavailable"),
                     "2D fallback must explicitly identify unavailable WebGL modules")
@@ -95,6 +106,7 @@ def main():
                     run_case(browser, "normal"),
                     run_case(browser, "blocked-textures", "**/textures/planets/**"),
                     run_case(browser, "blocked-modules", "**/node_modules/three/build/three.module.js"),
+                    run_case(browser, "context-lost"),
                 ]
             finally:
                 browser.close()
