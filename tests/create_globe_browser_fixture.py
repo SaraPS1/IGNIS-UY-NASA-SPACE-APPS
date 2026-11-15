@@ -34,6 +34,11 @@ def main():
         ],
         "hotspots_total": 2,
         "outline": json.loads((ROOT / "uruguay_contorno.geojson").read_text())["features"][0]["geometry"]["coordinates"][0],
+        "world_land": [
+            feature["geometry"]
+            for feature in json.loads((ROOT / "assets" / "world_coastlines_naturalearth.geojson")
+                                      .read_text(encoding="utf-8"))["features"]
+        ],
     }
     html = scope["_render_globe_html"](config)
     # Stable local package import paths for deterministic Chrome browser testing.
