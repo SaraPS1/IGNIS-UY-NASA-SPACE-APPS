@@ -221,6 +221,34 @@
   @media(max-width:760px){#orbital-console{width:185px;max-height:39%;overflow:auto;bottom:155px}
     #orbital-console .orbital-actions{grid-template-columns:1fr 1fr}}
 
+  /* Right-side information is a vertical flow, not two independently
+     absolutely positioned boxes. Prevents Mission Brief / Satellite Tracking
+     collisions for all data sizes, viewport heights and locales. */
+  #right-dock{
+    position:absolute;z-index:3;top:66px;right:14px;bottom:91px;
+    width:262px;display:flex;flex-direction:column;gap:12px;
+    overflow-y:auto;overflow-x:hidden;
+    scrollbar-width:thin;scrollbar-color:#305567 transparent;
+    overscroll-behavior:contain;padding:0 2px 2px 0;
+  }
+  #right-dock > #mission,
+  #right-dock > #orbital-console{
+    position:relative;left:auto;right:auto;top:auto;bottom:auto;
+    width:100%;max-height:none;overflow:visible;
+    flex:0 0 auto;margin:0;
+  }
+  #right-dock #legend{position:static;right:auto;bottom:auto;width:100%}
+  #stage.inspect #right-dock > #mission,
+  #stage.compact #right-dock > #mission{display:none}
+  #stage.cine #right-dock{opacity:0;pointer-events:none}
+  @media(max-width:1050px){
+    #right-dock{right:8px;top:66px;bottom:125px;width:214px}
+  }
+  @media(max-width:760px){
+    #right-dock{right:8px;top:80px;bottom:155px;
+      width:min(205px,calc(100% - 24px));}
+    #right-dock > #mission,#right-dock > #orbital-console{max-height:none}
+  }
 </style>
 </head>
 <body>
@@ -251,6 +279,7 @@
     <label class="tg" style="border-top:1px solid var(--glass-border);margin-top:4px;padding-top:8px"><span class="lbl"><span>Reduce motion<small>disables decorative animation</small></span></span><span class="sw"><input type="checkbox" id="tgReduce"><span></span></span></label>
   </div>
 
+  <div id="right-dock" role="region" aria-label="Observation and satellite information">
   <section id="mission" class="panel" aria-label="Historical observation mission deck">
     <div class="mission-kicker">Mission brief <b id="mission-mode">HISTORICAL</b></div>
     <div class="mission-title">Selected observation interval</div>
@@ -292,6 +321,7 @@
       <div style="color:var(--slate);margin-top:2px">Marker height ∝ FRP · not confirmed fires</div>
     </div>
   </section>
+  </div><!-- right-dock: stacked panels, no fixed overlap -->
   <div id="info" class="panel" aria-live="polite"></div>
   <div id="tip" role="tooltip"></div>
   <div id="satlabels"></div>
