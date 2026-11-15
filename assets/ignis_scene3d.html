@@ -192,6 +192,26 @@
     #radial{right:12px;bottom:8px}
   }
 
+
+  #orbital-console{position:absolute;right:14px;top:345px;width:262px;padding:12px 13px;z-index:3}
+  #orbital-console .orbital-heading{display:flex;justify-content:space-between;gap:4px;
+    font-size:10px;color:var(--ice);font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+  #orbital-status{font-size:9px;color:#9bc9d9}
+  #orbital-console label{display:block;font-size:9px;color:#9bb8c8;margin:8px 0 4px}
+  #orbital-console select{width:100%;padding:7px;color:#e7f8ff;background:#0b2335;border:1px solid rgba(125,235,255,.26);font-size:11px}
+  #orbital-console .orbital-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:10px}
+  #orbital-console button{padding:8px 3px;background:#0b2d42;border:1px solid rgba(0,217,245,.28);color:#ebfcff;font-size:10px;cursor:pointer}
+  #orbital-console button:hover{background:rgba(0,217,245,.2)}
+  #orbital-console button:disabled{opacity:.32;cursor:not-allowed}
+  #orbital-clock{font-size:11px;color:#e1f4fc;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+  #orbital-provenance{font-size:9px;line-height:1.4;color:#90adbb;margin:4px 0}
+  #orbital-console[data-mode="illustrative"]{border-color:rgba(255,106,26,.6)}
+  #orbital-console[data-mode="illustrative"] #orbital-status{color:#ffc19c}
+  .cine #orbital-console{opacity:0;pointer-events:none}
+  @media(max-width:1050px){#orbital-console{top:auto;bottom:125px;width:214px;right:8px}}
+  @media(max-width:760px){#orbital-console{width:185px;max-height:39%;overflow:auto;bottom:155px}
+    #orbital-console .orbital-actions{grid-template-columns:1fr 1fr}}
+
 </style>
 </head>
 <body>
@@ -205,7 +225,7 @@
   <div id="hud-top" class="panel">
     <b>URUGUAY</b><span style="color:var(--slate)">Thermal observations · NASA FIRMS</span>
     <span id="modeBadge" class="badge hist">Historical data</span>
-    <span class="badge illus" title="Relief and orbits are schematic; observations are real imported records">Illustrative relief · schematic orbits</span>
+    <span class="badge illus" id="orbitBadge" title="Scientific tracking uses suitable TLEs and SGP4; relief is illustrative">Illustrative relief · SGP4 positions when available</span>
   </div>
 
   <div id="layers" class="panel" role="group" aria-label="Scene layers">
@@ -216,9 +236,9 @@
     <label class="tg"><span class="lbl"><i class="dot" style="background:var(--ice)"></i><span>Department boundaries<small id="depNote"></small></span></span><span class="sw"><input type="checkbox" id="tgDep"><span></span></span></label>
     <label class="tg"><span class="lbl"><i class="dot" style="background:#ff8aa5"></i><span>Documented reference towns<small>locality centers, not ignition points</small></span></span><span class="sw"><input type="checkbox" id="tgCases" checked><span></span></span></label>
     <label class="tg"><span class="lbl"><i class="dot" style="background:#f7d774"></i><span>Satellite–ground associations<small id="assocNote"></small></span></span><span class="sw"><input type="checkbox" id="tgAssoc"><span></span></span></label>
-    <label class="tg"><span class="lbl"><i class="dot" style="background:#4ea1ff"></i><span>Observation footprints<small>schematic swath beams</small></span></span><span class="sw"><input type="checkbox" id="tgBeams"><span></span></span></label>
+    <label class="tg"><span class="lbl"><i class="dot" style="background:#4ea1ff"></i><span>Illustrative sensor beams<small>disabled in scientific mode; NOT verified coverage</small></span></span><span class="sw"><input type="checkbox" id="tgBeams"><span></span></span></label>
     <label class="tg"><span class="lbl"><i class="dot" style="background:#9fc7dd"></i><span>Atmospheric effects</span></span><span class="sw"><input type="checkbox" id="tgAtmo" checked><span></span></span></label>
-    <label class="tg"><span class="lbl"><i class="dot" style="background:var(--cyan)"></i><span>Illustrative orbit trails</span></span><span class="sw"><input type="checkbox" id="tgOrbits"><span></span></span></label>
+    <label class="tg"><span class="lbl"><i class="dot" style="background:var(--cyan)"></i><span>Orbital trajectories<small>calculated or explicitly illustrative</small></span></span><span class="sw"><input type="checkbox" id="tgOrbits"><span></span></span></label>
     <label class="tg" style="border-top:1px solid var(--glass-border);margin-top:4px;padding-top:8px"><span class="lbl"><span>Reduce motion<small>disables decorative animation</small></span></span><span class="sw"><input type="checkbox" id="tgReduce"><span></span></span></label>
   </div>
 
@@ -231,13 +251,30 @@
       <div><small>FIRMS OBSERVATIONS</small><strong id="mission-count">0</strong></div>
       <div><small>MODIS / VIIRS</small><strong id="mission-split">0 / 0</strong></div>
     </div>
-    <p class="mission-note">Imported thermal anomalies, not confirmed wildfires. Orbital geometry and terrain relief are illustrative.</p>
+    <p class="mission-note">Imported thermal anomalies, not confirmed wildfires. Terrain relief is illustrative; orbital positions require suitable TLE data.</p>
     <div class="mission-actions">
       <button id="mission-tour" class="mission-act" type="button" title="Animated flyover of actual imported observations">Guided flyover</button>
       <button id="mission-focus" class="mission-act" type="button" title="Focus a displayed observation with FRP metadata">Explore signal</button>
     </div>
   </section>
 
+  <section id="orbital-console" class="panel" aria-label="UTC orbital tracker controls">
+    <div class="orbital-heading">Satellite tracking <span id="orbital-status">CHECKING</span></div>
+    <label for="orbital-satellite">Satellite</label>
+    <select id="orbital-satellite" aria-label="Select tracked satellite"></select>
+    <div class="orbital-actions">
+      <button id="orbital-last" type="button">Last pass</button>
+      <button id="orbital-next" type="button">Next pass</button>
+      <button id="orbital-live" type="button">Current UTC</button>
+    </div>
+    <p id="orbital-clock" aria-live="polite">Waiting for orbital records…</p>
+    <p id="orbital-provenance">Ground-track crossing ≠ swath coverage ≠ FIRMS detection.</p>
+    <label for="orbital-mode">Trajectory source</label>
+    <select id="orbital-mode" aria-label="Select orbit animation mode">
+      <option value="calculated">Calculated SGP4 · scientific</option>
+      <option value="illustrative">ILLUSTRATIVE DEMO · not real tracking</option>
+    </select>
+  </section>
   <div id="info" class="panel" aria-live="polite"></div>
   <div id="tip" role="tooltip"></div>
   <div id="satlabels"></div>
