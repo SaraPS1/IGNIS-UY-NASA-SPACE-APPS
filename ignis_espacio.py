@@ -636,6 +636,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
               const points=valid? sat.positions.map((p)=>latLonToVector3(
                 p.lat,p.lon,2.2*(1+Math.max(0,Number(p.alt_km)||0)/6378.137)
               )):schematicOrbit(index);
+              let orbitLine=null;
               if(showOrbits){{
                 const geometry=new THREE.BufferGeometry().setFromPoints(points);
                 const material=demo?
@@ -643,7 +644,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
                   new THREE.LineBasicMaterial({{color,transparent:true,opacity:.73}});
                 const line=new THREE.Line(geometry,material);
                 if(demo)line.computeLineDistances();
-                earthGroup.add(line);
+                earthGroup.add(line);orbitLine=line;
                 if(demo)illustrativeOrbits++;else tleOrbits++;
               }}
               if(showSatellites&&points.length){{
@@ -663,7 +664,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
                 const label=makeSatelliteLabel(labelText,sat.color);
                 label.position.copy(points[0]).multiplyScalar(1.06);
                 label.position.y+=.10;earthGroup.add(label);
-                movers.push({{marker,label,points,sat,schematic:demo,
+                movers.push({{marker,label,points,sat,orbitLine,schematic:demo,
                   phase:demo?((index*.18+.07)%1):0,
                   times:valid?sat.positions.map(p=>Date.parse(p.t)):[]}});
               }}
