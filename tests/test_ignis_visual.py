@@ -50,7 +50,7 @@ class IgnisVisualSmokeTests(unittest.TestCase):
         self.assertIn("No demonstration figures are ever injected", dashboard)
         self.assertIn("if has:", dashboard)
         self.assertIn("No observations loaded", dashboard)
-        self.assertIn("map_fn(mapped", content)
+        self.assertIn("render_spatial_pair(mapped", content)
         self.assertIn("The absence of records", dashboard)
 
     def test_official_links(self):
