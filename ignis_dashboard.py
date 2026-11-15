@@ -35,6 +35,12 @@ def design_system_css() -> str:
       radial-gradient(900px 420px at 92% 0%,rgba(255,106,26,.05),transparent 55%),
       linear-gradient(170deg,#0a1a2c 0%,#06101d 48%,#050d18 100%)!important;color:var(--ig-white)}
     .block-container,[data-testid="stMainBlockContainer"]{padding-top:.55rem!important}
+    @media(min-width:1180px){section[data-testid="stMain"] .block-container,[data-testid="stMainBlockContainer"]{max-width:1780px!important;padding-left:1.25rem!important;padding-right:1.25rem!important}}
+    .ig-section h3{font-size:1.19rem!important;letter-spacing:-.018em!important}
+    .ig-section>span{max-width:53%;text-align:right;line-height:1.4}
+    .ig-panel{border-color:rgba(125,235,255,.19)!important}
+    @media(max-width:820px){.ig-section>span{display:none}}
+
     h1,h2,h3,h4{letter-spacing:-.015em}
     /* premium top bar */
     .ig-topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
@@ -393,7 +399,7 @@ def render_analytics(sample: pd.DataFrame, selected: Optional[int], map_fn: Call
 # --------------------------------------------------------------------------
 def render_premium_dashboard(combined: pd.DataFrame, sample: pd.DataFrame, selected: Optional[int], base, map_fn: Callable,
                              pages, navigate: Callable, logo_uri: str = "", live: bool = False) -> None:
-    """Control center: top bar · metric strip · 3D Uruguay (≈65%) + Ask IGNIS · analytics."""
+    """Control center: immersive map-first layout with contextual Ask IGNIS and analytics."""
     from ignis_scene3d import build_scene_payload, documented_cases
     associations = st.session_state.get("ignis_fusion_results")
     if not isinstance(associations, pd.DataFrame):
@@ -404,13 +410,13 @@ def render_premium_dashboard(combined: pd.DataFrame, sample: pd.DataFrame, selec
     stats = dashboard_stats(combined, sample, selected, len(documented_cases()), len(associations) if associations is not None else 0)
     render_stats_strip(stats)
 
-    left, right = st.columns([1.9, 1], gap="medium")
+    left, right = st.columns([3.2, 1], gap="medium")
     with left:
-        st.markdown('<div class="ig-section"><h3>Interactive 3D Uruguay</h3><span>drag to orbit · scroll to zoom · click a marker · Space plays the timeline</span></div>', unsafe_allow_html=True)
+        st.markdown('<div class="ig-section"><h3>Uruguay · Geospatial Observatory</h3><span>interactive terrain · satellite trajectories · real FIRMS observations · guided flyover</span></div>', unsafe_allow_html=True)
         if has:
-            render_uruguay_scene(sample, selected, associations, height=700, live_connection=live)
+            render_uruguay_scene(sample, selected, associations, height=770, live_connection=live)
         else:
-            render_uruguay_scene(None, None, None, height=560, live_connection=False)
+            render_uruguay_scene(None, None, None, height=690, live_connection=False)
             st.markdown('<div class="ig-empty" style="margin-top:10px"><b>No observations loaded</b>The scene shows the national outline only. Import an IGNIS Master or NASA FIRMS ZIP/CSV files to display thermal observations.</div>', unsafe_allow_html=True)
             st.button("Go to Data upload", key="ig_dash_upload", type="primary", on_click=navigate, args=(pages[2],))
     with right:
