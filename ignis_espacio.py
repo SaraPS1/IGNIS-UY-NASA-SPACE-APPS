@@ -2,6 +2,8 @@ import json
 import math
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 import numpy as np
@@ -247,6 +249,22 @@ def _country_regions_html() -> str:
         "uruguay": {"lat": -32.8, "lon": -56.0, "height": 1600000},
         "selected": {"lat": -32.8, "lon": -56.0, "height": 1600000},
     })
+
+
+@lru_cache(maxsize=1)
+def _world_geometries() -> List[Dict[str, Any]]:
+    """Bundled generalized Natural Earth polygons for a network-free Earth texture.
+
+    These are approximate cartographic boundaries, NOT legal or cadastral
+    claims. Never used as a wildfire detection or orbit calculation source.
+    """
+    path = Path(__file__).resolve().parent / "assets" / "world_coastlines_naturalearth.geojson"
+    try:
+        collection = json.loads(path.read_text(encoding="utf-8"))
+        return [feature["geometry"] for feature in collection.get("features", [])
+                if feature.get("geometry", {}).get("type") in ("Polygon", "MultiPolygon")]
+    except (OSError, ValueError, KeyError, TypeError):
+        return []
 
 
 def _render_globe_html(config: Dict[str, Any]) -> str:
@@ -537,9 +555,54 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             tex.needsUpdate = true;
             return tex;
           }}
+          // Guaranteed offline Earth surface: approximate Natural Earth continents,
+          // rendered into a locally generated equirectangular texture in 2D canvas.
+          // Optional NASA imagery may improve detail but is never required for WebGL.
+          function localWorldTexture(night){{
+            const canvas=document.createElement('canvas');
+            canvas.width=1536;canvas.height=768;
+            const ctx=canvas.getContext('2d');
+            if(!ctx)return solidTex(night?[12,31,55]:[58,125,167]);
+            const sea=ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+            sea.addColorStop(0,night?'#0b1b32':'#103a5a');
+            sea.addColorStop(.6,night?'#10263d':'#21668a');
+            sea.addColorStop(1,night?'#0c2238':'#0f456d');
+            ctx.fillStyle=sea;ctx.fillRect(0,0,canvas.width,canvas.height);
+            const geometries=Array.isArray(payload.world_land)?payload.world_land:[];
+            function drawRing(ring){{
+              if(!Array.isArray(ring)||ring.length<3)return;
+              ctx.beginPath();
+              ring.forEach((point,i)=>{{
+                const x=(Number(point[0])+180)/360*canvas.width;
+                const y=(90-Number(point[1]))/180*canvas.height;
+                if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+              }});
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+            }}
+            ctx.fillStyle=night?'#26393b':'#427450';
+            ctx.strokeStyle=night?'rgba(82,119,126,.5)':'rgba(179,213,140,.37)';
+            ctx.lineWidth=.65;
+            for(const geom of geometries){{
+              if(!geom||!geom.coordinates)continue;
+              const polygons=geom.type==='Polygon'?[geom.coordinates]:
+                geom.type==='MultiPolygon'?geom.coordinates:[];
+              for(const polygon of polygons){{
+                if(!Array.isArray(polygon)||!polygon.length)continue;
+                drawRing(polygon[0]);
+              }}
+            }}
+            const tex=new THREE.CanvasTexture(canvas);
+            tex.colorSpace=THREE.SRGBColorSpace;
+            tex.wrapS=THREE.RepeatWrapping;
+            tex.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+            return tex;
+          }}
+
           const globeUniforms = {{
-            dayMap: {{value:solidTex([58,125,167])}},
-            nightMap: {{value:solidTex([12,31,55])}},
+            dayMap: {{value:localWorldTexture(false)}},
+            nightMap: {{value:localWorldTexture(true)}},
             sunDirection: {{value:sunLight.position.clone().normalize()}},
             mode: {{value:earthView === 'Blue Marble (day)' ? 1 :
                     earthView === 'Black Marble (night)' ? 2 : 0}}
@@ -813,13 +876,15 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
 
           const region = payload.region || 'global';
           if (region === 'uruguay') {{
-            camera.position.set(0.9, 1.4, 5.5);
-            controls.target.set(-0.2, -0.2, 0.1);
+            // WGS84 Uruguay vector points into the southern +X/+Z hemisphere.
+            // Viewing it from above the Northern Hemisphere hid the country.
+            camera.position.set(3.5, -3.3, 5.1);
+            controls.target.set(0, 0, 0);
           }} else if (region === 'south_america') {{
-            camera.position.set(1.9, 0.8, 5.4);
-            controls.target.set(-0.6, -0.2, 0.1);
+            camera.position.set(3.2, -1.8, 6.3);
+            controls.target.set(0, 0, 0);
           }} else {{
-            camera.position.set(3.9, -3.5, 5.4);
+            camera.position.set(0, 1.3, 8.2);
             controls.target.set(0, 0, 0);
           }}
           controls.update();
@@ -1179,6 +1244,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         "hotspots": hotspots,
         "hotspots_total": int(len(filtered_frame)),
         "outline": _uruguay_outline(),
+        "world_land": _world_geometries(),
     }
 
     with globe_slot:
