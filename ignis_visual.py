@@ -790,6 +790,59 @@ def render_control_center(combined, sample, selected, base, map_fn, pages, navig
                              logo_uri=logo_uri, live=live)
 
 
+def render_zoomable_uruguay_map(records, base):
+    """Zoomable 2D geographic observation map exclusively for the Uruguay Map tab.
+
+    The Dashboard keeps its original illuminated density map. Only imported
+    FIRMS coordinates are displayed here; zooming does not change the data.
+    """
+    border = Path(base) / "uruguay_contorno.geojson"
+    if not border.exists():
+        st.warning("Uruguay outline unavailable.")
+        return
+    geometry = json.loads(border.read_text(encoding="utf-8"))["features"][0]["geometry"]
+    rings = geometry["coordinates"] if geometry["type"] == "Polygon" else geometry["coordinates"][0]
+    ring = rings[0]
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=[p[0] for p in ring], y=[p[1] for p in ring],
+        mode="lines", fill="toself", fillcolor="rgba(20,80,110,.16)",
+        line=dict(color="#62d7eb", width=2), name="Uruguay · outline",
+        hoverinfo="skip",
+    ))
+    coords = records[["longitude", "latitude"]].apply(pd.to_numeric, errors="coerce").dropna()
+    coords = coords[coords.longitude.between(-59, -52) &
+                    coords.latitude.between(-36, -29)]
+    if not coords.empty:
+        points = coords.sample(n=5000, random_state=42) if len(coords) > 5000 else coords
+        fig.add_trace(go.Scattergl(
+            x=points.longitude, y=points.latitude, mode="markers",
+            marker=dict(color="#ffb45f", size=5, opacity=.72),
+            name="Imported FIRMS observations",
+            hovertemplate="Lon %{x:.4f}<br>Lat %{y:.4f}<extra>FIRMS observation</extra>",
+        ))
+        if len(coords) > len(points):
+            st.caption(f"Displaying {len(points):,} of {len(coords):,} valid coordinates for map performance.")
+    fig.update_layout(
+        height=620, dragmode="zoom", hovermode="closest",
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#0b1c30",
+        font=dict(color="#e4f3ff"), margin=dict(l=12, r=15, t=20, b=15),
+        legend=dict(orientation="h", y=1.08),
+    )
+    fig.update_xaxes(title="Longitude", range=[-58.85, -52.65],
+                     gridcolor="rgba(128,158,220,.13)", zeroline=False)
+    fig.update_yaxes(title="Latitude", range=[-35.45, -29.75],
+                     scaleanchor="x", scaleratio=1,
+                     gridcolor="rgba(128,158,220,.13)", zeroline=False)
+    st.plotly_chart(
+        fig, use_container_width=True, key="ignis_uruguay_zoom_map",
+        config={"scrollZoom": True, "displayModeBar": True,
+                "modeBarButtonsToAdd": ["zoomIn2d", "zoomOut2d", "resetScale2d"]},
+    )
+    st.caption("Zoom with the mouse wheel, drag to select an area, or use the toolbar. "
+               "Only uploaded NASA FIRMS observations are shown; points are not confirmed wildfires.")
+
+
 def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
     _header("Scientific Atlas · Spatial exploration",
             "Thermal activity Atlas",
@@ -822,14 +875,9 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
         with st.container(border=True):
             st.markdown("#### 🗺️ Geographic distribution")
             if not mapped.empty:
-                if is_explorer():
-                    from ignis_spatial import render_spatial_pair
-                    render_spatial_pair(mapped, year=None if selector=="All uploaded historical records" else selected,
-                                        height=620, context="atlas")
-                else:
-                    # Original scientific map, with its established Plotly widget key.
-                    map_fn(mapped, "ignis_atlas_scientific")
-                    show_explorer_entry("ignis_atlas_explore_3d", "Explore this map in 3D")
+                # Sara's zoom-and-inspect map belongs here only, rather than
+                # duplicating the Dashboard's illuminated density display.
+                render_zoomable_uruguay_map(mapped, base)
             else:
                 st.info("No points for the selected period.")
                 _empty_uruguay_outline(base,"ignis_atlas_selection_empty")
