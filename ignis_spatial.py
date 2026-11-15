@@ -36,7 +36,7 @@ def to_scene_frame(data: Optional[pd.DataFrame]) -> pd.DataFrame:
         output[name] = pd.to_numeric(output[name], errors="coerce")
     valid = (output["fecha"].notna() & output["latitude"].between(-90, 90) &
              output["longitude"].between(-180, 180))
-    return output.loc[valid, FIELDS].reset_index(drop=True)
+    return output.loc[valid, list(FIELDS)].reset_index(drop=True)
 
 
 def render_spatial_3d(data: Optional[pd.DataFrame], year: Optional[int] = None,
