@@ -212,13 +212,13 @@
     <h4>Scene layers</h4>
     <label class="tg"><span class="lbl"><i class="dot" style="background:var(--ember)"></i><span>MODIS observations<small id="cMod"></small></span></span><span class="sw"><input type="checkbox" id="tgModis" checked><span></span></span></label>
     <label class="tg"><span class="lbl"><i class="dot" style="background:var(--orange)"></i><span>VIIRS observations<small id="cVii"></small></span></span><span class="sw"><input type="checkbox" id="tgViirs" checked><span></span></span></label>
-    <label class="tg"><span class="lbl"><i class="dot" style="background:#2fb3c9"></i><span>Historical recurrence grid<small>0.2° cells · years with records</small></span></span><span class="sw"><input type="checkbox" id="tgGrid"><span></span></span></label>
+    <label class="tg"><span class="lbl"><i class="dot" style="background:#2fb3c9"></i><span>Historical recurrence grid<small>0.2° cells · years with records</small></span></span><span class="sw"><input type="checkbox" id="tgGrid" checked><span></span></span></label>
     <label class="tg"><span class="lbl"><i class="dot" style="background:var(--ice)"></i><span>Department boundaries<small id="depNote"></small></span></span><span class="sw"><input type="checkbox" id="tgDep"><span></span></span></label>
     <label class="tg"><span class="lbl"><i class="dot" style="background:#ff8aa5"></i><span>Documented reference towns<small>locality centers, not ignition points</small></span></span><span class="sw"><input type="checkbox" id="tgCases" checked><span></span></span></label>
     <label class="tg"><span class="lbl"><i class="dot" style="background:#f7d774"></i><span>Satellite–ground associations<small id="assocNote"></small></span></span><span class="sw"><input type="checkbox" id="tgAssoc"><span></span></span></label>
-    <label class="tg"><span class="lbl"><i class="dot" style="background:#4ea1ff"></i><span>Observation footprints<small>schematic swath beams</small></span></span><span class="sw"><input type="checkbox" id="tgBeams" checked><span></span></span></label>
+    <label class="tg"><span class="lbl"><i class="dot" style="background:#4ea1ff"></i><span>Observation footprints<small>schematic swath beams</small></span></span><span class="sw"><input type="checkbox" id="tgBeams"><span></span></span></label>
     <label class="tg"><span class="lbl"><i class="dot" style="background:#9fc7dd"></i><span>Atmospheric effects</span></span><span class="sw"><input type="checkbox" id="tgAtmo" checked><span></span></span></label>
-    <label class="tg"><span class="lbl"><i class="dot" style="background:var(--cyan)"></i><span>Illustrative orbit trails</span></span><span class="sw"><input type="checkbox" id="tgOrbits" checked><span></span></span></label>
+    <label class="tg"><span class="lbl"><i class="dot" style="background:var(--cyan)"></i><span>Illustrative orbit trails</span></span><span class="sw"><input type="checkbox" id="tgOrbits"><span></span></span></label>
     <label class="tg" style="border-top:1px solid var(--glass-border);margin-top:4px;padding-top:8px"><span class="lbl"><span>Reduce motion<small>disables decorative animation</small></span></span><span class="sw"><input type="checkbox" id="tgReduce"><span></span></span></label>
   </div>
 
@@ -456,7 +456,7 @@ async function init3D(){
   scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x06101d, 0.012);
   camera = new THREE.PerspectiveCamera(42, 1, 0.1, 400);
-  const HOME = { pos: new THREE.Vector3(-6.5, 9.5, 12.5), tgt: new THREE.Vector3(0, 0, 0) };
+  const HOME = { pos: new THREE.Vector3(-5.5, 7.2, 10.0), tgt: new THREE.Vector3(0, 0, 0) };
   const FAR  = { pos: new THREE.Vector3(-40, 70, 95), tgt: new THREE.Vector3(0, -20, 0) };
   camera.position.copy(reduceMotion ? HOME.pos : FAR.pos);
   controls = new OrbitControls(camera, renderer.domElement);
@@ -464,8 +464,8 @@ async function init3D(){
   controls.maxPolarAngle = Math.PI*0.49; controls.target.copy(HOME.tgt); controls.enablePan = true; controls.screenSpacePanning = false;
 
   /* lights: restrained, one key light with shadows, cool fill, warm rim */
-  scene.add(new THREE.HemisphereLight(0x8fb6d8, 0x0b1a2a, 0.55));
-  const sun = new THREE.DirectionalLight(0xfff1dc, 2.1); sun.position.set(14, 18, 8); sun.castShadow = true;
+  scene.add(new THREE.HemisphereLight(0x90c3da, 0x091a28, 0.65));
+  const sun = new THREE.DirectionalLight(0xfff1dc, 1.55); sun.position.set(14, 18, 8); sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048); sun.shadow.camera.near = 1; sun.shadow.camera.far = 60;
   sun.shadow.camera.left = sun.shadow.camera.bottom = -9; sun.shadow.camera.right = sun.shadow.camera.top = 9; sun.shadow.bias = -0.0008;
   scene.add(sun);
@@ -476,24 +476,39 @@ async function init3D(){
   { const g=new THREE.BufferGeometry(); const n=2600, pos=new Float32Array(n*3); for(let i=0;i<n;i++){ const r=170+Math.random()*120, th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1); pos[i*3]=r*Math.sin(ph)*Math.cos(th); pos[i*3+1]=Math.abs(r*Math.cos(ph))*0.9+5; pos[i*3+2]=r*Math.sin(ph)*Math.sin(th);} g.setAttribute('position',new THREE.BufferAttribute(pos,3)); scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xcfe9ff,size:0.55,sizeAttenuation:true,transparent:true,opacity:.85}))); }
 
   /* Earth backdrop: the plate sits tangent to a large sphere so the horizon curves */
-  const R = 62; const earthGroup = new THREE.Group(); earthGroup.position.set(0, -R-0.42, 0); scene.add(earthGroup);
-  const earthMat = new THREE.MeshStandardMaterial({ color: 0x173a5a, roughness: .95, metalness: 0 });
+  const R = 62; const earthGroup = new THREE.Group(); earthGroup.position.set(0, -R-2.2, 0); scene.add(earthGroup);
+  const earthMat = new THREE.MeshStandardMaterial({ color: 0x112d45, roughness: .98, metalness: 0 });
   const earth = new THREE.Mesh(new THREE.SphereGeometry(R, 96, 64), earthMat); earth.receiveShadow = true; earthGroup.add(earth);
-  const clouds = new THREE.Mesh(new THREE.SphereGeometry(R+0.35, 72, 48), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, roughness: 1 })); earthGroup.add(clouds);
+  const clouds = new THREE.Mesh(new THREE.SphereGeometry(R+0.35, 72, 48), new THREE.MeshStandardMaterial({ color: 0x809eb8, transparent: true, opacity: 0, depthWrite: false, roughness: 1 })); earthGroup.add(clouds);
   const atmo = new THREE.Mesh(new THREE.SphereGeometry(R*1.035, 72, 48), new THREE.ShaderMaterial({
     uniforms:{ c:{value:new THREE.Color(0x3fc6ff)}, p:{value:3.4} }, transparent:true, side:THREE.BackSide, blending:THREE.AdditiveBlending, depthWrite:false,
     vertexShader:`varying vec3 vN; varying vec3 vP; void main(){ vN=normalize(normalMatrix*normal); vP=(modelViewMatrix*vec4(position,1.)).xyz; gl_Position=projectionMatrix*vec4(vP,1.);}`,
     fragmentShader:`uniform vec3 c; uniform float p; varying vec3 vN; varying vec3 vP; void main(){ float f=pow(1.0-abs(dot(normalize(vN),normalize(-vP))),p); gl_FragColor=vec4(c,1.0)*f*0.9; }`
   })); earthGroup.add(atmo);
-  const haze = new THREE.Mesh(new THREE.SphereGeometry(R+0.9, 48, 32), new THREE.MeshBasicMaterial({ color: 0x1a4f78, transparent: true, opacity: .10, depthWrite:false, blending: THREE.AdditiveBlending })); earthGroup.add(haze);
+  const haze = new THREE.Mesh(new THREE.SphereGeometry(R+0.9, 48, 32), new THREE.MeshBasicMaterial({ color: 0x1a4f78, transparent: true, opacity: .045, depthWrite:false, blending: THREE.AdditiveBlending })); earthGroup.add(haze);
   const loader = new THREE.TextureLoader(); loader.setCrossOrigin('anonymous');
   const texBase = 'https://threejs.org/examples/textures/planets/';
-  loader.load(texBase+'earth_atmos_2048.jpg', t=>{ t.colorSpace=THREE.SRGBColorSpace; earthMat.map=t; earthMat.color.set(0xffffff); earthMat.needsUpdate=true; earth.rotation.y = (c0[0]+180)*Math.PI/180*-1; }, undefined, ()=>setStatus('Earth texture offline · flat shading backdrop'));
-  loader.load(texBase+'earth_clouds_1024.png', t=>{ clouds.material.alphaMap=t; clouds.material.opacity=.55; clouds.material.needsUpdate=true; });
+  loader.load(texBase+'earth_atmos_2048.jpg', t=>{ t.colorSpace=THREE.SRGBColorSpace; earthMat.map=t; earthMat.color.set(0x3b637b); earthMat.needsUpdate=true; earth.rotation.y = (c0[0]+180)*Math.PI/180*-1; }, undefined, ()=>setStatus('Earth texture offline · flat shading backdrop'));
+  loader.load(texBase+'earth_clouds_1024.png', t=>{ clouds.material.alphaMap=t; clouds.material.opacity=.10; clouds.material.needsUpdate=true; });
   /* rotate the sphere so that Uruguay's longitude/latitude faces the plate (approximate alignment of the backdrop) */
   earthGroup.rotation.z = c0[1]*Math.PI/180; earthGroup.rotation.y = -(c0[0])*Math.PI/180;
 
   /* ---------- Uruguay plate ------------------------------------------------ */
+
+  /* Subtle decorative orbital arcs framing the national map.
+     These are a visual guide, not actual satellite trajectories. */
+  const orbitHaloGroup = new THREE.Group(); scene.add(orbitHaloGroup);
+  function orbitArc(radius,color,start,length,opacity){
+    const mesh=new THREE.Mesh(
+      new THREE.RingGeometry(radius,radius+.018,128,1,start,length),
+      new THREE.MeshBasicMaterial({ color,transparent:true,opacity,side:THREE.DoubleSide,
+        depthWrite:false,blending:THREE.AdditiveBlending }));
+    mesh.rotation.x=-Math.PI/2;mesh.position.y=-.08;orbitHaloGroup.add(mesh);
+  }
+  orbitArc(5.65,0x00d9f5,.35,Math.PI*1.45,.26);
+  orbitArc(5.95,0x7debff,2.45,Math.PI*.80,.12);
+  orbitArc(5.40,0xff6a1a,4.80,Math.PI*.26,.16);
+
   const uy = new THREE.Group(); scene.add(uy);
   const shape = new THREE.Shape(outline.map(p => { const [x,z]=toXZ(p[0],p[1]); return new THREE.Vector2(x,-z); }));
   const DEPTH = 0.42;
@@ -516,7 +531,7 @@ async function init3D(){
   /* procedural surface texture (satellite-style palette, explicitly illustrative) + alpha mask */
   const TEX=1024; const texC=document.createElement('canvas'); texC.width=TEX; texC.height=Math.round(TEX*spanZ/spanX); const tctx=texC.getContext('2d');
   const maskC=document.createElement('canvas'); maskC.width=texC.width; maskC.height=texC.height; const mctx=maskC.getContext('2d');
-  { const img=tctx.createImageData(texC.width,texC.height); const d=img.data; const cols=[[36,74,52],[58,96,52],[94,118,56],[132,126,68],[160,140,84],[112,120,92]];
+  { const img=tctx.createImageData(texC.width,texC.height); const d=img.data; const cols=[[15,46,43],[26,70,49],[45,80,52],[70,94,57],[96,104,65],[54,76,63]];
     for (let y=0;y<texC.height;y++) for (let x=0;x<texC.width;x++){ const lon=bbox[0]-(bbox[2]-bbox[0])*.02+(x/texC.width)*(bbox[2]-bbox[0])*1.04, lat=bbox[3]+(bbox[3]-bbox[1])*.02-(y/texC.height)*(bbox[3]-bbox[1])*1.04;
       const n=fbm(lon*1.3+7.1,lat*1.3+3.3), m=fbm(lon*9+4,lat*9+2), f=fbm(lon*30,lat*30); const t=Math.min(.999,Math.max(0,n*.75+m*.25)); const k=t*(cols.length-1), i0=Math.floor(k), fr=k-i0; const a=cols[i0], b=cols[Math.min(i0+1,cols.length-1)];
       const sh=.82+f*.36; const o=(y*texC.width+x)*4; d[o]=(a[0]+(b[0]-a[0])*fr)*sh; d[o+1]=(a[1]+(b[1]-a[1])*fr)*sh; d[o+2]=(a[2]+(b[2]-a[2])*fr)*sh; d[o+3]=255; }
@@ -563,12 +578,12 @@ async function init3D(){
 
   /* ---------- thermal observations (instanced) --------------------------- */
   const maxInst = Math.max(N,1);
-  const dotGeo = new THREE.CylinderGeometry(.028,.045,1,8); dotGeo.translate(0,.5,0);
+  const dotGeo = new THREE.ConeGeometry(.060,1,8); dotGeo.translate(0,.5,0);
   const dotMat = new THREE.MeshStandardMaterial({ roughness:.35, metalness:.1, emissive:0xffffff, emissiveIntensity:.55, toneMapped:true });
   dotMat.onBeforeCompile = (sh)=>{ sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance *= diffuseColor.rgb * 1.6;'); };
   const dots = new THREE.InstancedMesh(dotGeo, dotMat, maxInst); dots.castShadow = true; dots.count = 0; dots.userData.kind='dot'; uy.add(dots);
   const haloGeo = new THREE.PlaneGeometry(1,1); haloGeo.rotateX(-Math.PI/2);
-  const haloMat = new THREE.MeshBasicMaterial({ transparent:true, opacity:.55, depthWrite:false, blending:THREE.AdditiveBlending, map: makeHaloTexture() });
+  const haloMat = new THREE.MeshBasicMaterial({ transparent:true, opacity:.78, depthWrite:false, blending:THREE.AdditiveBlending, map: makeHaloTexture() });
   const halos = new THREE.InstancedMesh(haloGeo, haloMat, maxInst); halos.count=0; uy.add(halos);
   function makeHaloTexture(){ const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); const gr=g.createRadialGradient(32,32,2,32,32,32); gr.addColorStop(0,'rgba(255,255,255,.95)'); gr.addColorStop(.35,'rgba(255,255,255,.35)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); }
   let active = [], phases = new Float32Array(maxInst), baseH = new Float32Array(maxInst), surfH = new Float32Array(N);
@@ -579,7 +594,7 @@ async function init3D(){
   function rebuildInstances(){
     active = activeIndices();
     dots.count = active.length; halos.count = active.length;
-    for (let k=0;k<active.length;k++){ const i=active[k]; const [x,z]=toXZ(P.lon[i],P.lat[i]); const h = 0.18 + frpLog(P.frp[i])*0.9; baseH[k]=h; phases[k]=(i*0.618)%1;
+    for (let k=0;k<active.length;k++){ const i=active[k]; const [x,z]=toXZ(P.lon[i],P.lat[i]); const h = 0.11 + frpLog(P.frp[i])*0.22; baseH[k]=h; phases[k]=(i*0.618)%1;
       tmpM.compose(tmpP.set(x,surfH[i],z), tmpQ.identity(), tmpS.set(1,h,1)); dots.setMatrixAt(k,tmpM); dots.setColorAt(k, famColor[P.fam[i]]);
       const s = .22 + frpLog(P.frp[i])*.4; tmpM.compose(tmpP.set(x,surfH[i]+.01,z), tmpQ, tmpS.set(s,1,s)); halos.setMatrixAt(k,tmpM); halos.setColorAt(k, famColor[P.fam[i]]); }
     dots.instanceMatrix.needsUpdate = true; if (dots.instanceColor) dots.instanceColor.needsUpdate = true;
@@ -607,12 +622,12 @@ async function init3D(){
     const lamp=new THREE.Mesh(new THREE.SphereGeometry(.04,10,10), new THREE.MeshBasicMaterial({ color:s.color })); lamp.position.set(0,-.16,.2); g.add(lamp);
     /* beam toward Uruguay */
     const beamLen=Math.hypot(s.r*0.86, s.alt);
-    const beam=new THREE.Mesh(new THREE.ConeGeometry(2.6, beamLen, 28, 1, true), new THREE.MeshBasicMaterial({ color:s.sensor==='MODIS'?0xff8a5a:0x4ea1ff, transparent:true, opacity:.07, side:THREE.DoubleSide, depthWrite:false, blending:THREE.AdditiveBlending }));
+    const beam=new THREE.Mesh(new THREE.ConeGeometry(1.5, beamLen, 24, 1, true), new THREE.MeshBasicMaterial({ color:s.sensor==='MODIS'?0xff8a5a:0x4ea1ff, transparent:true, opacity:.07, side:THREE.DoubleSide, depthWrite:false, blending:THREE.AdditiveBlending }));
     beam.geometry.translate(0,-beamLen/2,0); beam.rotation.x=Math.PI; g.add(beam);
-    const beamEdge=new THREE.Mesh(new THREE.ConeGeometry(2.6, beamLen, 28, 1, true), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.035, wireframe:true, depthWrite:false, blending:THREE.AdditiveBlending })); beamEdge.geometry.translate(0,-beamLen/2,0); beamEdge.rotation.x=Math.PI; g.add(beamEdge);
+    const beamEdge=new THREE.Mesh(new THREE.ConeGeometry(1.5, beamLen, 24, 1, true), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.035, wireframe:true, depthWrite:false, blending:THREE.AdditiveBlending })); beamEdge.geometry.translate(0,-beamLen/2,0); beamEdge.rotation.x=Math.PI; g.add(beamEdge);
     /* orbit trail: fading polyline */
     const TR=120, trailPos=new Float32Array(TR*3), trailCol=new Float32Array(TR*3); const tg=new THREE.BufferGeometry(); tg.setAttribute('position',new THREE.BufferAttribute(trailPos,3)); tg.setAttribute('color',new THREE.BufferAttribute(trailCol,3));
-    const trail=new THREE.Line(tg, new THREE.LineBasicMaterial({ vertexColors:true, transparent:true, opacity:.9, blending:THREE.AdditiveBlending, depthWrite:false })); scene.add(trail);
+    const trail=new THREE.Line(tg, new THREE.LineBasicMaterial({ vertexColors:true, transparent:true, opacity:.32, blending:THREE.AdditiveBlending, depthWrite:false })); scene.add(trail);
     const col=new THREE.Color(s.color); for(let i=0;i<TR;i++){ const f=i/TR; trailCol[i*3]=col.r*f; trailCol[i*3+1]=col.g*f; trailCol[i*3+2]=col.b*f; }
     const lbl=document.createElement('div'); lbl.innerHTML=`${s.name}<small>${s.sensor} · illustrative</small>`; lbl.addEventListener('click',()=>showSatInfo(s)); labelsEl.appendChild(lbl);
     body.userData={kind:'sat',data:s}; g.children.forEach(ch=>{ if(!ch.userData.kind) ch.userData={kind:'sat',data:s}; });
@@ -709,7 +724,7 @@ async function init3D(){
   $('tgDep').addEventListener('change', e=>depGroup.visible=e.target.checked);
   $('tgCases').addEventListener('change', e=>caseGroup.visible=e.target.checked);
   $('tgAssoc').addEventListener('change', e=>assocGroup.visible=e.target.checked);
-  $('tgAtmo').addEventListener('change', e=>{ atmo.visible=haze.visible=clouds.visible=e.target.checked; scene.fog.density=e.target.checked?0.012:0.004; });
+  $('tgAtmo').addEventListener('change', e=>{ atmo.visible=haze.visible=clouds.visible=orbitHaloGroup.visible=e.target.checked; scene.fog.density=e.target.checked?0.012:0.004; });
   $('tgReduce').addEventListener('change', e=>{ reduceMotion=e.target.checked; stage.classList.toggle('reduce',reduceMotion); if(reduceMotion){ controls.autoRotate=false; stopPlay(); stopTour(); } });
   const radial=$('radial'); $('rCore').addEventListener('click',()=>{ const o=radial.classList.toggle('open'); $('rCore').setAttribute('aria-expanded',o); });
   $('rRotate').addEventListener('click',()=>{ controls.autoRotate=!controls.autoRotate; controls.autoRotateSpeed=0.6; });
@@ -743,7 +758,7 @@ async function init3D(){
     const dt=Math.min(0.1,(now-last)/1000); last=now; const t=now/1000;
     if (tween){ const k=Math.min(1,(now-tween.s)/tween.d), e=easeInOut(k); camera.position.lerpVectors(tween.p0,tween.p1,e); controls.target.lerpVectors(tween.t0,tween.t1,e); if(k>=1) tween=null; }
     controls.update();
-    if(!reduceMotion){ clouds.rotation.y += dt*0.004; earth.rotation.y += dt*0.0007;
+    if(!reduceMotion){ orbitHaloGroup.rotation.y += dt*.045; clouds.rotation.y += dt*0.002; earth.rotation.y += dt*0.00025;
       for (let k=0;k<active.length;k++){ const i=active[k]; const pulse=1+Math.sin(t*2.2+phases[k]*6.283)*0.08; const [x,z]=toXZ(P.lon[i],P.lat[i]); tmpM.compose(tmpP.set(x,surfH[i],z),tmpQ.identity(),tmpS.set(pulse,baseH[k],pulse)); dots.setMatrixAt(k,tmpM); const s=(.22+frpLog(P.frp[i])*.4)*(1+Math.sin(t*2.2+phases[k]*6.283)*.25); tmpM.compose(tmpP.set(x,surfH[i]+.01,z),tmpQ,tmpS.set(s,1,s)); halos.setMatrixAt(k,tmpM); }
       if(active.length){ dots.instanceMatrix.needsUpdate=true; halos.instanceMatrix.needsUpdate=true; }
       glowTube.material.opacity = .22 + Math.sin(t*0.9)*.06; }
