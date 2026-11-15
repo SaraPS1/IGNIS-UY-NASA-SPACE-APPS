@@ -938,7 +938,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             playButton.disabled=scientific&&replayKind==='current';
             speedSelect.disabled=scientific&&replayKind==='current';
             if(!scientific)playButton.textContent=playing?'⏸ Pause':'▶ Play';
-            else playButton.textContent=replayKind==='current'?'Current UTC':playing?'⏸ Pause':'▶ Play';
+            else playButton.textContent=replayKind==='current'?'▶ Replay':playing?'⏸ Pause':'▶ Play';
           }}
           function replayPass(kind){{
             const pass=trackedPass(kind);
