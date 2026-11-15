@@ -51,7 +51,7 @@ class IgnisVisualSmokeTests(unittest.TestCase):
         self.assertIn("if has:", dashboard)
         self.assertIn("No observations loaded", dashboard)
         self.assertIn("map_fn(mapped", content)
-        self.assertIn("The absence of records", content)
+        self.assertIn("The absence of records", dashboard)
 
     def test_official_links(self):
         content = (ROOT / "ignis_visual.py").read_text(encoding="utf-8")
