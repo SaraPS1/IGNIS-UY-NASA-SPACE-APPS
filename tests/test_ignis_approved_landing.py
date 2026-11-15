@@ -40,7 +40,7 @@ class PremiumLandingReferenceTests(unittest.TestCase):
         self.assertIn("on_click=navigate",self.visual)
 
     def test_sidebar_values_do_not_change(self):
-        self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[0])',self.main)
+        self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[1])',self.main)
         self.assertIn('key=f"ignis_nav_{i:02d}"',self.main)
         self.assertIn("def _ignis_navigate_to(section: str)",self.main)
         self.assertNotIn("current_section = st.radio(",self.main)
