@@ -3,7 +3,7 @@ name: IGNIS cinematic observatory validation
 on:
   push:
     branches:
-      - "feat/ignis-cinematic-observatory-v2"
+      - "feat/ignis-cinematic-mainline"
   pull_request:
     paths:
       - "ignis_dashboard.py"
