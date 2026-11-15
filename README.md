@@ -1,66 +1,153 @@
 # IGNIS UY — From Space to Ground Evidence
 
-**Independent scientific research prototype** that organizes NASA FIRMS thermal anomaly observations in Uruguay, explores matches between MODIS and VIIRS, and compares satellite records with documentary and ground evidence.
+**NASA Space Apps Challenge 2026 · Independent geospatial research prototype · Uruguay**
 
-> **Important:** A FIRMS detection does not represent a unique wildfire or confirm burned area. **Quantitative** cross-sensor harmonization and operational validation remain pending.
+IGNIS UY organizes NASA FIRMS MODIS and VIIRS thermal anomaly observations, explores spatial and temporal correspondences between instruments, and supports experimental comparison against documentary and ground evidence. The project combines historical maps, calendars, 3D visualizations, quality checks and scientific reporting.
 
-## Super Intelligence (SI) use — public disclosure
+> **Scientific limitation:** A satellite thermal anomaly is **not** a confirmed wildfire, a unique fire event, or measured burned area. The 2000–2026 imported archive is **partial and not normalized for satellite coverage**. IGNIS UY does **not** currently publish a validated quantitative MODIS–VIIRS harmonized series, operational fire alerts or confirmed ground matches.
 
-**SI tools were used in this project.** Generative AI/large-language-model tools assisted code design, implementation, debugging, documentation and illustrative interface artwork. The Home artwork is displayed with a visible **SI-generated illustration** watermark. Original NASA FIRMS MODIS/VIIRS source observations are **not SI-generated**; SI-assisted code processes, filters and summarizes external data. The exported IGNIS Master dataset records SI-assisted processing and source provenance in `manifest.json`.
+## Project links — start here
 
-No AI-generated audio or video has been identified in the app. Any future SI audio requires descriptive-text **and** metadata acknowledgement; SI images/videos require **visible watermarks**, including on standalone exported media. The project must not use NASA insignia, flags or mission-identifier design elements in SI-generated content. IGNIS UY is independent; references to NASA FIRMS identify the public data source, not a NASA endorsement.
+| Resource | Link | Status and purpose |
+| --- | --- | --- |
+| **GitHub project and source** | [IGNIS UY repository](https://github.com/SaraPS1/IGNIS-UY-NASA-SPACE-APPS) | Public source, methods, tests and documentation |
+| **Official short demo** | [Seven-slide presentation on Canva](https://canva.link/ta32fjqimlmpur6) | Team-provided link; **verify anonymous access and latest exported revision** before final submission |
+| **Additional files and reports** | [IGNIS UY project Drive folder](https://drive.google.com/drive/folders/1GAA0pQ4IglPLJJnTzFsizzOmaVGKQjy2) | Supporting documents; anonymous access has **not been independently verified** |
+| **Long-form website walkthrough** | To be added after recording | Approximately five-minute **supplemental guide**, not the required short demo |
+| **Live Streamlit app** | Link pending verification | A stable public deployment URL has **not been independently verified**; use local instructions below |
 
-See [detailed SI-use disclosure and release checklist](docs/SI_USAGE.md) and [machine-readable metadata](docs/si_usage.json). **A full binary-asset branding/provenance review is still required before competition submission.**
+**For judges:** The source code can be inspected here without relying on the Drive folder. The official competition demo is separate from the optional long-form walkthrough. A GitHub repository is **not by itself proof** that a deployed Streamlit app is running.
 
-## Implemented features
+## The challenge and our approach
 
-- Import NASA FIRMS MODIS/VIIRS CSV/ZIP files, deduplicate observations, and manually export/reimport the IGNIS Master dataset.
-- Query recent NASA FIRMS observations on demand with a MAP_KEY.
-- Generate maps, time series, instrument-specific calendars, and scientific PDF reports.
-- Exploratory matching by **UTC day and 0.20° grid cell**; alternative matching within **5 km and 30 minutes** (configurable).
-- **Grid sensitivity laboratory:** compare 0.05°, 0.10°, 0.20°, and 0.40° using the same subset and export results to CSV.
-- Recent monitoring including NOAA-21; historical import of **mixed** files with per-record instrument identification.
-- **Alternative V5 scientific matching:** unique matches across UTC midnight and export of paired dates, distances, and original FRP.
-- **FIRMS quality audit:** coordinates, dates, times, FRP, possible duplicates, and a monthly inventory warning about unverified coverage.
-- **NASA Worldview:** links for specific dates and locations from the Atlas and NRT monitoring.
-- Documentary traceability, experimental NASA–Fire Service/PAIF–SINAE/MIRA associations, contributions, and the **rule-based** Ask IGNIS assistant (not an LLM).
+MODIS and VIIRS observe thermal activity with different detection sensitivity, spatial resolution, observation times and platform availability. Comparing raw counts without accounting for these differences can misrepresent historical patterns.
 
-Files available during a session do not guarantee complete temporal or instrument coverage. Outputs **are not official alerts**.
+IGNIS UY contributes a **transparent, reproducible exploratory workflow**, not a finished sensor calibration. It imports and audits records, organizes them by UTC timestamp and instrument, tests candidate MODIS–VIIRS associations, displays an observation calendar and supports provisional satellite–ground evidence associations.
 
-## Getting started
+The application aims to make these uncertainties understandable rather than conceal them.
 
-Python 3.11 is recommended.
+## Explore the website
+
+| Section | Working capability | How to interpret it |
+| --- | --- | --- |
+| **Home · Discover IGNIS** | Project introduction and navigation | SI-generated artwork is illustrative, not measured imagery |
+| **Data upload** | Import NASA FIRMS CSV/ZIP and IGNIS Master ZIP; overview and data checks | No guaranteed complete archive or persistent global database |
+| **Dashboard** | Observation metrics and full-width interactive 3D Uruguay scene | Terrain effects and some orbital elements are illustrative |
+| **Historical Archive 2000–2026** | Filter imported observations and view time-series/maps | Scope refers to available imports, not verified continuous coverage |
+| **MODIS–VIIRS Harmonization** | Grid-cell/day and spatial–temporal candidate matching; sensitivity analysis | Candidates do not prove the same fire or calibrated equivalence |
+| **Uruguay Map** | 3D view by default; optional 2D zoomable and density maps | Coordinates display observations, not confirmed events |
+| **Alerts & Traceability** | Statistical screening and documentary research | Not operational wildfire warnings |
+| **Final Calendar** | Organize imported observations by date/sensor | No record is not proof of no fire |
+| **PDF Report** | Export scientific summaries | Reports must be read with source and coverage caveats |
+| **Recent Monitoring** | Optional recent FIRMS API queries | Requires configured key; NRT differs from definitive archived products |
+| **3D Earth & Satellites** | Interactive globe and satellite context | Scientific SGP4 positions require valid TLEs; otherwise explicitly illustrative |
+
+The project also includes experimental satellite–ground fusion and **Ask IGNIS**, a deterministic Python/Pandas rule-based assistant for loaded data. **Ask IGNIS is not a generative LLM at runtime** and does not browse live news on its own.
+
+## What the numbers actually mean
+
+The team presentation describes an **imported sample of 17,946 records from 27 years**. These are sample-dependent counts from a particular IGNIS Master dataset, **not universal NASA totals or a continuously maintained historical census**. Other uploads and filters will produce different totals.
+
+Two complementary exploratory methods are implemented:
+
+1. **Cell/day co-occurrence:** Group MODIS and VIIRS observations by UTC date and a configurable geographic grid. The illustrative base grid is **0.20°**, not a native MODIS/VIIRS footprint. One matching cell/day is counted once even if multiple observations occur within it.
+2. **Distance/time candidates:** Compare observation coordinates and acquisition times; reference parameters include **5 km** and **30 minutes**, adjustable in the interface. Candidate associations are not independent fire confirmations.
+
+The team sample reported **14 candidate coincident grid cell-days** and **2 candidate distance/time pairs** for its selected example. Those are **different definitions and should not be added together** or called 16 fires.
+
+The pilot space-to-ground demonstration uses **real imported FIRMS observations and two explicitly synthetic ground/institutional CSV test sources**. The demonstration shows that the matching software operates, **not** that institutional ground evidence has been independently verified.
+
+See [scientific methodology](docs/METODO_CIENTIFICO.md), [validation and limitations](docs/VALIDACION_Y_LIMITES.md) and [V5 quality and matching](docs/V5_CALIDAD_Y_PAREO.md).
+
+## Run IGNIS UY
+
+**Prerequisites:** Python 3.11 recommended, internet access for CDN-based 3D dependencies and optional API functionality.
 
 ```bash
+git clone https://github.com/SaraPS1/IGNIS-UY-NASA-SPACE-APPS.git
+cd IGNIS-UY-NASA-SPACE-APPS
+python -m venv .venv
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+# macOS/Linux: source .venv/bin/activate
 python -m pip install -r requirements.txt
 streamlit run principal.py
 ```
 
-Configure `FIRMS_MAP_KEY` in Streamlit secrets for recent queries (see `.streamlit/secrets.toml.example`). **Never commit API keys to the repository.** Historical ZIP/CSV files are uploaded through the interface. Download the IGNIS Master dataset as a backup for the next session.
+The Streamlit application normally opens at **http://localhost:8501**. To explore real data, upload a NASA FIRMS CSV/ZIP or the team's exported Master ZIP under **Data upload**. The default empty state should **not** be misrepresented as a fully populated archive.
 
-### Scientific tests
+For optional recent NASA FIRMS API queries, configure `FIRMS_MAP_KEY` in Streamlit secrets as described in `.streamlit/secrets.toml.example`. Never commit a MAP_KEY or access token. The Master dataset is manually downloaded and reimported to preserve work across sessions.
+
+### Tests
 
 ```bash
 python -m unittest discover -s tests -p "test_ignis_sensibilidad.py" -v
 python -m unittest discover -s tests -p "test_ignis_pareo_calidad_v5.py" -v
+python -m unittest discover -s tests -p "test_3d_panel_no_overlap.py" -v
 ```
 
-Synthetic sensitivity tests do not replace validation against confirmed wildfires.
+GitHub Actions additionally tests scientific methods, UI compatibility, source fidelity, 3D rendering paths and SI documentation. **Passing automated tests does not replace real-browser testing or field validation.**
 
-## Documentation and attribution
+## Suggested five-minute website tour (supplemental)
 
-| Document | Contents |
-|---|---|
-| [Data sources](docs/FUENTES_DATOS.md) | NASA FIRMS and other services: implemented, pilot, or proposed |
-| [Scientific methodology](docs/METODO_CIENTIFICO.md) | Formulas, criteria, discretization, matching, and calibration requirements |
-| [Validation and limitations](docs/VALIDACION_Y_LIMITES.md) | Cases, testing scope, biases, and outstanding uncertainty |
-| [V5 quality and matching](docs/V5_CALIDAD_Y_PAREO.md) | Per-record import, midnight matching, data inventory, and Worldview |
-| [AI use](docs/USO_DE_IA.md) | Actual Ask IGNIS capabilities and a tool-use log for the team to complete |
-| [Roadmap](docs/HOJA_DE_RUTA.md) | Steps toward verified coverage, quantitative harmonization, and NASA GIBS visualization |
-| [Contributions](TEAM_IGNIS_CONTRIBUCIONES.md) | Public discussions through GitHub Issues |
+| Time | Focus |
+| --- | --- |
+| 0:00–0:35 | Project purpose, thermal anomalies versus confirmed fires |
+| 0:35–1:15 | Upload a provenance-checked Master/FIRMS dataset |
+| 1:15–2:05 | Dashboard and interactive 3D layers/timeline |
+| 2:05–2:55 | Historical archive and candidate harmonization rules |
+| 2:55–3:40 | Uruguay 3D/2D maps and Final Calendar |
+| 3:40–4:25 | Traceability, experimental ground matching, Ask IGNIS |
+| 4:25–5:00 | PDF report, limitations, source and SI disclosures |
 
-**Data:** NASA [Fire Information for Resource Management System (FIRMS)](https://www.earthdata.nasa.gov/data/tools/firms), part of EOSDIS. MODIS and VIIRS observations are attributed to their respective sources. IGNIS UY is independent and is not an official NASA application or an indication of NASA endorsement.
+## Super Intelligence (SI) — transparent disclosure
 
-**Challenge status:** This version **does not** demonstrate a complete correction of discontinuities in the historical series caused by sensor changes. Detection counts are not normalized by observation coverage, and matching tests remain exploratory.
+**SI tools were used** to help design, write, debug and document Python/HTML/CSS/JavaScript, and to assist with visual illustrations and explanatory text. The team remains responsible for checking the work and scientific claims.
 
-The README and exported data document what the prototype actually does. Any future calibrated model must publish its methodology, out-of-sample tests, and uncertainty intervals before being presented as a scientific result.
+- **Generated artwork:** The website labels illustrative backgrounds **SI-generated illustration** and the team emblem **SI-generated logo**. Web overlays **do not embed watermarks into the raw image files**. Standalone images, exported graphics, slides and any generated videos must carry visible SI watermarks.
+- **Code and data:** SI-assisted data-processing code is disclosed in project documents and metadata exported with Master ZIP files. **NASA FIRMS satellite observations are externally sourced, not AI-generated measurements.**
+- **Audio/video:** No SI-generated audio or video was identified in the reviewed app. If any is used later, comply with applicable descriptive-text/metadata requirements for audio and visible-watermark requirements for video.
+- **Branding:** Do not include, recreate or modify NASA insignia, flags, mission logos or identifier designs in SI-generated art. Factual NASA FIRMS source attribution is not a claim of endorsement. The team must separately review all existing media and permissions before submission.
+
+Full details: [SI use and provenance](docs/SI_USAGE.md) · [Machine-readable SI disclosure](docs/si_usage.json) · [Ask IGNIS and tool-use notes](docs/USO_DE_IA.md).
+
+## NASA data, third-party libraries and attribution
+
+**Primary data source:** [NASA Fire Information for Resource Management System (FIRMS)](https://www.earthdata.nasa.gov/data/tools/firms), including externally supplied MODIS and VIIRS active-fire/thermal anomaly products. [FIRMS API](https://firms.modaps.eosdis.nasa.gov/api/) enables optional recent queries.
+
+**Tools and software:** [Python](https://www.python.org/), [Streamlit](https://streamlit.io/), [Pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/), [Plotly](https://plotly.com/python/), [Three.js](https://threejs.org/), [Folium](https://python-visualization.github.io/folium/), [Matplotlib](https://matplotlib.org/), [SciPy](https://scipy.org/), [ReportLab](https://www.reportlab.com/), [SGP4](https://pypi.org/project/sgp4/) and [Skyfield](https://rhodesmill.org/skyfield/). Versions and package requirements are in [requirements.txt](requirements.txt).
+
+**Other evidence sources:** Fire service/PAIF, SINAE/MIRA records and press references are **pilot/proposed external sources**, not a claim of an official data integration or agency endorsement. NASA POWER, EONET and GIBS are documented as proposed resources where not actually integrated; do not list proposed resources as successfully used in the final submission. Inspect [source inventory](docs/FUENTES_DATOS.md) for precise current statuses.
+
+**Intellectual property and release rights:** An open-source LICENSE file has **not been established** for this project. Do not assume unrestricted reuse of contributed graphics, external imagery or other materials. The team should verify contributor permissions and select a software license, if appropriate, **before** claiming the repository is open-source licensed. Independent NASA data attribution does not confer NASA endorsement.
+
+## What remains uncertain or unfinished
+
+- **Quantitative harmonization:** No demonstrated coverage-corrected, calibrated MODIS–VIIRS historical trend, sensor equivalence or validated uncertainty interval.
+- **Ground truth:** No completed external institutional validation or confirmed-fire detection rate; synthetic matching tests are identified.
+- **Completeness:** Some historical periods and instruments have partial uploads; missing observations are not zero events.
+- **Scientific map limits:** Approximate boundary/geometry may be used; density heatmaps show observation concentration, not burned area.
+- **Operational status:** Not for emergency dispatch, official alerting or predictive fire-risk claims.
+- **Deployment & public access:** The live Streamlit URL and anonymous access to the Canva/Drive assets should be checked by a team member in a logged-out browser before submission.
+- **SI compliance and attribution:** Final independent review of every binary image, presentation asset, video, logo and license is still required.
+- **Hackathon development provenance:** The team must accurately represent any work created before the challenge and confirm relevant eligibility requirements with organizers where applicable.
+
+## Documentation and team contributions
+
+| Document | Purpose |
+| --- | --- |
+| [Data sources](docs/FUENTES_DATOS.md) | Implemented versus pilot/proposed services and provenance |
+| [Scientific methodology](docs/METODO_CIENTIFICO.md) | Grid/day matching, proximity rules, temporal statistics and fusion |
+| [Validation and limitations](docs/VALIDACION_Y_LIMITES.md) | Evidence, biases, missing validation and known risks |
+| [V5 quality and matching](docs/V5_CALIDAD_Y_PAREO.md) | Record identification, UTC matching and inventory checks |
+| [SI provenance](docs/SI_USAGE.md) | Code, data, media and branding requirements |
+| [Ask IGNIS/AI notes](docs/USO_DE_IA.md) | Rule-based assistant and SI tool-use log |
+| [Roadmap](docs/HOJA_DE_RUTA.md) | Future calibrated methods and validation |
+| [Team contributions](TEAM_IGNIS_CONTRIBUCIONES.md) | Questions and community contribution workflow |
+
+Team contribution document: [TEAM_IGNIS_CONTRIBUCIONES.md](TEAM_IGNIS_CONTRIBUCIONES.md).
+
+**Team members named in the submitted project presentation:** Nahuel Sanabria, Sara Pastor, Danna Rodríguez, Jordan Danielli and Fabricio Saravia. Team identity and affiliations should be confirmed by the participants before final submission.
+
+---
+
+**Independent research prototype — no NASA endorsement.** Satellite thermal detections are not confirmed fires; exploratory harmonization and associations are not validated operational products. Publication of this repository does not by itself establish competition eligibility or complete SI-media compliance.
