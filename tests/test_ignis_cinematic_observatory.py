@@ -84,6 +84,21 @@ class CinematicObservatoryTests(unittest.TestCase):
         self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[1])', self.app_source)
         self.assertIn("Uruguay · Geospatial Observatory", self.dashboard_source)
 
+    def test_focus_view_keeps_timeline_and_keyboard_access(self):
+        # Intermediate presentation mode: less clutter without losing temporal controls.
+        for token in (
+            'id="focusBtn"', 'aria-pressed="false"',
+            'function setFocus(on)', "stage.classList.toggle('focus'",
+            "$('focusBtn').addEventListener('click'",
+            "#stage.focus:not(.cine) #tl",
+            ".focus:not(.cine) #layers",
+            "ev.key.toLowerCase()!=='p'",
+            "target.isContentEditable",
+            "if(on)setFocus(false); stage.classList.toggle('cine'",
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token, self.template)
+
     def test_scene_javascript_parses_in_node(self):
         if not shutil.which("node"):
             self.skipTest("Node.js unavailable")
