@@ -686,6 +686,8 @@ async function init3D(){
   }
   let orbitalMode='calculated',replayMode='current',replayTrack=null;
   let orbitalTimeMs=Date.now(),replayRunning=false,selectedOrbit=0;
+  selectedOrbit=Math.max(0,SATS.findIndex(s=>s.mode==='sgp4'));
+  if(SATS.length)orbitSelector.value=String(selectedOrbit);
   orbitHaloGroup.visible=false;
   function chosenSatellite(){return SATS[selectedOrbit]||null;}
   function chosenPass(which){
@@ -741,7 +743,7 @@ async function init3D(){
         replayMode==='last'?'Last ground-track replay':'Next ground-track replay';
       orbitClock.textContent=prefix+' · '+new Date(orbitalTimeMs).toISOString().replace('.000Z','Z');
       const ev=chosenPass(replayMode);
-      orbitProvenance.textContent='CelesTrak TLE '+(sat.tle_epoch||'unknown')+
+      orbitProvenance.textContent='CelesTrak TLE epoch '+(sat.tle_epoch||'unknown')+(sat.fetched_at?' · fetched '+sat.fetched_at:'')+
         (ev?' · crossing '+ev.start_utc+' to '+ev.end_utc:'')+
         ' · ground-track ≠ sensor coverage';
     }
