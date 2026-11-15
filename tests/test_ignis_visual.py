@@ -48,7 +48,7 @@ class IgnisVisualSmokeTests(unittest.TestCase):
         self.assertIn("render_premium_dashboard(", content)
         dashboard = (ROOT / "ignis_dashboard.py").read_text(encoding="utf-8")
         self.assertIn("No demonstration figures are ever injected", dashboard)
-        self.assertIn("if has:", dashboard)
+        self.assertIn("if not has:", dashboard)
         self.assertIn("No observations loaded", dashboard)
         self.assertIn("render_spatial_pair(mapped", content)
         self.assertIn("The absence of records", dashboard)
