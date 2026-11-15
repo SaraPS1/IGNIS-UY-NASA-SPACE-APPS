@@ -666,7 +666,7 @@ async function init3D(){
     const TR=120, trailPos=new Float32Array(TR*3), trailCol=new Float32Array(TR*3); const tg=new THREE.BufferGeometry(); tg.setAttribute('position',new THREE.BufferAttribute(trailPos,3)); tg.setAttribute('color',new THREE.BufferAttribute(trailCol,3));
     const trail=new THREE.Line(tg, new THREE.LineBasicMaterial({ vertexColors:true, transparent:true, opacity:.32, blending:THREE.AdditiveBlending, depthWrite:false })); scene.add(trail);
     const col=new THREE.Color(s.color); for(let i=0;i<TR;i++){ const f=i/TR; trailCol[i*3]=col.r*f; trailCol[i*3+1]=col.g*f; trailCol[i*3+2]=col.b*f; }
-    const lbl=document.createElement('div'); lbl.innerHTML=`${s.name}<small>${s.sensor} · illustrative</small>`; lbl.addEventListener('click',()=>showSatInfo(s)); labelsEl.appendChild(lbl);
+    const lbl=document.createElement('div'); lbl.textContent=s.name; const sub=document.createElement('small'); sub.textContent=s.sensor+' · '+(s.mode==='sgp4'?'SGP4':'unavailable'); lbl.appendChild(sub); lbl.addEventListener('click',()=>showSatInfo(s)); labelsEl.appendChild(lbl);
     body.userData={kind:'sat',data:s}; g.children.forEach(ch=>{ if(!ch.userData.kind) ch.userData={kind:'sat',data:s}; });
     satGroup.add(g); satObjs.push({ s, g, pivot, beam, beamEdge, trail, trailPos, TR, lbl, t:s.phase });
   }
@@ -840,7 +840,17 @@ async function init3D(){
   /* ---------- info / tooltip ---------------------------------------------- */
   const info=$('info'), tip=$('tip');
   function showInfo(html){ info.innerHTML = html + '<button id="infoClose">Close</button>'; info.classList.add('show'); stage.classList.add('inspect'); $('infoClose').onclick=()=>{info.classList.remove('show');stage.classList.remove('inspect');}; }
-  function showSatInfo(s){ showInfo(`<div class="ttl">${s.name} · ${s.sensor}</div><div class="kv"><span>Instrument</span><span>${s.sensor}</span><span>Orbit shown</span><span>Schematic animation</span><span>Role</span><span>${s.sensor==='MODIS'?'Terra/Aqua MODIS thermal anomalies (1 km)':'VIIRS I-band thermal anomalies (375 m)'}</span></div><div class="note">This orbit is illustrative and is not a historical overpass. Verified TLE-based trajectories are available in “3D Earth & Satellites”.</div>`); }
+  function showSatInfo(s){
+    const detail=orbitalMode==='illustrative'?
+      'ILLUSTRATIVE DEMO — NOT REAL-TIME TRACKING':(s.status||'Unavailable');
+    const content='<div class="ttl">'+esc(s.name)+' · '+esc(s.sensor)+'</div>'+
+      '<div class="kv"><span>Trajectory</span><span>'+esc(detail)+'</span>'+
+      '<span>TLE epoch</span><span>'+esc(s.tle_epoch||'Unavailable')+'</span>'+
+      '<span>Selected UTC</span><span>'+esc(new Date(orbitalTimeMs).toISOString())+'</span>'+
+      '<span>Last ground-track crossing</span><span>'+esc(s.last_pass?.start_utc||'Unavailable')+'</span></div>'+
+      '<div class="note">Calculated subsatellite crossings are NOT instrument swath coverage or FIRMS detections. Visual satellite altitude is exaggerated.</div>';
+    showInfo(content);
+  }
   function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function pointHtml(i){
     const frp=P.frp[i]==null?'not available':esc(P.frp[i])+' MW';
@@ -916,7 +926,7 @@ async function init3D(){
   $('tgDep').addEventListener('change', e=>depGroup.visible=e.target.checked);
   $('tgCases').addEventListener('change', e=>caseGroup.visible=e.target.checked);
   $('tgAssoc').addEventListener('change', e=>assocGroup.visible=e.target.checked);
-  $('tgAtmo').addEventListener('change', e=>{ atmo.visible=haze.visible=clouds.visible=orbitHaloGroup.visible=e.target.checked; scene.fog.density=e.target.checked?0.012:0.004; });
+  $('tgAtmo').addEventListener('change', e=>{ atmo.visible=haze.visible=clouds.visible=e.target.checked;orbitHaloGroup.visible=e.target.checked&&orbitalMode==='illustrative'; scene.fog.density=e.target.checked?0.012:0.004; });
   $('tgReduce').addEventListener('change', e=>{ reduceMotion=e.target.checked; stage.classList.toggle('reduce',reduceMotion); if(reduceMotion){ controls.autoRotate=false; stopPlay(); stopTour(); } });
   const radial=$('radial'); $('rCore').addEventListener('click',()=>{ const o=radial.classList.toggle('open'); $('rCore').setAttribute('aria-expanded',o); });
   $('rRotate').addEventListener('click',()=>{ controls.autoRotate=!controls.autoRotate; controls.autoRotateSpeed=0.6; });
