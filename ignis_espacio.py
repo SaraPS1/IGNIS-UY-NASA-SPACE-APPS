@@ -131,47 +131,22 @@ def _utc_to_jd_utc(dt: datetime) -> float:
 
 
 def _generate_orbit_positions_from_tle(tle_text: str, steps: int = 80) -> List[Dict[str, float]]:
-    if not HAS_SGP4 or Satrec is None:
+    """Compatibility wrapper. Skyfield WGS84 + SGP4, never a stale TLE."""
+    from ignis_orbits import satellite_from_tle, valid_for_time, positions_at, step_times
+    pair = _parse_tle_pair(tle_text)
+    if not pair:
         return []
     try:
-        pair = _parse_tle_pair(tle_text)
-        if not pair:
+        sat = satellite_from_tle(pair, "IGNIS compatibility")
+        now = datetime.now(timezone.utc)
+        if not valid_for_time(sat, now):
             return []
-        sat = Satrec.twoline2rv(*pair)
-    except Exception:
+        interval = step_times(now, now + timedelta(minutes=100),
+                              max(1, int(6000 / max(1, steps - 1))))
+        return positions_at(sat, interval)
+    except (ValueError, TypeError, RuntimeError, ArithmeticError):
         return []
 
-    points: List[Dict[str, float]] = []
-    try:
-        ref_dt = datetime.now(timezone.utc)
-        for idx in range(steps):
-            # Un tramo orbital de 105 minutos, no 24 h unidos por una sola línea.
-            offset_minutes = idx * 105.0 / max(steps - 1, 1)
-            sample_dt = ref_dt + timedelta(minutes=offset_minutes)
-            jd_float = _utc_to_jd_utc(sample_dt)
-            jd_int = int(math.floor(jd_float))
-            jd_frac = jd_float - jd_int
-            error, position, _ = sat.sgp4(jd_int, jd_frac)
-            if error != 0 or position is None:
-                continue
-            x, y, z = position[:3]
-            norm = float(np.linalg.norm([x, y, z]))
-            if norm <= 0:
-                continue
-            theta = (280.46061837 + 360.98564736629 * (jd_float - 2451545.0) + 0.000387933 * ((jd_float - 2451545.0) ** 2)) % 360.0
-            r_theta = math.radians(theta)
-            x_rot = x * math.cos(r_theta) + y * math.sin(r_theta)
-            y_rot = -x * math.sin(r_theta) + y * math.cos(r_theta)
-            lat = math.degrees(math.asin(z / norm))
-            lon = math.degrees(math.atan2(y_rot, x_rot))
-            alt_km = norm - 6378.137
-            if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
-                continue
-            points.append({"lat": float(lat), "lon": float(lon), "alt_km": float(alt_km)})
-    except Exception:
-        return []
-
-    return points
 
 
 def _generate_simulated_orbit(name: str, steps: int = 80) -> List[Dict[str, float]]:
@@ -332,7 +307,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           }}
           #ignis-orbit-ctl {{
             position:absolute; left:50%; bottom:19px; transform:translateX(-50%);
-            z-index:10; display:flex; gap:8px; align-items:center;
+            z-index:10; display:flex; flex-wrap:wrap; justify-content:center; max-width:90%; gap:7px; align-items:center;
             padding:6px 12px; border-radius:10px; color:#c8e0ef;
             background:rgba(3,14,28,.76); font:12px Arial,sans-serif;
           }}
@@ -345,28 +320,32 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
       </head>
       <body>
         <div id="globe-shell">
-          <div id="ignis-globe-status">Preparando globo 3D...</div>
+          <div id="ignis-globe-status">Preparing 3D globe…</div>
           <div class="ignis-globe-watermark">
-            IGNIS UY <span>· EXPLORADOR 3D</span>
+            IGNIS UY <span>· 3D ORBITAL EXPLORER</span>
           </div>
           <div class="ignis-globe-help">Drag to rotate · Scroll to zoom · Hover over a column</div>
           <div id="ignis-tip"></div>
           <div id="ignis-legend">
-            <b>Potencia radiativa (FRP)</b><br>
+            <b>Fire Radiative Power (FRP)</b><br>
             <i style="background:#f7b267"></i>&lt; 25 MW<br>
             <i style="background:#ffd166"></i>25–70 MW<br>
             <i style="background:#ff9f43"></i>70–150 MW<br>
             <i style="background:#ff5d73"></i>&gt; 150 MW<br>
-            Altura de la columna ∝ FRP
+            Marker height ∝ FRP
           </div>
           <div id="ignis-orbit-ctl">
-            <button id="ignis-play" type="button">⏸ Pausa</button>
-            <select id="ignis-speed" aria-label="Velocidad orbital">
-              <option value="1">×1</option>
-              <option value="3" selected>×3</option>
-              <option value="8">×8</option>
+            <select id="ignis-tracked-sat" aria-label="Choose satellite to replay"></select>
+            <button id="ignis-last-pass" type="button">Last pass</button>
+            <button id="ignis-next-pass" type="button">Next pass</button>
+            <button id="ignis-current" type="button">Current UTC</button>
+            <button id="ignis-play" type="button">⏸ Pause</button>
+            <select id="ignis-speed" aria-label="Orbital playback speed">
+              <option value="1">1×</option>
+              <option value="10">10×</option>
+              <option value="60" selected>60×</option>
             </select>
-            <span id="ignis-orbit-clock"></span>
+            <span id="ignis-orbit-clock" aria-live="polite"></span>
           </div>
           <div id="globe-root"></div>
         </div>
@@ -617,49 +596,56 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             sprite.scale.set(.96,.24,1);
             return sprite;
           }}
-          let illustrativeOrbits = 0;
-          let tleOrbits = 0;
-          const movers = [];
-          if (payload.satellites && (showSatellites || showOrbits)) {{
-            payload.satellites.forEach((sat,index) => {{
-              const color = new THREE.Color(sat.color);
-              const valid = Array.isArray(sat.positions) && sat.positions.length >= 2;
-              const schematic = !valid;
-              const points = valid
-                ? sat.positions.map((p)=>latLonToVector3(
-                    p.lat,p.lon,2.2*(1+Math.max(0,Number(p.alt_km)||0)/6378.137)
-                  ))
-                : schematicOrbit(index);
-              if (showOrbits) {{
-                const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                const material = schematic
-                  ? new THREE.LineDashedMaterial({{color,transparent:true,opacity:.83,dashSize:.11,gapSize:.05}})
-                  : new THREE.LineBasicMaterial({{color,transparent:true,opacity:.95}});
-                const line = new THREE.Line(geometry,material);
-                if(schematic) line.computeLineDistances();
-                earthGroup.add(line);
-                if(schematic) illustrativeOrbits++;
-                else tleOrbits++;
+          let illustrativeOrbits=0;
+          let tleOrbits=0;
+          const movers=[];
+          const orbitalRecords=Array.isArray(payload.satellites)?payload.satellites:[];
+          if(showSatellites||showOrbits){{
+            orbitalRecords.forEach((sat,index)=>{{
+              const scientific=payload.orbit_mode==='sgp4';
+          const selectedUtc=payload.orbit_clock_mode==='selected_utc';
+          const selectedMs=Date.parse(payload.orbit_reference_utc||'');
+          const referenceUtcMs=()=>selectedUtc&&Number.isFinite(selectedMs)?selectedMs:Date.now();
+          document.getElementById('ignis-current').textContent=selectedUtc?'Selected UTC':'Current UTC';
+              const valid=scientific&&sat.mode==='sgp4'&&
+                Array.isArray(sat.positions)&&sat.positions.length>=2;
+              const demo=payload.orbit_mode==='illustrative';
+              if(!valid&&!demo)return; // Never fabricate real-mode positions.
+              const color=new THREE.Color(sat.color);
+              const points=valid? sat.positions.map((p)=>latLonToVector3(
+                p.lat,p.lon,2.2*(1+Math.max(0,Number(p.alt_km)||0)/6378.137)
+              )):schematicOrbit(index);
+              let orbitLine=null;
+              if(showOrbits){{
+                const geometry=new THREE.BufferGeometry().setFromPoints(points);
+                const material=demo?
+                  new THREE.LineDashedMaterial({{color,transparent:true,opacity:.48,dashSize:.08,gapSize:.09}}):
+                  new THREE.LineBasicMaterial({{color,transparent:true,opacity:.73}});
+                const line=new THREE.Line(geometry,material);
+                if(demo)line.computeLineDistances();
+                earthGroup.add(line);orbitLine=line;
+                if(demo)illustrativeOrbits++;else tleOrbits++;
               }}
-              if (showSatellites && points.length) {{
-                // En modo ilustrativo las posiciones se distribuyen: NO son posiciones reales.
-                const markerIndex=schematic
-                  ? Math.floor(points.length*((index*.18+.07)%1))
-                  : 0;
-                const markerPoint=points[markerIndex];
-                const marker=new THREE.Mesh(
-                  new THREE.SphereGeometry(.063,18,18),
-                  new THREE.MeshBasicMaterial({{color}})
-                );
-                marker.position.copy(markerPoint);
-                earthGroup.add(marker);
+              if(showSatellites&&points.length){{
+                const marker=new THREE.Group();
+                marker.add(new THREE.Mesh(
+                  new THREE.BoxGeometry(.09,.065,.13),
+                  new THREE.MeshStandardMaterial({{color:0xdbe8f6,metalness:.72,roughness:.28}})
+                ));
+                const panelMaterial=new THREE.MeshStandardMaterial({{
+                  color:0x174f9e,metalness:.52,roughness:.33,emissive:0x092250,emissiveIntensity:.4}});
+                for(const side of [-1,1]){{
+                  const panel=new THREE.Mesh(new THREE.BoxGeometry(.19,.015,.075),panelMaterial);
+                  panel.position.x=side*.145;marker.add(panel);
+                }}
+                marker.position.copy(points[0]);earthGroup.add(marker);
                 const labelText=sat.name.replace(' (MODIS)','').replace(' (VIIRS)','');
                 const label=makeSatelliteLabel(labelText,sat.color);
-                label.position.copy(markerPoint).multiplyScalar(1.06);
-                label.position.y += .10;
-                earthGroup.add(label);
-                movers.push({{ marker, label, points, schematic,
-                  phase: schematic ? ((index*.18+.07)%1) : 0 }});
+                label.position.copy(points[0]).multiplyScalar(1.06);
+                label.position.y+=.10;earthGroup.add(label);
+                movers.push({{marker,label,points,sat,orbitLine,schematic:demo,
+                  phase:demo?((index*.18+.07)%1):0,
+                  times:valid?sat.positions.map(p=>Date.parse(p.t)):[]}});
               }}
             }});
           }}
@@ -751,44 +737,135 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
 
           setStatus('Loading Blue/Black Marble textures…');
 
-          let playing = true;
-          let orbitSpeed = 3;
-          let orbitT = 0;
-          const playButton = document.getElementById('ignis-play');
-          const speedSelect = document.getElementById('ignis-speed');
-          const orbitClock = document.getElementById('ignis-orbit-clock');
-          const anyTle = movers.some((m) => !m.schematic);
-          if (!movers.length) {{
-            document.getElementById('ignis-orbit-ctl').style.display = 'none';
-          }}
-          playButton.addEventListener('click', () => {{
-            playing = !playing;
-            playButton.textContent = playing ? '⏸ Pausa' : '▶ Reproducir';
+          /* Scientific mode and last/next crossing replay use the SAME UTC
+             timestamped ephemerides as the Uruguay mission-control scene. */
+          const scientific=payload.orbit_mode==='sgp4';
+          let playing=!scientific,orbitT=0,orbitSpeed=60;
+          let orbitalUtcMs=referenceUtcMs(),replayKind='current',replayTrack=null;
+          let replaySelected=0;
+          const orbitClock=document.getElementById('ignis-orbit-clock');
+          const playButton=document.getElementById('ignis-play');
+          const speedSelect=document.getElementById('ignis-speed');
+          const satSelect=document.getElementById('ignis-tracked-sat');
+          orbitalRecords.forEach((sat,index)=>{{
+            const opt=document.createElement('option');opt.value=String(index);
+            opt.textContent=sat.name+' · '+(sat.mode==='sgp4'?'SGP4':'unavailable');
+            satSelect.appendChild(opt);
           }});
-          speedSelect.addEventListener('change', () => {{ orbitSpeed = Number(speedSelect.value) || 1; }});
-
-          function updateMovers() {{
-            movers.forEach((m) => {{
-              const n = m.points.length;
-              const pos = m.points[Math.min(n - 1, Math.floor(((orbitT + m.phase) % 1) * (n - 1)))];
+          if(!orbitalRecords.length){{
+            const opt=document.createElement('option');opt.textContent='No satellite records';
+            satSelect.appendChild(opt);
+          }}
+          if(orbitalRecords.length){{
+            replaySelected=Math.max(0,orbitalRecords.findIndex(s=>s.mode==='sgp4'));
+            satSelect.value=String(replaySelected);
+          }}
+          function trackedSat(){{return orbitalRecords[replaySelected]||null;}}
+          function trackedPass(kind){{
+            const sat=trackedSat();return scientific&&sat&&sat.mode==='sgp4'?sat[kind+'_pass']:null;
+          }}
+          function updatePassControls(){{
+            document.getElementById('ignis-last-pass').disabled=!trackedPass('last');
+            document.getElementById('ignis-next-pass').disabled=!trackedPass('next');
+            document.getElementById('ignis-current').disabled=!scientific;
+            playButton.disabled=scientific&&replayKind==='current';
+            if(!scientific)playButton.textContent=playing?'⏸ Pause':'▶ Play';
+            else playButton.textContent=replayKind==='current'?'Current UTC':playing?'⏸ Pause':'▶ Play';
+          }}
+          function replayPass(kind){{
+            const pass=trackedPass(kind);
+            if(!pass||!Array.isArray(pass.track)||pass.track.length<2)return;
+            replayKind=kind;
+            replayTrack=pass.track.map(p=>({{
+              t:Date.parse(p.t),
+              pos:latLonToVector3(p.lat,p.lon,2.2*(1+Math.max(0,p.alt_km)/6378.137))
+            }}));
+            orbitalUtcMs=replayTrack[0].t;playing=true;
+            movers.forEach(m=>{{
+              if(!m.orbitLine)return;
+              const same=m.sat===trackedSat();
+              m.orbitLine.visible=same;
+              if(same){{
+                m.orbitLine.geometry.dispose();
+                m.orbitLine.geometry=new THREE.BufferGeometry().setFromPoints(replayTrack.map(p=>p.pos));
+              }}
+            }});
+            updatePassControls();
+          }}
+          function restoreCurrent(){{
+            replayKind='current';replayTrack=null;orbitalUtcMs=referenceUtcMs();playing=false;
+            movers.forEach(m=>{{
+              if(!m.orbitLine)return;
+              m.orbitLine.geometry.dispose();
+              m.orbitLine.geometry=new THREE.BufferGeometry().setFromPoints(m.points);
+              m.orbitLine.visible=true;
+            }});
+            updatePassControls();
+          }}
+          document.getElementById('ignis-last-pass').onclick=()=>replayPass('last');
+          document.getElementById('ignis-next-pass').onclick=()=>replayPass('next');
+          document.getElementById('ignis-current').onclick=restoreCurrent;
+          satSelect.onchange=()=>{{replaySelected=Number(satSelect.value)||0;restoreCurrent();}};
+          playButton.onclick=()=>{{if(scientific&&replayKind==='current')return;
+            playing=!playing;updatePassControls();}};
+          speedSelect.onchange=()=>{{orbitSpeed=Number(speedSelect.value)||1;}};
+          updatePassControls();
+          function interpolateTime(points,times,ms){{
+            if(!points.length||ms<times[0]||ms>times[times.length-1])return null;
+            let lo=0,hi=times.length-1;
+            while(lo<hi){{const mid=(lo+hi)>>1;if(times[mid]<ms)lo=mid+1;else hi=mid;}}
+            if(lo===0)return points[0];
+            const a=times[lo-1],b=times[lo];
+            return points[lo-1].clone().lerp(points[lo],b===a?0:(ms-a)/(b-a));
+          }}
+          function updateMovers(){{
+            movers.forEach(m=>{{
+              let pos=null;
+              if(m.schematic){{
+                const n=m.points.length;
+                pos=m.points[Math.min(n-1,Math.floor(((orbitT+m.phase)%1)*(n-1)))];
+              }}else if(replayKind==='current'){{
+                pos=interpolateTime(m.points,m.times,orbitalUtcMs);
+              }}else if(m.sat===trackedSat()&&replayTrack){{
+                pos=interpolateTime(replayTrack.map(p=>p.pos),replayTrack.map(p=>p.t),orbitalUtcMs);
+              }}
+              const visible=!!pos;
+              m.marker.visible=visible;m.label.visible=visible;
+              if(!visible)return;
               m.marker.position.copy(pos);
               m.label.position.copy(pos).multiplyScalar(1.06);
-              m.label.position.y += .10;
+              m.label.position.y+=.10;
             }});
-            orbitClock.textContent = anyTle
-              ? 'Simulation: +' + Math.round(orbitT * 105) + ' min since the TLE request'
-              : 'Illustrative motion';
+            const sat=trackedSat();
+            if(!scientific){{
+              orbitClock.textContent='ILLUSTRATIVE MOTION · NOT REAL UTC TRACKING';
+            }}else if(!sat||sat.mode!=='sgp4'){{
+              orbitClock.textContent='Verified orbital position unavailable · '+(sat?.status||'No suitable TLE');
+            }}else{{
+              const prefix=replayKind==='current'?(selectedUtc?'SGP4 selected UTC estimate':'SGP4 current UTC estimate'):
+                replayKind==='last'?'Last ground-track replay':'Next ground-track replay';
+              orbitClock.textContent=prefix+' · '+new Date(orbitalUtcMs).toISOString().replace('.000Z','Z')+
+                ' · TLE epoch '+(sat.tle_epoch||'unknown')+' · NOT verified sensor coverage';
+            }}
           }}
-
-          function animate() {{
+          let priorFrame=performance.now();
+          function animate(){{
             requestAnimationFrame(animate);
-            if (playing && movers.length) {{
-              orbitT = (orbitT + 0.00035 * orbitSpeed) % 1;
+            const now=performance.now(),delta=Math.min(0.12,(now-priorFrame)/1000);
+            priorFrame=now;
+            if(scientific){{
+              if(replayKind==='current')orbitalUtcMs=referenceUtcMs();
+              else if(playing&&replayTrack){{
+                orbitalUtcMs+=delta*1000*orbitSpeed;
+                const end=replayTrack[replayTrack.length-1].t;
+                if(orbitalUtcMs>=end){{orbitalUtcMs=end;playing=false;updatePassControls();}}
+              }}
+            }}else if(playing&&movers.length){{
+              orbitT=(orbitT+delta*.025*orbitSpeed)%1;
             }}
             updateMovers();
-            // Rotar la cámara y no la textura: las detecciones permanecen georreferenciadas.
             controls.update();
-            renderer.render(scene, camera);
+            renderer.render(scene,camera);
           }}
           animate();
           const orbitStatus = (showOrbits && illustrativeOrbits > 0)
@@ -895,9 +972,29 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
             orbit_mode = st.radio(
                 "Trajectory source",
                 ["Illustrative trajectories", "Current TLE data"],
-                index=0, key="ignis_orbit_source",
+                index=1, key="ignis_orbit_source",
                 help="Current TLE data cannot reconstruct orbits on historical FIRMS observation dates.",
             )
+
+            st.caption("The FIRMS observation date does not change orbital UTC.")
+            orbit_clock_mode = st.radio(
+                "Orbital UTC clock", ["Current UTC", "Selected UTC"],
+                index=0, key="ignis_orbit_clock_mode",
+                help="Use a current TLE only near its epoch. Distant historical dates require archived elements.",
+            )
+            if orbit_clock_mode == "Selected UTC":
+                now_utc = datetime.now(timezone.utc)
+                orbital_date = st.date_input(
+                    "Orbital date (UTC)", now_utc.date(), key="ignis_orbit_custom_date")
+                orbital_time = st.time_input(
+                    "Orbital time (UTC)", now_utc.time().replace(microsecond=0),
+                    key="ignis_orbit_custom_time")
+                st.session_state["ignis_orbit_selected_utc"] = datetime.combine(
+                    orbital_date, orbital_time, tzinfo=timezone.utc).isoformat()
+                st.caption("A historical TLE archive is not connected. Distant dates correctly show unavailable.")
+            else:
+                st.session_state.pop("ignis_orbit_selected_utc", None)
+
         with st.container(border=True):
             st.caption("DATA LOADED IN THIS SESSION")
             q1, q2 = st.columns(2, gap="small")
@@ -932,14 +1029,30 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         satellite_filter=selected_satellite,
     )
 
-    # La carga de TLE se hace por solicitud explícita. El modo normal no accede
-    # a CelesTrak y el globo abre sin depender de esa red externa.
+    # Shared SGP4 source for both 3D views. FIRMS historical dates are separate.
+    from ignis_orbits import shared_bundle
     use_live_tle = orbit_mode == "Current TLE data"
     if use_live_tle:
-        with st.spinner("Loading current TLE data from CelesTrak…"):
-            satellites = _build_satellite_payload(use_live_tle=True)
+        bundle = shared_bundle()
+        satellites = [
+            {
+                "name": item["name"], "sensor": item["sensor"],
+                "color": item["color"], "mode": item["mode"],
+                "positions": item["track"],
+                "last_pass": item["last_pass"], "next_pass": item["next_pass"],
+                "source": item["source"], "tle_epoch": item.get("tle_epoch"),
+                "status": item.get("status", "Unavailable"),
+            }
+            for item in bundle["satellites"]
+        ]
     else:
-        satellites = _build_satellite_payload(use_live_tle=False)
+        # Explicit illustrative opt-in only. Never attach a real pass timestamp.
+        bundle = {"reference_utc": None, "pass_definition": "illustrative demo"}
+        satellites = [
+            {**item, "mode": "illustrative", "last_pass": None,
+             "next_pass": None, "tle_epoch": None}
+            for item in _build_satellite_payload(use_live_tle=False)
+        ]
 
     config = {
         "region": selected_region,
@@ -950,6 +1063,9 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         "show_clouds": show_clouds,
         "earth_visualization": earth_visualization,
         "satellites": satellites,
+        "orbit_mode": "sgp4" if use_live_tle else "illustrative",
+        "orbit_reference_utc": bundle["reference_utc"],
+        "orbit_clock_mode": bundle.get("clock_mode", "current_utc"),
         "hotspots": hotspots,
         "hotspots_total": int(len(filtered_frame)),
         "outline": _uruguay_outline(),
@@ -962,7 +1078,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         count = len(filtered_frame)
         st.caption(
             f"**{count:,} thermal observations** for the selected date and sensor. "
-            "Orbit mode: current TLE data if requested; otherwise illustrative "
+            "Orbit mode: current TLE estimates by default; optionally illustrative "
             "trajectories. Drag to rotate the globe and scroll "
             "to zoom in."
         )

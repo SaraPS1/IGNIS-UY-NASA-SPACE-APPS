@@ -101,7 +101,7 @@ class SceneHtmlTests(unittest.TestCase):
                       "id=\"tgBeams\"", "id=\"tgAtmo\"", "id=\"tgOrbits\"", "id=\"tgReduce\"",
                       "id=\"slider\"", "id=\"play\"", "id=\"speed\"", "id=\"radial\"", "id=\"rCine\"", "id=\"rFull\"",
                       "id=\"flat\"", "start2D(", "prefers-reduced-motion", "InstancedMesh",
-                      "not confirmed fires", "Illustrative relief", "schematic orbits",
+                      "not confirmed fires", "Illustrative relief", "ILLUSTRATIVE ORBITAL ANIMATION",
                       "No imported observations for this interval"):
             self.assertIn(token, self.html, token)
 

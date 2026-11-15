@@ -737,6 +737,11 @@ if current_section==NAV_PAGES[4]:
     if sample.empty:st.info('Import the Master dataset or upload NASA FIRMS ZIP files to view historical records.')
     else:
         x,y,z=st.columns(3);x.metric('Records in selection',f'{len(sample):,}');y.metric('Years with records',sample.anio.nunique());z.metric('Sensors present',sample.instrumento.nunique())
+        st.markdown("#### 3D historical archive · Uruguay")
+        from ignis_spatial import render_spatial_3d
+        render_spatial_3d(sample, year=selected, height=580)
+        st.caption("Orbital tracking uses current UTC and is independent of the selected historical FIRMS year.")
+
         sensors=sorted(sample.instrumento.unique())
         for i,sensor in enumerate(sensors):heatmap_mensual(sample[sample.instrumento==sensor],sensor,f'historico_mensual_{i}')
         st.subheader('Summer seasons · previous December plus January/February')
@@ -941,6 +946,13 @@ if current_section == NAV_PAGES[6]:
 
 if current_section==NAV_PAGES[7]:
     st.subheader('⚠️ Historical monitoring · signals requiring review')
+    if isinstance(sample, pd.DataFrame) and not sample.empty:
+        st.markdown("#### 3D scientific observation context")
+        from ignis_spatial import render_spatial_3d
+        render_spatial_3d(sample[sample.anio == selected] if selected is not None else sample,
+                          year=selected, height=550)
+        st.caption("Thermal anomalies are not verified emergencies; no risk probability or alert level is inferred.")
+
     st.markdown('''<style>
     .ignis-alerta{background:linear-gradient(110deg,#511c2b,#251629);border:2px solid #ff5265;border-radius:16px;padding:20px;margin:13px 0;box-shadow:0 0 20px rgba(255,57,86,.14)}
     .ignis-alerta h2{color:#ff7684!important;margin:0 0 7px 0;font-size:1.6rem;}

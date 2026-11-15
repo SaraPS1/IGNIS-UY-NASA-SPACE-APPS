@@ -740,7 +740,10 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
         with st.container(border=True):
             st.markdown("#### 🗺️ Geographic distribution")
             if not mapped.empty:
-                map_fn(mapped,"ignis_atlas_scientific")
+                from ignis_spatial import render_spatial_3d
+                render_spatial_3d(mapped, year=selected, height=620)
+                with st.expander("2D scientific chart / accessible fallback"):
+                    map_fn(mapped,"ignis_atlas_scientific")
             else:
                 st.info("No points for the selected period.")
                 _empty_uruguay_outline(base,"ignis_atlas_selection_empty")
