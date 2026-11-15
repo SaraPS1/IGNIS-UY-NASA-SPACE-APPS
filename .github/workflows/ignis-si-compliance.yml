@@ -1,0 +1,31 @@
+name: IGNIS SI disclosure checks
+
+on:
+  pull_request:
+    paths:
+      - "ignis_visual.py"
+      - "ignis_historico.py"
+      - "assets/ignis_scene3d.html"
+      - "README.md"
+      - "docs/SI_USAGE.md"
+      - "docs/si_usage.json"
+      - "tests/test_si_compliance.py"
+      - ".github/workflows/ignis-si-compliance.yml"
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  si-disclosure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate SI-use disclosure and watermark wiring
+        run: |
+          python -m unittest discover -s tests -p 'test_si_compliance.py' -v
+          python -m compileall -q ignis_visual.py ignis_historico.py
