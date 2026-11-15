@@ -350,7 +350,10 @@ def render_analytics(sample: pd.DataFrame, selected: Optional[int], map_fn: Call
         if view.empty:
             st.markdown('<div class="ig-empty"><b>No observations for the selected year</b>Pick another year in the sidebar; absence of records is not absence of fire.</div>', unsafe_allow_html=True)
         else:
-            map_fn(view, "ig_an_density")
+            from ignis_spatial import render_spatial_3d
+            render_spatial_3d(view, year=selected, height=550)
+            with st.expander("2D density chart / accessible fallback"):
+                map_fn(view, "ig_an_density")
 
     with tabs[2]:
         cal = sample.groupby(["anio", "mes"]).size().unstack(fill_value=0).reindex(columns=range(1, 13), fill_value=0).sort_index()
