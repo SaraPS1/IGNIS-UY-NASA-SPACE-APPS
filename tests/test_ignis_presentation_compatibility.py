@@ -30,7 +30,7 @@ class PresentationCompatibilityTests(TestCase):
         self.assertIn('st.session_state.setdefault("ignis_3d_explorer", False)',self.main)
         self.assertIn('st.toggle("3D Explorer", key="ignis_3d_explorer"',self.main)
 
-    def test_original_sidebar_buttons_stay_in_same_order(self):
+    def test_requested_sidebar_order_and_remaining_buttons_stay_stable(self):
         tree=ast.parse(self.main)
         nav=next(item for item in tree.body
                  if isinstance(item,ast.Assign)
@@ -38,7 +38,7 @@ class PresentationCompatibilityTests(TestCase):
         titles=ast.literal_eval(nav.value)
         self.assertEqual(len(titles),15)
         self.assertEqual([t.split(" ",1)[1] for t in titles[:7]],[
-            "Home · Discover IGNIS","Dashboard","Data upload",
+            "Home · Discover IGNIS","Data upload","Dashboard",
             "NASA Yearly Overview","Historical Archive 2000–2026",
             "MODIS–VIIRS Harmonization","Uruguay Map"])
         self.assertEqual(titles[9].split(" ",1)[1],"PDF Report")
