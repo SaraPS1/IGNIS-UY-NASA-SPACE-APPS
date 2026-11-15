@@ -293,3 +293,36 @@ except (ImportError, NameError):
     def cached_current_bundle(utc_text: str) -> dict[str, Any]:
         stamp = datetime.fromisoformat(utc_text.replace("Z", "+00:00"))
         return available_bundle(stamp)
+
+
+
+def shared_bundle() -> dict[str, Any]:
+    """Current UTC by default; optional selected UTC shared across all map pages.
+
+    Current TLEs are not back-propagated to distant historical dates: the
+    available_bundle policy returns unavailable for those times.
+    """
+    try:
+        from streamlit import session_state
+        if session_state.get("ignis_orbit_clock_mode") == "Selected UTC":
+            raw = session_state.get("ignis_orbit_selected_utc")
+            if raw:
+                return cached_selected_bundle(str(raw))
+    except (ImportError, KeyError, ValueError, RuntimeError):
+        pass
+    return current_bundle()
+
+
+try:
+    @st.cache_data(ttl=300, show_spinner=False)
+    def cached_selected_bundle(selected_iso: str) -> dict[str, Any]:
+        selected = datetime.fromisoformat(selected_iso.replace("Z", "+00:00"))
+        result = available_bundle(utc(selected))
+        result["clock_mode"] = "selected_utc"
+        return result
+except (ImportError, NameError):
+    def cached_selected_bundle(selected_iso: str) -> dict[str, Any]:
+        selected = datetime.fromisoformat(selected_iso.replace("Z", "+00:00"))
+        result = available_bundle(utc(selected))
+        result["clock_mode"] = "selected_utc"
+        return result
