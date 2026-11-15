@@ -4,10 +4,14 @@ on:
   push:
     branches:
       - "feat/ignis-cinematic-mainline"
+      - "feat/verified-orbital-sync-3d-maps"
   pull_request:
     paths:
       - "ignis_dashboard.py"
       - "ignis_scene3d.py"
+      - "ignis_espacio.py"
+      - "ignis_orbits.py"
+      - "tests/test_ignis_orbital_sync.py"
       - "assets/ignis_scene3d.html"
       - "ignis_historico.py"
       - "tests/test_ignis_scene3d_dashboard.py"
@@ -33,11 +37,12 @@ jobs:
         run: python -m pip install -r requirements.txt
       - name: Compile application modules
         run: |
-          python -m compileall -q -f ignis_historico.py ignis_dashboard.py ignis_scene3d.py ignis_visual.py ignis_espacio.py ignis_fusion_terrestre.py ignis_informe.py pages
+          python -m compileall -q -f ignis_historico.py ignis_dashboard.py ignis_scene3d.py ignis_orbits.py ignis_visual.py ignis_espacio.py ignis_fusion_terrestre.py ignis_informe.py pages
       - name: Run scene payload and design regression tests
         run: |
           python -m unittest discover -s tests -p 'test_ignis_scene3d_dashboard.py' -v
           python -m unittest discover -s tests -p 'test_ignis_cinematic_observatory.py' -v
+          python -m unittest discover -s tests -p 'test_ignis_orbital_sync.py' -v
       - name: Streamlit startup smoke test with empty dataset
         run: |
           python - <<'PY'
