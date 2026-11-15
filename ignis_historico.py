@@ -495,18 +495,18 @@ NAV_PAGES = [
     "✨ Home · Discover IGNIS",
     "🏠 Dashboard",
     "📂 Data upload",
-    "📊 NASA yearly overview",
-    "📚 Historical archive 2000–2026",
-    "🔄 MODIS–VIIRS harmonization",
-    "🗺️ Map of Uruguay",
-    "⚠️ Alerts and traceability",
-    "🗓️ Final calendar",
-    "📄 PDF report",
-    "🛰️ Recent monitoring",
-    "🌐 3D Earth and satellites",
-    "🤖 ASK IGNIS",
-    "🌎 Satellite–ground fusion",
-    "💬 Team IGNIS · Questions and contributions",
+    "📊 NASA Yearly Overview",
+    "📚 Historical Archive 2000–2026",
+    "🔄 MODIS–VIIRS Harmonization",
+    "🗺️ Uruguay Map",
+    "⚠️ Alerts & Traceability",
+    "🗓️ Final Calendar",
+    "📄 PDF Report",
+    "🛰️ Recent Monitoring",
+    "🌐 3D Earth & Satellites",
+    "🤖 Ask IGNIS",
+    "🌎 Satellite–Ground Fusion",
+    "💬 Team & Contributions",
 ]
 
 def _ignis_navigate_to(section: str) -> None:
@@ -541,7 +541,7 @@ with st.sidebar:
     # El botón de cada sección tiene una clave única. No dependemos de la
     # estructura interna de st.radio ni de nth-child: se eliminan las casitas
     # duplicadas y los controles circulares visibles.
-    st.session_state.setdefault("ignis_nav", NAV_PAGES[0])
+    st.session_state.setdefault("ignis_nav", NAV_PAGES[1])
     if st.session_state["ignis_nav"] not in NAV_PAGES:
         _ignis_navigate_to(NAV_PAGES[0])
     current_section = st.session_state["ignis_nav"]
@@ -713,8 +713,11 @@ else:
 
 # C — Dashboard de monitoreo con datos de la selección compartida.
 if current_section == NAV_PAGES[1]:
+    _logo_uri = asset_uri(BASE / "logo_ignis.png") if (BASE / "logo_ignis.png").exists() else ""
+    _nrt_records = st.session_state.get("ignis_firms_vivos")
+    _live = isinstance(_nrt_records, pd.DataFrame) and not _nrt_records.empty
     render_control_center(combined, sample, selected, BASE, mapa_ignis,
-                          NAV_PAGES, _ignis_navigate_to)
+                          NAV_PAGES, _ignis_navigate_to, logo_uri=_logo_uri, live=_live)
 
 
 if current_section==NAV_PAGES[3]:

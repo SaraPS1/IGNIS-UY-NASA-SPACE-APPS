@@ -1,0 +1,70 @@
+name: IGNIS cinematic observatory validation
+
+on:
+  push:
+    branches:
+      - "feat/ignis-cinematic-mainline"
+  pull_request:
+    paths:
+      - "ignis_dashboard.py"
+      - "ignis_scene3d.py"
+      - "assets/ignis_scene3d.html"
+      - "ignis_historico.py"
+      - "tests/test_ignis_scene3d_dashboard.py"
+      - "tests/test_ignis_cinematic_observatory.py"
+      - ".github/workflows/ignis-cinematic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  cinematic-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install full IGNIS runtime dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Compile application modules
+        run: |
+          python -m compileall -q -f ignis_historico.py ignis_dashboard.py ignis_scene3d.py ignis_visual.py ignis_espacio.py ignis_fusion_terrestre.py ignis_informe.py pages
+      - name: Run scene payload and design regression tests
+        run: |
+          python -m unittest discover -s tests -p 'test_ignis_scene3d_dashboard.py' -v
+          python -m unittest discover -s tests -p 'test_ignis_cinematic_observatory.py' -v
+      - name: Streamlit startup smoke test with empty dataset
+        run: |
+          python - <<'PY'
+          from streamlit.testing.v1 import AppTest
+          app = AppTest.from_file("principal.py", default_timeout=50).run()
+          assert not app.exception, [str(e.message) for e in app.exception]
+          print("Streamlit startup verified; no uncaught application exception")
+          PY
+      - name: Create visibly labelled synthetic visual test fixture
+        run: python tests/create_cinematic_preview.py
+      - name: Capture browser preview when Chrome is available
+        shell: bash
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            timeout 65s google-chrome --headless=new --no-sandbox --disable-dev-shm-usage \
+              --enable-webgl --enable-unsafe-swiftshader --use-angle=swiftshader \
+              --hide-scrollbars --window-size=1600,900 --virtual-time-budget=12000 \
+              --screenshot="$PWD/preview/ignis-cinematic-test.png" \
+              "file://$PWD/preview/ignis-cinematic-visual-test.html" || true
+          else
+            echo "Google Chrome unavailable; static and node syntax checks still apply."
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ignis-cinematic-preview
+          path: |
+            preview/ignis-cinematic-visual-test.html
+            preview/ignis-cinematic-test.png
+          if-no-files-found: ignore

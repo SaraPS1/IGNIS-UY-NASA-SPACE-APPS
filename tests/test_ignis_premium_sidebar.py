@@ -22,7 +22,7 @@ class PremiumSidebarTests(unittest.TestCase):
                 ast.parse((ROOT / filename).read_text(encoding="utf-8"))
 
     def test_navigation_state_stays_the_same(self):
-        self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[0])', self.main)
+        self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[1])', self.main)
         self.assertIn('key=f"ignis_nav_{i:02d}"', self.main)
         self.assertIn('on_click=_ignis_navigate_to', self.main)
         self.assertIn("def _ignis_navigate_to(section: str)", self.main)

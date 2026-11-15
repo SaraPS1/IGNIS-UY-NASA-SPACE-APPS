@@ -65,7 +65,7 @@ class PremiumIconAndHeroTests(unittest.TestCase):
     def test_menu_has_no_radio_circles_and_keyboard_focus(self):
         self.assertIn('key=f"ignis_nav_{i:02d}"', self.main)
         self.assertIn("button:focus-visible", self.visual)
-        self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[0])', self.main)
+        self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[1])', self.main)
 
     def test_enhanced_satellite_is_present(self):
         for detail in ("id=\"satBody\"", "id=\"cellShine\"",
