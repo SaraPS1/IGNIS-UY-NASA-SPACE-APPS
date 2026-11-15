@@ -261,8 +261,8 @@ def render_uruguay_scene(df: Optional[pd.DataFrame], selected_year: Optional[int
     payload = build_scene_payload(df, selected_year, associations, live_connection=live_connection)
     # The identical validated UTC orbit bundle is used by this dashboard and
     # by the full Earth tracker; the FIRMS historical year is independent.
-    from ignis_orbits import current_bundle
-    payload["orbit"] = current_bundle()
+    from ignis_orbits import shared_bundle
+    payload["orbit"] = shared_bundle()
     components.html(scene_html(payload), height=height, scrolling=False)
     return payload["stats"]
 
