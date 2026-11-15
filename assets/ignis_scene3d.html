@@ -196,7 +196,12 @@
   }
 
 
-  #orbital-console{position:absolute;right:14px;top:345px;width:262px;padding:12px 13px;z-index:3}
+  #orbital-console{position:absolute;right:14px;top:345px;width:262px;padding:12px 13px;z-index:3;
+    max-height:calc(100% - 365px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#305567 transparent}
+  /* Legend is now a normal-flow footer inside the tracker, not an overlapping overlay. */
+  #orbital-console #legend{position:static;display:grid;right:auto;bottom:auto;
+    width:100%;margin-top:12px;padding:9px 10px;box-shadow:none;
+    background:rgba(9,28,43,.7);border-color:rgba(125,235,255,.22)}
   #orbital-console .orbital-heading{display:flex;justify-content:space-between;gap:4px;
     font-size:10px;color:var(--ice);font-weight:700;letter-spacing:.07em;text-transform:uppercase}
   #orbital-status{font-size:9px;color:#9bc9d9}
@@ -211,7 +216,8 @@
   #orbital-console[data-mode="illustrative"]{border-color:rgba(255,106,26,.6)}
   #orbital-console[data-mode="illustrative"] #orbital-status{color:#ffc19c}
   .cine #orbital-console{opacity:0;pointer-events:none}
-  @media(max-width:1050px){#orbital-console{top:auto;bottom:125px;width:214px;right:8px}}
+  @media(max-width:1050px){#orbital-console{top:auto;bottom:125px;width:214px;right:8px;
+    max-height:calc(100% - 220px)}}
   @media(max-width:760px){#orbital-console{width:185px;max-height:39%;overflow:auto;bottom:155px}
     #orbital-console .orbital-actions{grid-template-columns:1fr 1fr}}
 
@@ -277,18 +283,20 @@
       <option value="calculated">Calculated SGP4 · scientific</option>
       <option value="illustrative">ILLUSTRATIVE DEMO · not real tracking</option>
     </select>
+    <!-- Legend stays in the satellite panel flow, never overlays its controls. -->
+    <div id="legend" class="panel">
+      <div><i style="background:var(--ember)"></i>MODIS thermal anomaly</div>
+      <div><i style="background:var(--orange)"></i>VIIRS thermal anomaly</div>
+      <div><i style="background:#ff8aa5;border-radius:0"></i>Documented town (reference)</div>
+      <div><i style="background:#f7d774;border-radius:0"></i>Sat–ground association</div>
+      <div style="color:var(--slate);margin-top:2px">Marker height ∝ FRP · not confirmed fires</div>
+    </div>
   </section>
   <div id="info" class="panel" aria-live="polite"></div>
   <div id="tip" role="tooltip"></div>
   <div id="satlabels"></div>
 
-  <div id="legend" class="panel">
-    <div><i style="background:var(--ember)"></i>MODIS thermal anomaly</div>
-    <div><i style="background:var(--orange)"></i>VIIRS thermal anomaly</div>
-    <div><i style="background:#ff8aa5;border-radius:0"></i>Documented town (reference)</div>
-    <div><i style="background:#f7d774;border-radius:0"></i>Sat–ground association</div>
-    <div style="color:var(--slate);margin-top:2px">Marker height ∝ FRP · not confirmed fires</div>
-  </div>
+
 
   <div id="tl" class="panel" role="group" aria-label="Timeline">
     <div class="row">

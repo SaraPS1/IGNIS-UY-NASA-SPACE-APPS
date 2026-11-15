@@ -55,6 +55,12 @@ def apply_visual_theme():
       color:#8daec2;font-size:.60rem;font-weight:750;
       letter-spacing:.115em;margin-top:.38rem;
     }
+    .ignis-side-brand-copy .ignis-side-logo-ai-note{
+      display:inline-block;align-self:flex-start;
+      color:#b9e8f1;font-size:.59rem;font-weight:750;
+      letter-spacing:.055em;line-height:1.25;
+      margin-top:.22rem;opacity:.92;
+    }
     .ignis-side-project{
       background:rgba(19,49,73,.48);border:1px solid rgba(83,141,170,.2);
       color:#a9d2e4;padding:8px 10px;margin:12px 0 19px;
@@ -870,15 +876,13 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
     if is_explorer():
         show_presentation_return("ignis_atlas_back_to_presentation")
     if sample.empty:
-        st.info("Import ZIP/CSV files or the IGNIS Master dataset before using the Atlas.")
-        left,right=st.columns([2,1],gap="medium")
-        with left:
-            _empty_uruguay_outline(base,"ignis_atlas_empty")
-        with right:
-            st.markdown("#### Start by uploading data")
-            st.button("📂 Go to Data upload",type="primary",
-                      use_container_width=True,key="atlas_upload",
-                      on_click=navigate,args=(pages[1],))
+        st.info("Import ZIP/CSV files or the IGNIS Master dataset to see actual thermal observations. The 3D map displays reference geography only until records are uploaded.")
+        from ignis_spatial import render_spatial_pair
+        render_spatial_pair(None, height=620, context="atlas_empty",
+                            show_report_map=False)
+        st.button("📂 Go to Data upload",type="primary",
+                  use_container_width=True,key="atlas_upload",
+                  on_click=navigate,args=(pages[1],))
         return
     selector=st.radio("Map time range",
                       ["All uploaded historical records","Selected year"],
@@ -893,24 +897,31 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
     with map_col:
         with st.container(border=True):
             st.markdown("#### 🗺️ Geographic distribution")
-            if not mapped.empty:
-                # Preserve the established paired 3D/report view for Explorer,
-                # and the rehearsed classic widget key for compatibility.
-                # Default 2D presentation uses Sara's zoomable inspection map.
-                if is_explorer():
-                    from ignis_spatial import render_spatial_pair
-                    render_spatial_pair(mapped, year=None if selector=="All uploaded historical records" else selected,
-                                        height=620, context="atlas")
-                elif st.checkbox("Use original scientific density view",
-                                 value=False, key="ignis_atlas_classic_density"):
-                    map_fn(mapped, "ignis_atlas_scientific")
-                    show_explorer_entry("ignis_atlas_explore_3d", "Explore this map in 3D")
+            # Uruguay Map always opens in 3D, independently of the global
+            # Presentation/Explorer preference. The dedicated 2D views remain
+            # accessible through a deliberate local selection.
+            map_mode = st.radio(
+                "Map display", ["3D interactive", "2D zoomable", "2D scientific density"],
+                index=0, horizontal=True, key="ignis_atlas_map_display",
+            )
+            if map_mode == "3D interactive":
+                from ignis_spatial import render_spatial_pair
+                render_spatial_pair(mapped, year=None if selector=="All uploaded historical records" else selected,
+                                    height=620, context="atlas", show_report_map=False)
+            elif map_mode == "2D zoomable":
+                if mapped.empty:
+                    _empty_uruguay_outline(base,"ignis_atlas_selection_empty")
                 else:
                     render_zoomable_uruguay_map(mapped, base)
                     show_explorer_entry("ignis_atlas_zoom_explore_3d", "Explore this map in 3D")
             else:
-                st.info("No points for the selected period.")
-                _empty_uruguay_outline(base,"ignis_atlas_selection_empty")
+                # Keep the original scientific density widget/key and its
+                # presentation-compatible navigation entry available.
+                if mapped.empty:
+                    _empty_uruguay_outline(base,"ignis_atlas_selection_empty_density")
+                else:
+                    map_fn(mapped, "ignis_atlas_scientific")
+                    show_explorer_entry("ignis_atlas_explore_3d", "Explore this map in 3D")
     with tools_col:
         with st.container(border=True):
             st.markdown("#### 🧰 Tools")
