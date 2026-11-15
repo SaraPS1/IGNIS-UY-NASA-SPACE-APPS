@@ -603,6 +603,10 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           if(showSatellites||showOrbits){{
             orbitalRecords.forEach((sat,index)=>{{
               const scientific=payload.orbit_mode==='sgp4';
+          const selectedUtc=payload.orbit_clock_mode==='selected_utc';
+          const selectedMs=Date.parse(payload.orbit_reference_utc||'');
+          const referenceUtcMs=()=>selectedUtc&&Number.isFinite(selectedMs)?selectedMs:Date.now();
+          document.getElementById('ignis-current').textContent=selectedUtc?'Selected UTC':'Current UTC';
               const valid=scientific&&sat.mode==='sgp4'&&
                 Array.isArray(sat.positions)&&sat.positions.length>=2;
               const demo=payload.orbit_mode==='illustrative';
@@ -737,7 +741,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
              timestamped ephemerides as the Uruguay mission-control scene. */
           const scientific=payload.orbit_mode==='sgp4';
           let playing=!scientific,orbitT=0,orbitSpeed=60;
-          let orbitalUtcMs=Date.now(),replayKind='current',replayTrack=null;
+          let orbitalUtcMs=referenceUtcMs(),replayKind='current',replayTrack=null;
           let replaySelected=0;
           const orbitClock=document.getElementById('ignis-orbit-clock');
           const playButton=document.getElementById('ignis-play');
@@ -789,7 +793,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             updatePassControls();
           }}
           function restoreCurrent(){{
-            replayKind='current';replayTrack=null;orbitalUtcMs=Date.now();playing=false;
+            replayKind='current';replayTrack=null;orbitalUtcMs=referenceUtcMs();playing=false;
             movers.forEach(m=>{{
               if(!m.orbitLine)return;
               m.orbitLine.geometry.dispose();
@@ -838,7 +842,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             }}else if(!sat||sat.mode!=='sgp4'){{
               orbitClock.textContent='Verified orbital position unavailable · '+(sat?.status||'No suitable TLE');
             }}else{{
-              const prefix=replayKind==='current'?'SGP4 current UTC estimate':
+              const prefix=replayKind==='current'?(selectedUtc?'SGP4 selected UTC estimate':'SGP4 current UTC estimate'):
                 replayKind==='last'?'Last ground-track replay':'Next ground-track replay';
               orbitClock.textContent=prefix+' · '+new Date(orbitalUtcMs).toISOString().replace('.000Z','Z')+
                 ' · TLE epoch '+(sat.tle_epoch||'unknown')+' · NOT verified sensor coverage';
@@ -850,7 +854,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             const now=performance.now(),delta=Math.min(0.12,(now-priorFrame)/1000);
             priorFrame=now;
             if(scientific){{
-              if(replayKind==='current')orbitalUtcMs=Date.now();
+              if(replayKind==='current')orbitalUtcMs=referenceUtcMs();
               else if(playing&&replayTrack){{
                 orbitalUtcMs+=delta*1000*orbitSpeed;
                 const end=replayTrack[replayTrack.length-1].t;
