@@ -1313,8 +1313,6 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
                             height=650, context="fusion")
         st.caption("Both maps use the same selected FIRMS observations. Ground associations "
                    "remain candidates for review, not verified wildfire confirmation.")
-    else:
-        show_explorer_entry("ignis_fusion_explore_3d", "Explore satellite–ground fusion in 3D")
     if not fusion.empty:
         celda_fusion=fusion.loc[fusion.lat.ge(lat0)&fusion.lat.lt(lat1)&
                                fusion.lon.ge(lon0)&fusion.lon.lt(lon1)].copy()
@@ -1379,13 +1377,14 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
     if not salida_local.empty and salida_local.simulado.astype(str).str.startswith(('SÍ','YES')).any():
         st.warning('DEMONSTRATION RESULT: includes synthetic data, '
                    'does not confirm actual Fire Service or SINAE observations.')
-    # Display the exact 2D image embedded in the selected-cell PDF.
-    # This complements the same-period, side-by-side 2D science map above.
-    st.markdown("**Selected-cell 2D map · identical to PDF illustration**")
-    st.image(
-        _mapa_estatico_para_pdf(visible, seleccion_celda, b_vista, s_vista),
-        use_container_width=True,
-        caption="Static scientific grid / imported institutional positions, used by the cell PDF")
+    # Keep the original selected-cell PDF button in exactly its rehearsed position.
+    # The extra static preview belongs to the optional advanced experience only.
+    if is_explorer():
+        st.markdown("**Selected-cell 2D map · identical to PDF illustration**")
+        st.image(
+            _mapa_estatico_para_pdf(visible, seleccion_celda, b_vista, s_vista),
+            use_container_width=True,
+            caption="Static scientific grid / imported institutional positions, used by the cell PDF")
     try:
         pdf_celda=generar_informe_pdf_celda(
             visible,seleccion_celda,t_hist,t_per,bom_cell,sin_cell,salida_local,
@@ -1418,3 +1417,6 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
             "- Associations use configurable temporal and spatial proximity: "
             "this does not validate source independence, sensor accuracy, or alert lead times."
         )
+    if not is_explorer():
+        # The only new control appears AFTER the rehearsed grid, analysis and exports.
+        show_explorer_entry("ignis_fusion_explore_3d", "Explore satellite–ground fusion in 3D")
