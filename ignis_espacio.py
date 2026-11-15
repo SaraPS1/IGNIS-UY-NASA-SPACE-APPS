@@ -895,7 +895,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
             orbit_mode = st.radio(
                 "Trajectory source",
                 ["Illustrative trajectories", "Current TLE data"],
-                index=0, key="ignis_orbit_source",
+                index=1, key="ignis_orbit_source",
                 help="Current TLE data cannot reconstruct orbits on historical FIRMS observation dates.",
             )
         with st.container(border=True):
@@ -932,14 +932,30 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         satellite_filter=selected_satellite,
     )
 
-    # La carga de TLE se hace por solicitud explícita. El modo normal no accede
-    # a CelesTrak y el globo abre sin depender de esa red externa.
+    # Shared SGP4 source for both 3D views. FIRMS historical dates are separate.
+    from ignis_orbits import current_bundle
     use_live_tle = orbit_mode == "Current TLE data"
     if use_live_tle:
-        with st.spinner("Loading current TLE data from CelesTrak…"):
-            satellites = _build_satellite_payload(use_live_tle=True)
+        bundle = current_bundle()
+        satellites = [
+            {
+                "name": item["name"], "sensor": item["sensor"],
+                "color": item["color"], "mode": item["mode"],
+                "positions": item["track"],
+                "last_pass": item["last_pass"], "next_pass": item["next_pass"],
+                "source": item["source"], "tle_epoch": item.get("tle_epoch"),
+                "status": item.get("status", "Unavailable"),
+            }
+            for item in bundle["satellites"]
+        ]
     else:
-        satellites = _build_satellite_payload(use_live_tle=False)
+        # Explicit illustrative opt-in only. Never attach a real pass timestamp.
+        bundle = {"reference_utc": None, "pass_definition": "illustrative demo"}
+        satellites = [
+            {**item, "mode": "illustrative", "last_pass": None,
+             "next_pass": None, "tle_epoch": None}
+            for item in _build_satellite_payload(use_live_tle=False)
+        ]
 
     config = {
         "region": selected_region,
@@ -950,6 +966,8 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         "show_clouds": show_clouds,
         "earth_visualization": earth_visualization,
         "satellites": satellites,
+        "orbit_mode": "sgp4" if use_live_tle else "illustrative",
+        "orbit_reference_utc": bundle["reference_utc"],
         "hotspots": hotspots,
         "hotspots_total": int(len(filtered_frame)),
         "outline": _uruguay_outline(),
@@ -962,7 +980,7 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         count = len(filtered_frame)
         st.caption(
             f"**{count:,} thermal observations** for the selected date and sensor. "
-            "Orbit mode: current TLE data if requested; otherwise illustrative "
+            "Orbit mode: current TLE estimates by default; optionally illustrative "
             "trajectories. Drag to rotate the globe and scroll "
             "to zoom in."
         )
