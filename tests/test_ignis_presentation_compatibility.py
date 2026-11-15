@@ -97,6 +97,11 @@ class PresentationCompatibilityTests(TestCase):
         self.assertIn('if is_explorer():\n            st.markdown("#### Historical archive',self.main)
         self.assertIn("st.plotly_chart(fig,use_container_width=True,on_select='rerun'",self.fusion)
         self.assertIn('show_explorer_entry("ignis_fusion_explore_3d"',self.fusion)
+        self.assertLess(self.nrt.index('Download recent query CSV'),
+                        self.nrt.index('show_explorer_entry("ignis_nrt_explore_3d"'))
+        self.assertLess(self.fusion.index("Download PDF report for this cell"),
+                        self.fusion.index('show_explorer_entry("ignis_fusion_explore_3d"'))
+        self.assertIn('if is_explorer():\n        st.markdown("**Selected-cell 2D map',self.fusion)
         self.assertIn('globe_2d_slot = None',self.earth)
         self.assertIn('if globe_2d_slot is not None:',self.earth)
 
