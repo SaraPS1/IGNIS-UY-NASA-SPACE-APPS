@@ -381,8 +381,8 @@ def _reference_styles():
     }
     .ignis-ui-card.ignis-has-background::after{display:none!important}
     /* Space Apps SI disclosure: permanent visible watermarks on illustrative art. */
-    .ignis-ui-hero .ignis-si-watermark,
-    .ignis-ui-card .ignis-si-watermark{
+    .ignis-ui-hero>.ignis-si-watermark.ignis-si-watermark,
+    .ignis-ui-card>.ignis-si-watermark.ignis-si-watermark{
       position:absolute!important;right:12px!important;bottom:10px!important;
       left:auto!important;top:auto!important;z-index:4!important;
       display:block!important;width:max-content;max-width:calc(100% - 24px);
