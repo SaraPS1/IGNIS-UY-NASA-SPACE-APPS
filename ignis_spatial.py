@@ -107,11 +107,12 @@ def render_report_map(data: Optional[pd.DataFrame],
 def render_spatial_pair(data: Optional[pd.DataFrame], year: Optional[int] = None,
                         associations: Optional[pd.DataFrame] = None,
                         height: int = 590, live_connection: bool = False,
-                        context: str = "spatial") -> dict:
-    """Every science map is presented as synchronized interactive 3D + report-ready 2D.
+                        context: str = "spatial",
+                        show_report_map: bool = True) -> dict:
+    """Render synchronized 3D and optionally 2D maps from the same observations.
 
-    Both views and their downloadable PNG use the exact same normalized,
-    temporally filtered source frame. No synthetic production points.
+    The Dashboard uses a full-width 3D scene with no adjacent 2D map.
+    Other callers retain their existing paired view by default.
     """
     import streamlit as st
     from ignis_scene3d import render_uruguay_scene
@@ -119,6 +120,15 @@ def render_spatial_pair(data: Optional[pd.DataFrame], year: Optional[int] = None
     frame = to_scene_frame(data)
     if year is not None and not frame.empty:
         frame = frame.loc[frame["fecha"].dt.year == int(year)].copy()
+
+    if not show_report_map:
+        st.markdown("**3D · Interactive exploration**")
+        render_uruguay_scene(frame, selected_year=year, associations=associations,
+                             height=height, live_connection=live_connection)
+        return {"source_records": int(len(frame)),
+                "selected_year": year,
+                "report_map_available": False}
+
     left, right = st.columns([1.85, 1], gap="medium")
     with left:
         st.markdown("**3D · Interactive exploration**")
