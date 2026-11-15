@@ -69,8 +69,7 @@ def run_case(browser, name, blocked=None):
 
 def main():
     OUT.mkdir(exist_ok=True)
-    import tests.create_globe_browser_fixture as fixture
-    fixture.main()
+    subprocess.run(["python", str(ROOT / "tests" / "create_globe_browser_fixture.py")], check=True)
     chrome = (shutil.which("google-chrome") or shutil.which("chromium")
               or shutil.which("chromium-browser"))
     assert_test(chrome is not None, "Chrome is required for real browser validation")
