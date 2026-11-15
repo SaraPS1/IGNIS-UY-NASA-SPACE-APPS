@@ -81,7 +81,7 @@ class CinematicObservatoryTests(unittest.TestCase):
     def test_design_is_visually_prominent_and_primary_navigation(self):
         self.assertIn("st.columns([2, 1]", self.dashboard_source)
         self.assertIn("height=740", self.dashboard_source)
-        self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[1])', self.app_source)
+        self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[0])', self.app_source)
         self.assertIn("Uruguay · Geospatial Observatory", self.dashboard_source)
 
     def test_scene_javascript_parses_in_node(self):
