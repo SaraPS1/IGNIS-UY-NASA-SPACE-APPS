@@ -611,6 +611,8 @@ with st.sidebar:
         'Geospatial research platform.'
         '<br>Thermal hotspots are not confirmed wildfires.'
         '<br>Institutional links are informational and do not imply endorsement.'
+        '<br>SI-assisted code and explanatory text; SI-generated home illustrations '
+        'are visibly watermarked. Imported NASA FIRMS data is not SI-generated.'
         '</div>',
         unsafe_allow_html=True,
     )
