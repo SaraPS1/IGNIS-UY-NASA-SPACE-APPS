@@ -606,14 +606,14 @@ async function init3D(){
 
   /* ---------- satellites (schematic) ------------------------------------- */
   const SATS = [
-    { name:'Terra', sensor:'MODIS', color:PAL.ember, r:4.6, tilt:0.62, speed:0.09, phase:0.0, alt:4.9 },
-    { name:'Aqua', sensor:'MODIS', color:PAL.ember, r:5.0, tilt:-0.55, speed:0.075, phase:2.1, alt:5.3 },
-    { name:'Suomi NPP', sensor:'VIIRS', color:PAL.cyan, r:5.4, tilt:1.25, speed:0.065, phase:4.0, alt:5.6 },
-    { name:'NOAA-20', sensor:'VIIRS', color:PAL.cyan, r:5.8, tilt:1.05, speed:0.060, phase:5.3, alt:6.0 },
+    { name:'Terra', sensor:'MODIS', color:PAL.ember, r:4.6, tilt:0.62, speed:0.09, phase:0.0, alt:2.3 },
+    { name:'Aqua', sensor:'MODIS', color:PAL.ember, r:5.0, tilt:-0.55, speed:0.075, phase:2.1, alt:3.8 },
+    { name:'Suomi NPP', sensor:'VIIRS', color:PAL.cyan, r:5.4, tilt:1.25, speed:0.065, phase:4.0, alt:4.0 },
+    { name:'NOAA-20', sensor:'VIIRS', color:PAL.cyan, r:5.8, tilt:1.05, speed:0.060, phase:5.3, alt:2.9 },
   ];
   const satGroup = new THREE.Group(); scene.add(satGroup); const satObjs=[]; const labelsEl=$('satlabels');
   function buildSat(s){
-    const g=new THREE.Group();
+    const g=new THREE.Group(); g.scale.setScalar(0.66);
     const body=new THREE.Mesh(new THREE.BoxGeometry(.34,.26,.5), new THREE.MeshStandardMaterial({ color:0xcfd8e3, metalness:.75, roughness:.3 })); body.castShadow=false; g.add(body);
     const panelMat=new THREE.MeshStandardMaterial({ color:0x1b3f8f, metalness:.6, roughness:.25, emissive:0x0a1e4a, emissiveIntensity:.4 });
     const pivot=new THREE.Group(); g.add(pivot);
