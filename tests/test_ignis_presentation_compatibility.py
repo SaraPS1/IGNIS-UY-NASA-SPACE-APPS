@@ -47,6 +47,41 @@ class PresentationCompatibilityTests(TestCase):
         self.assertIn('key=f"ignis_nav_{i:02d}"',self.main)
         self.assertIn('on_click=_ignis_navigate_to',self.main)
 
+    def test_sidebar_moves_data_upload_above_dashboard_without_changing_ids(self):
+        tree = ast.parse(self.main)
+        order = next(node for node in tree.body
+                     if isinstance(node, ast.Assign)
+                     and any(isinstance(t, ast.Name) and t.id == "NAV_DISPLAY_ORDER"
+                             for t in node.targets))
+        self.assertEqual(ast.unparse(order.value),
+                         '[0, 2, 1, *range(3, len(NAV_PAGES))]')
+        self.assertIn("for i in NAV_DISPLAY_ORDER:", self.main)
+        self.assertIn("section = NAV_PAGES[i]", self.main)
+        self.assertIn('key=f"ignis_nav_{i:02d}"', self.main)
+        self.assertIn('if current_section==NAV_PAGES[2]:', self.main)
+        self.assertIn('if current_section == NAV_PAGES[1]:', self.main)
+
+    def test_illustrative_orbits_are_default_and_scientific_tracking_is_opt_in(self):
+        space = ast.parse(self.earth)
+        radios = [call for node in ast.walk(space)
+                  if isinstance(node, ast.Call)
+                  for call in (node,)
+                  if isinstance(call.func, ast.Attribute)
+                  and call.func.attr == 'radio'
+                  and call.args
+                  and isinstance(call.args[0], ast.Constant)
+                  and call.args[0].value == 'Trajectory source']
+        self.assertEqual(len(radios), 1)
+        source_radio = radios[0]
+        self.assertEqual(ast.literal_eval(source_radio.args[1]),
+                         ['Illustrative trajectories', 'Current TLE data'])
+        kwargs = {kw.arg: kw.value for kw in source_radio.keywords}
+        self.assertEqual(ast.literal_eval(kwargs['index']), 0)
+        self.assertEqual(ast.literal_eval(kwargs['key']), 'ignis_orbit_source')
+        self.assertIn('use_live_tle = orbit_mode == "Current TLE data"', self.earth)
+        self.assertIn('orbit_mode": "sgp4" if use_live_tle else "illustrative"', self.earth)
+        self.assertIn("Illustrative trajectories", self.earth)
+
     def test_switch_is_after_rehearsed_filters_and_resource_links(self):
         keys=[
             'key="sidebar_region"', 'key="sidebar_sensores"',
