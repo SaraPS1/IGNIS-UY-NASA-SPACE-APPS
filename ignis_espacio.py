@@ -1098,18 +1098,11 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
     # Keep the same left-side orbital control panel in both experiences.
     controls_col, globe_col = st.columns([1, 3.1], gap="medium")
     with globe_col:
+        # The dedicated Uruguay Map page already provides 2D exploration.
+        # Give the 3D orbital globe the entire available main column.
         if is_explorer():
-            globe_3d_col, globe_2d_col = st.columns([2.05, 1], gap="small")
-            with globe_3d_col:
-                st.markdown("**3D · Earth orbital explorer**")
-                globe_slot = st.empty()
-            with globe_2d_col:
-                st.markdown("**2D · Scientific report view**")
-                globe_2d_slot = st.empty()
-        else:
-            # Rehearsed layout: one large globe, timeline underneath.
-            globe_slot = st.empty()
-            globe_2d_slot = None
+            st.markdown("**3D · Earth orbital explorer**")
+        globe_slot = st.empty()
         with st.container(border=True):
             st.caption("TIMELINE · FIRMS OBSERVATIONS")
             if date_options:
@@ -1268,22 +1261,6 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
 
     with globe_slot:
         components.html(_render_globe_html(config), height=690, scrolling=False)
-
-    if globe_2d_slot is not None:
-        with globe_2d_slot:
-            from ignis_spatial import render_report_map
-            static_map = render_report_map(filtered_frame)
-            if static_map is not None:
-                st.image(static_map, use_container_width=True,
-                         caption="Same selected FIRMS date and sensor as 3D · not a confirmed wildfire map")
-                st.download_button("Download 2D report map (PNG)", static_map,
-                                   file_name="IGNIS_earth_2d_report_map.png", mime="image/png",
-                                   key="ignis_globe_2d_download", use_container_width=True)
-            else:
-                st.info("No imported FIRMS observations at the selected date and sensor. "
-                        "The lack of records does not prove the absence of fires.")
-            st.caption("The 2D map uses IGNIS's static PDF map renderer. "
-                       "It works independently of WebGL and external Earth textures.")
 
     with globe_col:
         count = len(filtered_frame)
