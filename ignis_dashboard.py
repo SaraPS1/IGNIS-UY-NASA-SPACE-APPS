@@ -418,23 +418,23 @@ def render_premium_dashboard(combined: pd.DataFrame, sample: pd.DataFrame, selec
     if not has:
         st.markdown('<div class="ig-empty"><b>No observations loaded</b>The map uses the national reference outline. Import IGNIS Master or NASA FIRMS data to display real records.</div>', unsafe_allow_html=True)
         st.button("Go to Data upload", key="ig_dash_upload", type="primary",
-                  on_click=navigate, args=(pages[2],))
+                  on_click=navigate, args=(pages[1],))
     left, right = st.columns([2, 1], gap="medium")
     with left:
         st.markdown('<div class="ig-section"><h3>Interpretation</h3><span>data provenance and research context</span></div>', unsafe_allow_html=True)
         st.caption("Thermal anomalies are imported satellite observations, not confirmed wildfire incidents. No records does not establish the absence of fire.")
     with right:
         with st.container(border=True):
-            render_ask_panel(sample if has else pd.DataFrame(), navigate, pages[12])
+            render_ask_panel(sample if has else pd.DataFrame(), navigate, pages[11])
         with st.container(border=True):
             st.markdown("#### Quick access")
             q1, q2 = st.columns(2)
-            q1.button("Uruguay Map", key="ig_dash_atlas", use_container_width=True, on_click=navigate, args=(pages[6],))
-            q2.button("Harmonization", key="ig_dash_harm", use_container_width=True, on_click=navigate, args=(pages[5],))
-            q1.button("Alerts & Traceability", key="ig_dash_alerts", use_container_width=True, on_click=navigate, args=(pages[7],))
-            q2.button("PDF Report", key="ig_dash_pdf", use_container_width=True, on_click=navigate, args=(pages[9],))
-            q1.button("3D Earth & Satellites", key="ig_dash_space", use_container_width=True, on_click=navigate, args=(pages[11],))
-            q2.button("Sky–ground fusion", key="ig_dash_fusion", use_container_width=True, on_click=navigate, args=(pages[13],))
-    render_analytics(sample if has else pd.DataFrame(), selected, map_fn, associations, navigate, pages[13])
+            q1.button("Uruguay Map", key="ig_dash_atlas", use_container_width=True, on_click=navigate, args=(pages[5],))
+            q2.button("Harmonization", key="ig_dash_harm", use_container_width=True, on_click=navigate, args=(pages[4],))
+            q1.button("Alerts & Traceability", key="ig_dash_alerts", use_container_width=True, on_click=navigate, args=(pages[6],))
+            q2.button("PDF Report", key="ig_dash_pdf", use_container_width=True, on_click=navigate, args=(pages[8],))
+            q1.button("3D Earth & Satellites", key="ig_dash_space", use_container_width=True, on_click=navigate, args=(pages[10],))
+            q2.button("Sky–ground fusion", key="ig_dash_fusion", use_container_width=True, on_click=navigate, args=(pages[12],))
+    render_analytics(sample if has else pd.DataFrame(), selected, map_fn, associations, navigate, pages[12])
     st.markdown('<p class="ig-note" style="margin-top:14px">IGNIS UY is a research platform, not an operational emergency service. The absence of records does not mean the absence of fires, '
                 'nor does it confirm complete satellite coverage. Relief and orbits in the 3D scene are illustrative; every marker is an imported NASA FIRMS record.</p>', unsafe_allow_html=True)

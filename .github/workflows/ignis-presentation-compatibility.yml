@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/pitch-safe-classic-navigation-3d-explorer
+      - fix/globe-illustrative-default-swap-upload-dashboard
       - fix/globe-default-illustrative-nav-order-pitch
   pull_request:
     paths:
@@ -14,6 +15,7 @@ on:
       - ignis_espacio.py
       - ignis_fusion_terrestre.py
       - tests/test_ignis_presentation_compatibility.py
+      - tests/test_ignis_team_presentation_edits.py
       - .github/workflows/ignis-presentation-compatibility.yml
 
 permissions:
@@ -36,6 +38,8 @@ jobs:
       - name: Run pitch layout and earlier UI regression tests
         run: |
           python -m unittest discover -s tests -p 'test_ignis_presentation_compatibility.py' -v
+          python -m unittest discover -s tests -p 'test_ignis_team_presentation_edits.py' -v
+          python -m unittest discover -s tests -p 'test_ignis_reference_fidelity.py' -v
           python -m unittest discover -s tests -p 'test_ignis_approved_landing.py' -v
           python -m unittest discover -s tests -p 'test_ignis_premium_sidebar.py' -v
           python -m unittest discover -s tests -p 'test_ignis_reference_fidelity.py' -v
@@ -50,10 +54,6 @@ jobs:
           assert not app.exception, [str(e.message) for e in app.exception]
           assert app.session_state["ignis_3d_explorer"] is False
           assert app.session_state["ignis_nav"].endswith("Home · Discover IGNIS")
-          # The rendered navigation order changes; the original stable keys do not.
-          nav_keys = [button.key for button in app.get("button")
-                      if button.key and button.key.startswith("ignis_nav_")]
-          assert nav_keys[:3] == ["ignis_nav_00", "ignis_nav_02", "ignis_nav_01"], nav_keys
           controls = list(app.get("toggle"))
           toggle = next((w for w in controls if w.key == "ignis_3d_explorer"), None)
           assert toggle is not None, "Expected the view toggle in the sidebar"
@@ -66,13 +66,23 @@ jobs:
           assert not app.exception, [str(e.message) for e in app.exception]
           assert app.session_state["ignis_3d_explorer"] is False
           assert app.session_state["ignis_nav"].endswith("Home · Discover IGNIS")
-          upload_button = next(button for button in app.get("button") if button.key == "ignis_nav_02")
-          upload_button.click().run()
+          # Verify the new sidebar order and actual routing, not just source strings.
+          for position, expected in ((1, "Data upload"), (2, "Dashboard")):
+              nav = next(w for w in app.get("button")
+                         if w.key == f"ignis_nav_{position:02d}")
+              assert nav.label == expected, (position, nav.label, expected)
+              nav.click().run()
+              assert not app.exception, [str(e.message) for e in app.exception]
+              assert app.session_state["ignis_nav"].endswith(expected)
+          assert not any(w.label == "NASA Yearly Overview" for w in app.sidebar.button)
+          assert any("Selected-year overview" in item.value for item in app.subheader)
+          # On a fresh 3D Earth page, the visual mode must be illustrative.
+          globe = next(w for w in app.get("button") if w.key == "ignis_nav_10")
+          globe.click().run()
           assert not app.exception, [str(e.message) for e in app.exception]
-          assert app.session_state["ignis_nav"].endswith("Data upload")
-          dashboard_button = next(button for button in app.get("button") if button.key == "ignis_nav_01")
-          dashboard_button.click().run()
-          assert not app.exception, [str(e.message) for e in app.exception]
-          assert app.session_state["ignis_nav"].endswith("Dashboard")
-          print("Presentation mode, visual navigation order, and actual Data upload/Dashboard clicks verified")
+          trajectory = next(w for w in app.get("radio")
+                            if w.key == "ignis_orbit_source")
+          assert trajectory.value == "Illustrative trajectories", trajectory.value
+          print("Verified: upload → dashboard sidebar routing and illustrative globe default")
+          print("Presentation ↔ 3D Explorer: same page, stable navigation and no app exceptions")
           PY

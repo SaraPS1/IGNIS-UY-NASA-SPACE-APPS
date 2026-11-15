@@ -1165,7 +1165,9 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
                 "Trajectory source",
                 ["Illustrative trajectories", "Current TLE data"],
                 index=0, key="ignis_orbit_source",
-                help="Illustrative trajectories are artistic demonstrations, NOT real satellite positions. Select Current TLE data for SGP4-based tracking when valid elements exist; historical dates need archived TLEs.",
+                help=("Illustrative trajectories are schematic, NOT measured satellite positions. "
+                      "Select Current TLE data for calculated orbital estimates; current elements "
+                      "cannot reconstruct historical FIRMS observation dates."),
             )
 
             st.caption("The FIRMS observation date does not change orbital UTC.")
@@ -1287,9 +1289,9 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
         count = len(filtered_frame)
         st.caption(
             f"**{count:,} thermal observations** for the selected date and sensor. "
-            "Orbit mode: current TLE estimates by default; optionally illustrative "
-            "trajectories. Drag to rotate the globe and scroll "
-            "to zoom in."
+            "Default: illustrative trajectories (schematic, not actual satellite positions). "
+            "Select Current TLE data in the controls for calculated orbital estimates. "
+            "Drag to rotate the globe and scroll to zoom in."
         )
         if not frame.empty and frame["frp"].notna().any():
             with st.expander("View observations for the selected date", expanded=False):

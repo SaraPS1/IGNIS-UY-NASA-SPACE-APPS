@@ -102,7 +102,7 @@ class AskIgnisEnglishTests(unittest.TestCase):
 
     def test_main_has_page_and_no_widget_reassignment(self):
         source = (ROOT / "ignis_historico.py").read_text(encoding="utf-8")
-        self.assertIn('NAV_PAGES[14]', source)
+        self.assertIn('NAV_PAGES[13]', source)
         self.assertIn('mostrar_contacto_team()', source)
         self.assertIn('st.chat_input(', source)
         self.assertIn('on_click=_ignis_navigate_to', source)

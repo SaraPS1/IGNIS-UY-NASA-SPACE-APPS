@@ -31,17 +31,15 @@ class IgnisReferenceFidelityTests(unittest.TestCase):
         for name in ("ignis_historico.py","ignis_visual.py"):
             ast.parse((ROOT/name).read_text(encoding="utf-8"))
 
-    def test_nav_is_fifteen_distinct_buttons_not_radio(self):
+    def test_nav_is_fourteen_distinct_buttons_not_radio(self):
         self.assertNotIn("current_section = st.radio(",self.main)
         self.assertIn('key=f"ignis_nav_{i:02d}"',self.main)
-        self.assertIn("for i in NAV_DISPLAY_ORDER:",self.main)
-        self.assertIn("section = NAV_PAGES[i]",self.main)
-        self.assertIn("NAV_DISPLAY_ORDER = [0, 2, 1, *range(3, len(NAV_PAGES))]",self.main)
+        self.assertIn("for i, section in enumerate(NAV_PAGES):",self.main)
         self.assertIn("on_click=_ignis_navigate_to",self.main)
         self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[0])',self.main)
 
     def test_exactly_one_icon_css_per_button(self):
-        for i in range(15):
+        for i in range(14):
             target=f'div.st-key-ignis_nav_{i:02d} button::before'
             with self.subTest(index=i):
                 self.assertEqual(self.css.count(target),1)
@@ -50,12 +48,12 @@ class IgnisReferenceFidelityTests(unittest.TestCase):
     def test_icons_unique_and_semantic(self):
         masks=re.findall(r'div\.st-key-ignis_nav_(\d{2}) button::before'
                          r'\{-webkit-mask-image:url\("data:image/svg\+xml,([^"]+)"\)',self.css)
-        self.assertEqual(len(masks),15)
-        self.assertEqual([int(index) for index,_ in masks],list(range(15)))
-        self.assertEqual(len({url for _,url in masks}),15)
-        # Dashboard has a grid and the upload page has an upload symbol.
-        self.assertIn('rect',unquote(masks[1][1]))
-        self.assertIn('path',unquote(masks[2][1]))
+        self.assertEqual(len(masks),14)
+        self.assertEqual([int(index) for index,_ in masks],list(range(14)))
+        self.assertEqual(len({url for _,url in masks}),14)
+        # Requested order: Data upload is #1 (upload path), Dashboard #2 (grid).
+        self.assertIn('path',unquote(masks[1][1]))
+        self.assertIn('rect',unquote(masks[2][1]))
 
     def test_no_radio_controls_rendered(self):
         self.assertIn("button:focus-visible",self.visual)
@@ -74,7 +72,7 @@ class IgnisReferenceFidelityTests(unittest.TestCase):
 
     def test_preserve_existing_navigation_and_science(self):
         self.assertIn('def _ignis_navigate_to(section: str)',self.main)
-        for index in (0,1,2,4,6,14):
+        for index in (0,1,2,3,5,13):
             self.assertIn(f"NAV_PAGES[{index}]",self.main)
         self.assertIn('key="sidebar_region"',self.main)
         self.assertIn('key="sidebar_sensores"',self.main)

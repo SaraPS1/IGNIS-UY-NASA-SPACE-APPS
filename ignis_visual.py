@@ -491,9 +491,8 @@ def _reference_styles():
     </style>"""
     strokes = [
       '<path d="m3 10 9-7 9 7v10h-6v-6H9v6H3z"/>',
-      '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
       '<path d="M5 18H4a3 3 0 0 1-.5-5.96A7 7 0 0 1 17 8a5 5 0 0 1 3 9h-2M12 13v8m0-8-4 4m4-4 4 4"/>',
-      '<path d="M4 19V10m5 9V4m5 15v-8m5 8V7"/>',
+      '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
       '<path d="m3 17 6-7 4 4 7-9M15 5h5v5"/>',
       '<path d="M8 8a4 4 0 0 1 7-2l2 2m0-3v3h-3M16 16a4 4 0 0 1-7 2l-2-2m0 3v-3h3"/>',
       '<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15"/>',
@@ -518,9 +517,9 @@ def _reference_styles():
         icons.append(f'<style>{selector}{{-webkit-mask-image:url("data:image/svg+xml,{url}");'
                      f'mask-image:url("data:image/svg+xml,{url}");}}</style>')
     for key, shape in (
-        ("hero_to_history",strokes[1]),
+        ("hero_to_history",strokes[2]),
         ("hero_to_dashboard",'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>'),
-        ("hero_to_upload",strokes[2]),
+        ("hero_to_upload",strokes[1]),
     ):
         svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
                'stroke="black" stroke-width="1.8">' + shape + '</svg>')
@@ -646,13 +645,13 @@ def render_project_home(base, asset_uri, pages, navigate):
     left, center, right = st.columns([1.08, 1, 1], gap="medium")
     with left:
         st.button("Explore historical archive", type="primary", use_container_width=True,
-                  key="hero_to_history", on_click=navigate, args=(pages[4],))
+                  key="hero_to_history", on_click=navigate, args=(pages[3],))
     with center:
         st.button("Dashboard", use_container_width=True,
-                  key="hero_to_dashboard", on_click=navigate, args=(pages[1],))
+                  key="hero_to_dashboard", on_click=navigate, args=(pages[2],))
     with right:
         st.button("Upload data", use_container_width=True,
-                  key="hero_to_upload", on_click=navigate, args=(pages[2],))
+                  key="hero_to_upload", on_click=navigate, args=(pages[1],))
     st.markdown(
         '<h2 class="ignis-home-section-title" style="padding-left:clamp(24px,2.5vw,40px)">What you can do with IGNIS</h2>',
         unsafe_allow_html=True,
@@ -734,7 +733,7 @@ def render_classic_control_center(combined,sample,selected,base,map_fn,pages,nav
                 st.info("No observations in this selection.")
                 st.button("📂 Import data",type="primary",
                           use_container_width=True,key="control_upload",
-                          on_click=navigate,args=(pages[2],))
+                          on_click=navigate,args=(pages[1],))
             else:
                 counts=view.groupby("instrumento").size().sort_values()
                 fig=go.Figure(go.Bar(
@@ -749,13 +748,13 @@ def render_classic_control_center(combined,sample,selected,base,map_fn,pages,nav
             st.markdown("#### 🛡️ External validation")
             st.caption("Historical evidence and original references for reviewing potential events.")
             st.button("Review sources",use_container_width=True,key="control_evidence",
-                      on_click=navigate,args=(pages[7],))
+                      on_click=navigate,args=(pages[6],))
         with st.container(border=True):
             st.markdown("#### 📚 Other tools")
             st.button("Scientific Atlas",use_container_width=True,key="control_atlas",
-                      on_click=navigate,args=(pages[6],))
+                      on_click=navigate,args=(pages[5],))
             st.button("MODIS–VIIRS harmonization",use_container_width=True,
-                      key="control_harmonization",on_click=navigate,args=(pages[5],))
+                      key="control_harmonization",on_click=navigate,args=(pages[4],))
     if not view.empty:
         st.markdown("#### 📈 Monthly trend for the selected year")
         months=view.groupby("mes").size().sort_index()
@@ -807,7 +806,7 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
             st.markdown("#### Start by uploading data")
             st.button("📂 Go to Data upload",type="primary",
                       use_container_width=True,key="atlas_upload",
-                      on_click=navigate,args=(pages[2],))
+                      on_click=navigate,args=(pages[1],))
         return
     selector=st.radio("Map time range",
                       ["All uploaded historical records","Selected year"],
@@ -838,9 +837,9 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
         with st.container(border=True):
             st.markdown("#### 🧰 Tools")
             st.button("🔄 Compare MODIS–VIIRS",use_container_width=True,
-                      key="atlas_harmonization",on_click=navigate,args=(pages[5],))
+                      key="atlas_harmonization",on_click=navigate,args=(pages[4],))
             st.button("🛡️ External sources",use_container_width=True,
-                      key="atlas_sources",on_click=navigate,args=(pages[7],))
+                      key="atlas_sources",on_click=navigate,args=(pages[6],))
             if not mapped.empty:
                 available=[c for c in columns if c in mapped.columns]
                 csv=mapped[available].to_csv(index=False).encode("utf-8-sig")

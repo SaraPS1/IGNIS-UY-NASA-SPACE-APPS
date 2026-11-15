@@ -142,11 +142,11 @@ class DashboardSourceTests(unittest.TestCase):
         self.assertNotIn("Risk Zones", self.dash)
         self.assertNotIn("Wildfire Probability", self.dash)
 
-    def test_navigation_keeps_fifteen_routes(self):
+    def test_navigation_keeps_fourteen_routes(self):
         tree = ast.parse(self.main)
         nav = next(n for n in tree.body if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == "NAV_PAGES")
         labels = [e.value for e in nav.value.elts]
-        self.assertEqual(len(labels), 15)
+        self.assertEqual(len(labels), 14)
         for expected in ("Home", "Uruguay Map", "Historical Archive", "MODIS–VIIRS Harmonization", "Alerts & Traceability",
                          "Recent Monitoring", "3D Earth & Satellites", "Satellite–Ground Fusion", "Final Calendar",
                          "PDF Report", "Ask IGNIS", "Team & Contributions"):
