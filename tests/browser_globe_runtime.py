@@ -60,6 +60,13 @@ def run_case(browser, name, blocked=None):
         shot = "ignis-globe-no-textures.png" if name == "blocked-textures" else "ignis-globe-webgl.png"
     assert_test(not failures, f"JavaScript runtime exception: {failures}")
     page.screenshot(path=str(OUT / shot), full_page=False)
+    if name != "blocked-modules":
+        # A live canvas without any visible planet still fails visual acceptance.
+        from PIL import Image
+        with Image.open(OUT / shot) as image:
+            pixel=image.convert("RGB").getpixel((image.width//2,image.height//2))
+        assert_test(pixel[2] > 27 and sum(pixel) > 62,
+                    f"Globe visually blank or almost black at center: {pixel}")
     result = {"case": name, "status": "ok", "screenshot": shot,
               "scene_ready": page.evaluate("window.__ignisGlobeReady===true"),
               "fallback_active": page.evaluate("window.__ignisGlobeFallbackActive===true")}
