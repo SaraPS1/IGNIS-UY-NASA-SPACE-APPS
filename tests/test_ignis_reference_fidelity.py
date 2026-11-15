@@ -36,7 +36,7 @@ class IgnisReferenceFidelityTests(unittest.TestCase):
         self.assertIn('key=f"ignis_nav_{i:02d}"',self.main)
         self.assertIn("for i, section in enumerate(NAV_PAGES):",self.main)
         self.assertIn("on_click=_ignis_navigate_to",self.main)
-        self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[0])',self.main)
+        self.assertIn('st.session_state.setdefault("ignis_nav", NAV_PAGES[1])',self.main)
 
     def test_exactly_one_icon_css_per_button(self):
         for i in range(15):
