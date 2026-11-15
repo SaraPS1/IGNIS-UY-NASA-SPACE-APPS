@@ -131,47 +131,22 @@ def _utc_to_jd_utc(dt: datetime) -> float:
 
 
 def _generate_orbit_positions_from_tle(tle_text: str, steps: int = 80) -> List[Dict[str, float]]:
-    if not HAS_SGP4 or Satrec is None:
+    """Compatibility wrapper. Skyfield WGS84 + SGP4, never a stale TLE."""
+    from ignis_orbits import satellite_from_tle, valid_for_time, positions_at, step_times
+    pair = _parse_tle_pair(tle_text)
+    if not pair:
         return []
     try:
-        pair = _parse_tle_pair(tle_text)
-        if not pair:
+        sat = satellite_from_tle(pair, "IGNIS compatibility")
+        now = datetime.now(timezone.utc)
+        if not valid_for_time(sat, now):
             return []
-        sat = Satrec.twoline2rv(*pair)
-    except Exception:
+        interval = step_times(now, now + timedelta(minutes=100),
+                              max(1, int(6000 / max(1, steps - 1))))
+        return positions_at(sat, interval)
+    except (ValueError, TypeError, RuntimeError, ArithmeticError):
         return []
 
-    points: List[Dict[str, float]] = []
-    try:
-        ref_dt = datetime.now(timezone.utc)
-        for idx in range(steps):
-            # Un tramo orbital de 105 minutos, no 24 h unidos por una sola línea.
-            offset_minutes = idx * 105.0 / max(steps - 1, 1)
-            sample_dt = ref_dt + timedelta(minutes=offset_minutes)
-            jd_float = _utc_to_jd_utc(sample_dt)
-            jd_int = int(math.floor(jd_float))
-            jd_frac = jd_float - jd_int
-            error, position, _ = sat.sgp4(jd_int, jd_frac)
-            if error != 0 or position is None:
-                continue
-            x, y, z = position[:3]
-            norm = float(np.linalg.norm([x, y, z]))
-            if norm <= 0:
-                continue
-            theta = (280.46061837 + 360.98564736629 * (jd_float - 2451545.0) + 0.000387933 * ((jd_float - 2451545.0) ** 2)) % 360.0
-            r_theta = math.radians(theta)
-            x_rot = x * math.cos(r_theta) + y * math.sin(r_theta)
-            y_rot = -x * math.sin(r_theta) + y * math.cos(r_theta)
-            lat = math.degrees(math.asin(z / norm))
-            lon = math.degrees(math.atan2(y_rot, x_rot))
-            alt_km = norm - 6378.137
-            if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
-                continue
-            points.append({"lat": float(lat), "lon": float(lon), "alt_km": float(alt_km)})
-    except Exception:
-        return []
-
-    return points
 
 
 def _generate_simulated_orbit(name: str, steps: int = 80) -> List[Dict[str, float]]:
@@ -776,6 +751,10 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           if(!orbitalRecords.length){{
             const opt=document.createElement('option');opt.textContent='No satellite records';
             satSelect.appendChild(opt);
+          }}
+          if(orbitalRecords.length){{
+            replaySelected=Math.max(0,orbitalRecords.findIndex(s=>s.mode==='sgp4'));
+            satSelect.value=String(replaySelected);
           }}
           function trackedSat(){{return orbitalRecords[replaySelected]||null;}}
           function trackedPass(kind){{
