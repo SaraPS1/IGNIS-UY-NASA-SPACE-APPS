@@ -17,7 +17,7 @@ filter keys are shared.
 
 - A fresh session opens on **Home · Discover IGNIS**, just as it did
   before the cinematic dashboard PR.
-- The original sidebar navigation order and button labels are unchanged.
+- The team-requested sidebar order places **Data upload before Dashboard**. All other navigation positions and labels remain unchanged.
 - Analysis filters remain in the same sidebar position and retain the
   original keys: `sidebar_region`, `sidebar_sensores`, `ignis_selected_year`.
 - The Dashboard's familiar 4 metric cards, 2D Uruguay plot on the left,
@@ -33,6 +33,7 @@ filter keys are shared.
   area/year selectors, selected-cell actions, and PDF report workflow.
 - 3D Earth & Satellites keeps the familiar single large globe with
   the left-side orbital controls and the timeline underneath.
+- The globe starts in **Illustrative trajectories** for the polished visual presentation. **Current TLE data** remains a selectable scientific calculation mode, and schematic paths are explicitly labeled illustrative.
 
 **3D remains available:**
 
@@ -50,7 +51,7 @@ filter keys are shared.
 ## Pitch sequence suggestion
 
 1. Open IGNIS (Home appears by default).
-2. Follow the exact original navigation practiced by the team.
+2. The sidebar lists **Data upload**, then **Dashboard**, followed by the remaining pages; rehearse with the updated order.
 3. Explain the 2D data and MODIS–VIIRS harmonization using the familiar buttons.
 4. Open Satellite–Ground Fusion and demonstrate the existing clickable grid.
 5. When ready for an optional visual highlight, select **Explore in 3D**.
