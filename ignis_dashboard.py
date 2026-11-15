@@ -418,7 +418,7 @@ def render_premium_dashboard(combined: pd.DataFrame, sample: pd.DataFrame, selec
     if not has:
         st.markdown('<div class="ig-empty"><b>No observations loaded</b>The map uses the national reference outline. Import IGNIS Master or NASA FIRMS data to display real records.</div>', unsafe_allow_html=True)
         st.button("Go to Data upload", key="ig_dash_upload", type="primary",
-                  on_click=navigate, args=(pages[2],))
+                  on_click=navigate, args=(pages[1],))
     left, right = st.columns([2, 1], gap="medium")
     with left:
         st.markdown('<div class="ig-section"><h3>Interpretation</h3><span>data provenance and research context</span></div>', unsafe_allow_html=True)
