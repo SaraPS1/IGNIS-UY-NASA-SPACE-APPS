@@ -51,9 +51,9 @@ class IgnisReferenceFidelityTests(unittest.TestCase):
         self.assertEqual(len(masks),15)
         self.assertEqual([int(index) for index,_ in masks],list(range(15)))
         self.assertEqual(len({url for _,url in masks}),15)
-        # Dashboard has a grid and the upload page has an upload symbol.
-        self.assertIn('rect',unquote(masks[1][1]))
-        self.assertIn('path',unquote(masks[2][1]))
+        # Requested order: Data upload is #1 (upload path), Dashboard #2 (grid).
+        self.assertIn('path',unquote(masks[1][1]))
+        self.assertIn('rect',unquote(masks[2][1]))
 
     def test_no_radio_controls_rendered(self):
         self.assertIn("button:focus-visible",self.visual)
