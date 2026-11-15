@@ -40,7 +40,7 @@ class DualMapTests(unittest.TestCase):
                             "longitude":-56.0,"instrumento":"MODIS"}])
         assoc=pd.DataFrame([{"lon":-56.3,"lat":-33.7,"resultado":"SYNTHETIC TEST"}])
         self.assertTrue(render_report_map(data,associations=assoc).startswith(b"\x89PNG"))
-        self.assertIsNone(render_report_map(pd.DataFrame()))
+        self.assertTrue(render_report_map(pd.DataFrame()).startswith(bytes([137, 80, 78, 71])))
 
     def test_every_spatial_page_uses_shared_pair(self):
         for path in ("ignis_dashboard.py","ignis_visual.py","ignis_nrt.py",
