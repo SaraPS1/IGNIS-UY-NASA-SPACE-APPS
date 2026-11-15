@@ -1164,8 +1164,10 @@ def render_ignis_space_module(df: Optional[pd.DataFrame]) -> None:
             orbit_mode = st.radio(
                 "Trajectory source",
                 ["Illustrative trajectories", "Current TLE data"],
-                index=1, key="ignis_orbit_source",
-                help="Current TLE data cannot reconstruct orbits on historical FIRMS observation dates.",
+                index=0, key="ignis_orbit_source",
+                help=("Illustrative trajectories are schematic, NOT measured satellite positions. "
+                      "Select Current TLE data for calculated orbital estimates; current elements "
+                      "cannot reconstruct historical FIRMS observation dates."),
             )
 
             st.caption("The FIRMS observation date does not change orbital UTC.")
