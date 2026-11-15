@@ -426,7 +426,7 @@ if (glOK) {
 function start2D(reason){
   $('gl').style.display='none'; const cv=$('flat'); cv.style.display='block';
   setStatus('WebGL unavailable · 2D fallback (' + reason + ')');
-  ['tgBeams','tgAtmo','tgOrbits','rRotate','rView','rLayer','mission-tour','mission-focus'].forEach(id=>{ const el=$(id); if(el){ el.disabled=true; el.style.opacity=.35; }});
+  ['tgBeams','tgAtmo','tgOrbits','rRotate','rView','rLayer','mission-tour','mission-focus','orbital-last','orbital-next','orbital-live','orbital-mode'].forEach(id=>{ const el=$(id); if(el){ el.disabled=true; el.style.opacity=.35; }});
   const ctx = cv.getContext('2d');
   function draw(){
     const w = cv.width = cv.clientWidth*devicePixelRatio, h = cv.height = cv.clientHeight*devicePixelRatio;
@@ -716,6 +716,63 @@ async function init3D(){
   function satelliteInViewport(lon,lat){
     return lon>-60&&lon< -51.7&&lat>-36.6&&lat< -28.7;
   }
+  function updateOrbitPanel(){
+    const sat=chosenSatellite(),illustrative=orbitalMode==='illustrative';
+    orbitPanel.dataset.mode=orbitalMode;
+    orbitStatus.textContent=illustrative?'ILLUSTRATIVE DEMO':
+      sat&&sat.mode==='sgp4'?'SGP4 ESTIMATE':'UNAVAILABLE';
+    $('orbital-last').disabled=illustrative||!chosenPass('last');
+    $('orbital-next').disabled=illustrative||!chosenPass('next');
+    $('orbital-live').disabled=illustrative;
+    $('tgBeams').disabled=!illustrative;
+    if(!illustrative)$('tgBeams').checked=false;
+    $('orbitBadge').textContent=illustrative?
+      'ILLUSTRATIVE ORBITAL ANIMATION — NOT REAL-TIME TRACKING':
+      'Illustrative relief · SGP4 coordinates when valid';
+    if(illustrative){
+      orbitClock.textContent='Demonstration movement · not a real UTC satellite position.';
+      orbitProvenance.textContent='All artistic orbit paths are explicitly simulated.';
+    }else if(!sat||sat.mode!=='sgp4'){
+      orbitClock.textContent='Verified orbital position unavailable.';
+      orbitProvenance.textContent=sat?(sat.status||'Suitable TLE unavailable'):
+        'No orbital records loaded';
+    }else{
+      const prefix=replayMode==='current'?'Current UTC estimate':
+        replayMode==='last'?'Last ground-track replay':'Next ground-track replay';
+      orbitClock.textContent=prefix+' · '+new Date(orbitalTimeMs).toISOString().replace('.000Z','Z');
+      const ev=chosenPass(replayMode);
+      orbitProvenance.textContent='CelesTrak TLE '+(sat.tle_epoch||'unknown')+
+        (ev?' · crossing '+ev.start_utc+' to '+ev.end_utc:'')+
+        ' · ground-track ≠ sensor coverage';
+    }
+  }
+  function replayPass(kind){
+    const pass=chosenPass(kind);
+    if(!pass||!Array.isArray(pass.track)||pass.track.length<2)return;
+    replayMode=kind;replayTrack=pass.track;
+    orbitalTimeMs=Date.parse(replayTrack[0].t);
+    replayRunning=!reduceMotion;
+    updateOrbitPanel();
+    setStatus('SGP4 ground-track crossing replay · swath coverage not verified');
+  }
+  $('orbital-last').onclick=()=>replayPass('last');
+  $('orbital-next').onclick=()=>replayPass('next');
+  $('orbital-live').onclick=()=>{
+    replayMode='current';replayTrack=null;replayRunning=false;
+    orbitalTimeMs=Date.now();updateOrbitPanel();
+  };
+  orbitSelector.onchange=()=>{
+    selectedOrbit=Number(orbitSelector.value)||0;
+    replayMode='current';replayTrack=null;replayRunning=false;updateOrbitPanel();
+  };
+  orbitInput.onchange=()=>{
+    orbitalMode=orbitInput.value;
+    replayMode='current';replayTrack=null;replayRunning=false;
+    orbitHaloGroup.visible=orbitalMode==='illustrative';
+    $('tgOrbits').checked=orbitalMode==='illustrative';
+    updateOrbitPanel();
+  };
+  updateOrbitPanel();
   function satPos(s,t){
     if(orbitalMode==='illustrative'){
       const x=Math.cos(t)*s.r,y=s.alt+Math.sin(t*2)*.4,z=Math.sin(t)*s.r*.72;
