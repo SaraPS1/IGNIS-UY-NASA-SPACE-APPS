@@ -634,18 +634,27 @@ async function init3D(){
   const info=$('info'), tip=$('tip');
   function showInfo(html){ info.innerHTML = html + '<button id="infoClose">Close</button>'; info.classList.add('show'); stage.classList.add('inspect'); $('infoClose').onclick=()=>{info.classList.remove('show');stage.classList.remove('inspect');}; }
   function showSatInfo(s){ showInfo(`<div class="ttl">${s.name} · ${s.sensor}</div><div class="kv"><span>Instrument</span><span>${s.sensor}</span><span>Orbit shown</span><span>Schematic animation</span><span>Role</span><span>${s.sensor==='MODIS'?'Terra/Aqua MODIS thermal anomalies (1 km)':'VIIRS I-band thermal anomalies (375 m)'}</span></div><div class="note">This orbit is illustrative and is not a historical overpass. Verified TLE-based trajectories are available in “3D Earth & Satellites”.</div>`); }
-  function pointHtml(i){ const frp = P.frp[i]==null ? 'not available' : `${P.frp[i]} MW`; return `<b>${P.inst[i]||(P.fam[i]===0?'MODIS':'VIIRS')}</b>${D.satellites[P.sat[i]]?' · '+D.satellites[P.sat[i]]:''}<br>${P.day[i]}<br>${P.lat[i].toFixed(4)}°, ${P.lon[i].toFixed(4)}°<br>FRP ${frp}${P.conf[i]?' · confidence '+P.conf[i]:''}<br><span style="color:var(--slate)">Thermal anomaly · not a confirmed fire</span>`; }
+  function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function pointHtml(i){
+    const frp=P.frp[i]==null?'not available':esc(P.frp[i])+' MW';
+    const name=esc(P.inst[i]||(P.fam[i]===0?'MODIS':'VIIRS'));
+    const satellite=D.satellites[P.sat[i]]?' · '+esc(D.satellites[P.sat[i]]):'';
+    return '<b>'+name+'</b>'+satellite+'<br>'+esc(P.day[i])+'<br>'+
+      P.lat[i].toFixed(4)+'°, '+P.lon[i].toFixed(4)+'°<br>FRP '+frp+
+      (P.conf[i]?' · confidence '+esc(P.conf[i]):'')+
+      '<br><span style="color:var(--slate)">Thermal anomaly · not a confirmed fire</span>';
+  }
   const rc=new THREE.Raycaster(); rc.params.Line.threshold=0.05; const mouse=new THREE.Vector2(); let hover=null;
   function pick(ev){ const r=renderer.domElement.getBoundingClientRect(); mouse.x=((ev.clientX-r.left)/r.width)*2-1; mouse.y=-((ev.clientY-r.top)/r.height)*2+1; rc.setFromCamera(mouse,camera);
     const targets=[dots]; if(caseGroup.visible) targets.push(...caseMeshes); if(assocGroup.visible) targets.push(...assocMeshes); satObjs.forEach(o=>targets.push(o.g.children[0]));
     const hits=rc.intersectObjects(targets,false); return hits.length?hits[0]:null; }
   renderer.domElement.addEventListener('pointermove', ev=>{ const h=pick(ev); if(!h){ tip.style.display='none'; renderer.domElement.style.cursor='grab'; hover=null; return; } renderer.domElement.style.cursor='pointer';
-    let html=''; if(h.object===dots){ const i=active[h.instanceId]; html=pointHtml(i); } else if(h.object.userData.kind==='case'){ const c=h.object.userData.data; html=`<b>${c.name}</b><br>${c.start} → ${c.end} · ${c.source}<br><span style="color:var(--slate)">Locality center, not the ignition point</span>`; } else if(h.object.userData.kind==='assoc'){ const a=h.object.userData.data; html=`<b>${a.result}</b><br>${a.date} · ${a.sources}<br>Nearby FIRMS: ${a.n_firms}${a.simulated?'<br><span style="color:#ffb4ad">SIMULATED test record</span>':''}`; } else if(h.object.userData.kind==='sat'){ const s=h.object.userData.data; html=`<b>${s.name}</b> · ${s.sensor}<br><span style="color:var(--slate)">Schematic orbit · click for details</span>`; }
+    let html=''; if(h.object===dots){ const i=active[h.instanceId]; html=pointHtml(i); } else if(h.object.userData.kind==='case'){ const c=h.object.userData.data; html=`<b>${esc(c.name)}</b><br>${esc(c.start)} → ${esc(c.end)} · ${esc(c.source)}<br><span style="color:var(--slate)">Locality center, not the ignition point</span>`; } else if(h.object.userData.kind==='assoc'){ const a=h.object.userData.data; html=`<b>${esc(a.result)}</b><br>${esc(a.date)} · ${esc(a.sources)}<br>Nearby FIRMS: ${a.n_firms}${a.simulated?'<br><span style="color:#ffb4ad">SIMULATED test record</span>':''}`; } else if(h.object.userData.kind==='sat'){ const s=h.object.userData.data; html=`<b>${s.name}</b> · ${s.sensor}<br><span style="color:var(--slate)">Schematic orbit · click for details</span>`; }
     tip.innerHTML=html; tip.style.display='block'; const r=stage.getBoundingClientRect(); tip.style.left=Math.min(ev.clientX-r.left+14, r.width-280)+'px'; tip.style.top=Math.max(8, ev.clientY-r.top-10)+'px'; });
   renderer.domElement.addEventListener('pointerleave', ()=>{ tip.style.display='none'; });
-  renderer.domElement.addEventListener('click', ev=>{ const h=pick(ev); if(!h) return; if(h.object===dots){ const i=active[h.instanceId]; showInfo(`<div class="ttl">Thermal observation</div><div class="kv"><span>Instrument</span><span>${P.inst[i]||'—'}</span><span>Satellite</span><span>${D.satellites[P.sat[i]]||'—'}</span><span>Timestamp</span><span>${P.day[i]}</span><span>Coordinates</span><span>${P.lat[i].toFixed(4)}°, ${P.lon[i].toFixed(4)}°</span><span>FRP</span><span>${P.frp[i]==null?'not available':P.frp[i]+' MW'}</span><span>Confidence</span><span>${P.conf[i]||'not available'}</span></div><div class="note">NASA FIRMS thermal anomaly from the imported records. It is not automatically a confirmed wildfire.</div>`); flyTo(toXZ(P.lon[i],P.lat[i])); }
-    else if(h.object.userData.kind==='case'){ const c=h.object.userData.data; showInfo(`<div class="ttl">${c.name}</div><div class="kv"><span>Episode</span><span>${c.start} → ${c.end}</span><span>Source</span><span>${c.source}</span></div>${c.url?`<div class="note"><a href="${c.url}" target="_blank" rel="noopener" style="color:var(--ice)">Open documentary source</a></div>`:''}<div class="note">Reference locality from the documented-case library; not a fire perimeter.</div>`); flyTo(toXZ(c.lon,c.lat)); }
-    else if(h.object.userData.kind==='assoc'){ const a=h.object.userData.data; showInfo(`<div class="ttl">Satellite–ground association</div><div class="kv"><span>Result</span><span>${a.result}</span><span>Date (UTC)</span><span>${a.date}</span><span>Sources</span><span>${a.sources}</span><span>Nearby FIRMS</span><span>${a.n_firms}</span></div><div class="note">${a.simulated?'SIMULATED test record · not evidence. ':''}Spatial/temporal proximity for review, not a confirmed detection.</div>`); flyTo(toXZ(a.lon,a.lat)); }
+  renderer.domElement.addEventListener('click', ev=>{ const h=pick(ev); if(!h) return; if(h.object===dots){ const i=active[h.instanceId]; showInfo(`<div class="ttl">Thermal observation</div><div class="kv"><span>Instrument</span><span>${esc(P.inst[i]||'—')}</span><span>Satellite</span><span>${esc(D.satellites[P.sat[i]]||'—')}</span><span>Timestamp</span><span>${esc(P.day[i])}</span><span>Coordinates</span><span>${P.lat[i].toFixed(4)}°, ${P.lon[i].toFixed(4)}°</span><span>FRP</span><span>${P.frp[i]==null?'not available':P.frp[i]+' MW'}</span><span>Confidence</span><span>${esc(P.conf[i]||'not available')}</span></div><div class="note">NASA FIRMS thermal anomaly from the imported records. It is not automatically a confirmed wildfire.</div>`); flyTo(toXZ(P.lon[i],P.lat[i])); }
+    else if(h.object.userData.kind==='case'){ const c=h.object.userData.data; showInfo(`<div class="ttl">${esc(c.name)}</div><div class="kv"><span>Episode</span><span>${esc(c.start)} → ${esc(c.end)}</span><span>Source</span><span>${esc(c.source)}</span></div>${c.url?`<div class="note"><a href="${c.url}" target="_blank" rel="noopener" style="color:var(--ice)">Open documentary source</a></div>`:''}<div class="note">Reference locality from the documented-case library; not a fire perimeter.</div>`); flyTo(toXZ(c.lon,c.lat)); }
+    else if(h.object.userData.kind==='assoc'){ const a=h.object.userData.data; showInfo(`<div class="ttl">Satellite–ground association</div><div class="kv"><span>Result</span><span>${esc(a.result)}</span><span>Date (UTC)</span><span>${esc(a.date)}</span><span>Sources</span><span>${esc(a.sources)}</span><span>Nearby FIRMS</span><span>${a.n_firms}</span></div><div class="note">${a.simulated?'SIMULATED test record · not evidence. ':''}Spatial/temporal proximity for review, not a confirmed detection.</div>`); flyTo(toXZ(a.lon,a.lat)); }
     else if(h.object.userData.kind==='sat'){ showSatInfo(h.object.userData.data); } });
 
   /* ---------- camera travel ---------------------------------------------- */
@@ -672,15 +681,16 @@ async function init3D(){
     if(!list.length&&indices.length)list.push(indices[0]);
     return list;
   }
-  function focusSignal(i){
+  function focusSignal(i, guided=false){
     if(i==null)return;
     flyTo(toXZ(P.lon[i],P.lat[i]),5.8,1550);
-    showInfo('<div class="ttl">Imported FIRMS observation</div><div class="note">'+pointHtml(i)+'</div>');
-    setStatus('Exploring an imported observation · not a confirmed wildfire');
+    if(!guided) showInfo('<div class="ttl">Imported FIRMS observation</div><div class="note">'+pointHtml(i)+'</div>');
+    else {info.classList.remove('show');stage.classList.remove('inspect');}
+    setStatus(guided?'Guided flyover of imported observations · not confirmed fires':'Exploring an imported observation · not a confirmed wildfire');
   }
   function nextTourStep(){
     if(tourStep>=tourQueue.length){stopTour();return;}
-    focusSignal(tourQueue[tourStep++]);
+    focusSignal(tourQueue[tourStep++],true);
     tourTimer=setTimeout(nextTourStep,3600);
   }
   missionNodes['mission-tour'].onclick=()=>{
@@ -715,7 +725,7 @@ async function init3D(){
   wireTimeline(rebuildInstances);
 
   /* ---------- resize / quality ------------------------------------------- */
-  function resize(){ const w=stage.clientWidth, h=stage.clientHeight;stage.classList.toggle('compact',w<760); renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+  function resize(){ const w=stage.clientWidth, h=stage.clientHeight;stage.classList.toggle('compact',w<760); renderer.setSize(w,h,false); camera.aspect=w/h;camera.fov=w<760?53:42;camera.updateProjectionMatrix(); }
   new ResizeObserver(resize).observe(stage); resize();
   let frames=0, lowSince=0, quality=2;
   function adapt(dt){ frames++; const fps=1/Math.max(dt,1e-4); if(fps<38){ lowSince+=dt; if(lowSince>2 && quality>0){ quality--; lowSince=0; if(quality===1){ pixelRatio=Math.min(pixelRatio,1.25); renderer.setPixelRatio(pixelRatio); setStatus('Adaptive quality: reduced resolution'); } else { renderer.shadowMap.enabled=false; sun.castShadow=false; halos.visible=false; setStatus('Adaptive quality: shadows off'); } } } else lowSince=Math.max(0,lowSince-dt*.5); }
