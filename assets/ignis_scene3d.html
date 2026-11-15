@@ -671,6 +671,51 @@ async function init3D(){
     satGroup.add(g); satObjs.push({ s, g, pivot, beam, beamEdge, trail, trailPos, TR, lbl, t:s.phase });
   }
   SATS.forEach(buildSat);
+  /* Orbital state is independent of historical FIRMS year selection. */
+  const orbitSelector=$('orbital-satellite'),orbitInput=$('orbital-mode');
+  const orbitClock=$('orbital-clock'),orbitStatus=$('orbital-status');
+  const orbitPanel=$('orbital-console'),orbitProvenance=$('orbital-provenance');
+  SATS.forEach((sat,index)=>{
+    const option=document.createElement('option');option.value=String(index);
+    option.textContent=sat.name+' · '+(sat.mode==='sgp4'?'SGP4':'unavailable');
+    orbitSelector.appendChild(option);
+  });
+  if(!SATS.length){
+    const option=document.createElement('option');option.textContent='No orbital data';
+    orbitSelector.appendChild(option);
+  }
+  let orbitalMode='calculated',replayMode='current',replayTrack=null;
+  let orbitalTimeMs=Date.now(),replayRunning=false,selectedOrbit=0;
+  orbitHaloGroup.visible=false;
+  function chosenSatellite(){return SATS[selectedOrbit]||null;}
+  function chosenPass(which){
+    const sat=chosenSatellite();
+    return sat&&sat.mode==='sgp4'?sat[which+'_pass']:null;
+  }
+  function interpolateOrbit(points,timeMs){
+    if(!Array.isArray(points)||!points.length||!Number.isFinite(timeMs))return null;
+    const first=Date.parse(points[0].t),last=Date.parse(points[points.length-1].t);
+    if(timeMs<first||timeMs>last)return null;
+    let lo=0,hi=points.length-1;
+    while(lo<hi){
+      const mid=(lo+hi)>>1;
+      if(Date.parse(points[mid].t)<timeMs)lo=mid+1;else hi=mid;
+    }
+    if(lo===0)return points[0];
+    const a=points[lo-1],b=points[lo],t0=Date.parse(a.t),t1=Date.parse(b.t);
+    const ratio=t1===t0?0:(timeMs-t0)/(t1-t0);
+    let dLon=b.lon-a.lon;
+    if(dLon>180)dLon-=360;
+    if(dLon< -180)dLon+=360;
+    let lon=a.lon+ratio*dLon;
+    if(lon>180)lon-=360;
+    if(lon< -180)lon+=360;
+    return {lat:a.lat+(b.lat-a.lat)*ratio,lon,
+      alt_km:a.alt_km+(b.alt_km-a.alt_km)*ratio};
+  }
+  function satelliteInViewport(lon,lat){
+    return lon>-60&&lon< -51.7&&lat>-36.6&&lat< -28.7;
+  }
   function satPos(s, t){ const a=t; const x=Math.cos(a)*s.r, y=s.alt+Math.sin(a*2)*0.4, z=Math.sin(a)*s.r*0.72; const v=new THREE.Vector3(x,y,z); v.applyAxisAngle(new THREE.Vector3(0,1,0), s.tilt); return v; }
   function updateSats(dt, t){
     satObjs.forEach(o=>{ if(!reduceMotion) o.t += dt*o.s.speed; const p=satPos(o.s,o.t); o.g.position.copy(p); o.g.lookAt(0,0,0); o.g.rotateX(Math.PI/2);
