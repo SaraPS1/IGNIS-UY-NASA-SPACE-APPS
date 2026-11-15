@@ -269,3 +269,27 @@ def available_bundle(reference_utc: Optional[datetime] = None,
             "source": SOURCE, "epoch_policy_days": MAX_EPOCH_DISTANCE_DAYS,
             "pass_definition": "subsatellite ground-track crossing; not instrument coverage",
             "satellites": records, "terrain_is_illustrative": True}
+
+
+
+def current_bundle() -> dict[str, Any]:
+    """Shared current-UTC bundle cached in Streamlit across all 3D views.
+
+    A five-minute anchor avoids recalculating expensive pass searches on
+    every Streamlit rerun. Frontend clock uses wall UTC in between refreshes.
+    """
+    moment = utc().replace(second=0, microsecond=0)
+    minute = (moment.minute // 5) * 5
+    anchor = moment.replace(minute=minute)
+    return cached_current_bundle(iso(anchor))
+
+
+try:
+    @st.cache_data(ttl=300, show_spinner=False)
+    def cached_current_bundle(utc_text: str) -> dict[str, Any]:
+        stamp = datetime.fromisoformat(utc_text.replace("Z", "+00:00"))
+        return available_bundle(stamp)
+except (ImportError, NameError):
+    def cached_current_bundle(utc_text: str) -> dict[str, Any]:
+        stamp = datetime.fromisoformat(utc_text.replace("Z", "+00:00"))
+        return available_bundle(stamp)
