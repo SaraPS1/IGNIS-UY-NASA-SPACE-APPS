@@ -23,6 +23,21 @@
   .reduce .panel{transition:none}
   #hud-top{left:14px;top:12px;padding:9px 13px;display:flex;align-items:center;gap:12px;font-size:12px}
   #hud-top b{font-size:13px;letter-spacing:.06em}
+  /* One-click, timeline-preserving presentation mode: the globe remains interactive. */
+  #focusBtn{margin-left:3px;background:linear-gradient(115deg,rgba(0,217,245,.13),rgba(0,100,130,.07));
+    border:1px solid rgba(125,235,255,.32);border-radius:4px;color:var(--ice);padding:5px 9px;
+    font-size:10.5px;font-weight:700;letter-spacing:.035em;white-space:nowrap;cursor:pointer;
+    transition:background .2s,border-color .2s,box-shadow .2s}
+  #focusBtn:hover,#focusBtn[aria-pressed="true"]{background:rgba(0,217,245,.22);
+    border-color:rgba(125,235,255,.75);box-shadow:0 0 18px rgba(0,217,245,.1)}
+  #focusBtn:focus-visible{outline:2px solid var(--white);outline-offset:3px}
+  .focus:not(.cine) #layers,.focus:not(.cine) #mission,.focus:not(.cine) #legend{
+    opacity:0;pointer-events:none;transform:translateY(12px)}
+  #stage.focus:not(.cine) #tl{left:50%;right:auto;width:min(750px,calc(100% - 30px));
+    max-width:none;transform:translateX(-50%)}
+  .reduce #focusBtn{transition:none}
+  @media(max-width:650px){#focusBtn{font-size:10px;padding:4px 7px}
+    #stage.focus:not(.cine) #tl{bottom:72px}}
   .badge{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:3px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
   .badge.hist{background:rgba(0,217,245,.12);color:var(--ice);border:1px solid rgba(0,217,245,.35)}
   .badge.live{background:rgba(255,106,26,.14);color:#ffb38a;border:1px solid rgba(255,106,26,.45)}
@@ -205,6 +220,8 @@
   <div id="hud-top" class="panel">
     <b>URUGUAY</b><span style="color:var(--slate)">Thermal observations · NASA FIRMS</span>
     <span id="modeBadge" class="badge hist">Historical data</span>
+    <button id="focusBtn" type="button" aria-pressed="false"
+      title="Hide side panels and keep the interactive map and timeline (P)">Focus view · P</button>
     <span class="badge illus" title="Relief and orbits are schematic; observations are real imported records">Illustrative relief · schematic orbits</span>
   </div>
 
@@ -300,6 +317,21 @@ const prefersReduce = window.matchMedia && window.matchMedia('(prefers-reduced-m
 let reduceMotion = prefersReduce;
 $('tgReduce').checked = reduceMotion;
 if (reduceMotion) stage.classList.add('reduce');
+/* Research mode keeps all panels; Focus mode gives the map breathing room.
+   Both modes work even when the scene falls back to 2D canvas. */
+function setFocus(on){
+  stage.classList.toggle('focus',Boolean(on));
+  $('focusBtn').setAttribute('aria-pressed',String(Boolean(on)));
+  $('focusBtn').textContent=on?'Show panels · P':'Focus view · P';
+}
+$('focusBtn').addEventListener('click',()=>setFocus(!stage.classList.contains('focus')));
+window.addEventListener('keydown',ev=>{
+  if(ev.key.toLowerCase()!=='p'||ev.ctrlKey||ev.metaKey||ev.altKey||ev.repeat)return;
+  const target=ev.target;
+  if(target && (target.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(target.tagName)))return;
+  if(stage.classList.contains('cine'))return;
+  ev.preventDefault();setFocus(!stage.classList.contains('focus'));
+});
 
 /* ---------- geography & projection ------------------------------------- */
 const outline = D.outline || [];
@@ -451,7 +483,7 @@ async function init3D(){
   let pixelRatio = Math.min(window.devicePixelRatio||1, 2);
   renderer.setPixelRatio(pixelRatio);
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.91;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x06101d, 0.012);
@@ -465,11 +497,11 @@ async function init3D(){
 
   /* lights: restrained, one key light with shadows, cool fill, warm rim */
   scene.add(new THREE.HemisphereLight(0x8fb6d8, 0x0b1a2a, 0.55));
-  const sun = new THREE.DirectionalLight(0xfff1dc, 2.1); sun.position.set(14, 18, 8); sun.castShadow = true;
+  const sun = new THREE.DirectionalLight(0xfff1dc, 1.65); sun.position.set(14, 18, 8); sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048); sun.shadow.camera.near = 1; sun.shadow.camera.far = 60;
   sun.shadow.camera.left = sun.shadow.camera.bottom = -9; sun.shadow.camera.right = sun.shadow.camera.top = 9; sun.shadow.bias = -0.0008;
   scene.add(sun);
-  const rim = new THREE.DirectionalLight(0x4fc3ff, 0.55); rim.position.set(-12, 6, -10); scene.add(rim);
+  const rim = new THREE.DirectionalLight(0x4fc3ff, 0.75); rim.position.set(-12, 6, -10); scene.add(rim);
   const ember = new THREE.PointLight(PAL.orange, 0, 9, 2); ember.position.set(0, 1.2, 0); scene.add(ember);
 
   /* stars */
@@ -483,13 +515,13 @@ async function init3D(){
   const atmo = new THREE.Mesh(new THREE.SphereGeometry(R*1.035, 72, 48), new THREE.ShaderMaterial({
     uniforms:{ c:{value:new THREE.Color(0x3fc6ff)}, p:{value:3.4} }, transparent:true, side:THREE.BackSide, blending:THREE.AdditiveBlending, depthWrite:false,
     vertexShader:`varying vec3 vN; varying vec3 vP; void main(){ vN=normalize(normalMatrix*normal); vP=(modelViewMatrix*vec4(position,1.)).xyz; gl_Position=projectionMatrix*vec4(vP,1.);}`,
-    fragmentShader:`uniform vec3 c; uniform float p; varying vec3 vN; varying vec3 vP; void main(){ float f=pow(1.0-abs(dot(normalize(vN),normalize(-vP))),p); gl_FragColor=vec4(c,1.0)*f*0.9; }`
+    fragmentShader:`uniform vec3 c; uniform float p; varying vec3 vN; varying vec3 vP; void main(){ float f=pow(1.0-abs(dot(normalize(vN),normalize(-vP))),p); gl_FragColor=vec4(c,1.0)*f*0.45; }`
   })); earthGroup.add(atmo);
-  const haze = new THREE.Mesh(new THREE.SphereGeometry(R+0.9, 48, 32), new THREE.MeshBasicMaterial({ color: 0x1a4f78, transparent: true, opacity: .10, depthWrite:false, blending: THREE.AdditiveBlending })); earthGroup.add(haze);
+  const haze = new THREE.Mesh(new THREE.SphereGeometry(R+0.9, 48, 32), new THREE.MeshBasicMaterial({ color: 0x1a4f78, transparent: true, opacity: .035, depthWrite:false, blending: THREE.AdditiveBlending })); earthGroup.add(haze);
   const loader = new THREE.TextureLoader(); loader.setCrossOrigin('anonymous');
   const texBase = 'https://threejs.org/examples/textures/planets/';
-  loader.load(texBase+'earth_atmos_2048.jpg', t=>{ t.colorSpace=THREE.SRGBColorSpace; earthMat.map=t; earthMat.color.set(0xffffff); earthMat.needsUpdate=true; earth.rotation.y = (c0[0]+180)*Math.PI/180*-1; }, undefined, ()=>setStatus('Earth texture offline · flat shading backdrop'));
-  loader.load(texBase+'earth_clouds_1024.png', t=>{ clouds.material.alphaMap=t; clouds.material.opacity=.55; clouds.material.needsUpdate=true; });
+  loader.load(texBase+'earth_atmos_2048.jpg', t=>{ t.colorSpace=THREE.SRGBColorSpace; earthMat.map=t; earthMat.color.set(0x678397); earthMat.needsUpdate=true; earth.rotation.y = (c0[0]+180)*Math.PI/180*-1; }, undefined, ()=>setStatus('Earth texture offline · flat shading backdrop'));
+  loader.load(texBase+'earth_clouds_1024.png', t=>{ clouds.material.alphaMap=t; clouds.material.opacity=.16; clouds.material.needsUpdate=true; });
   /* rotate the sphere so that Uruguay's longitude/latitude faces the plate (approximate alignment of the backdrop) */
   earthGroup.rotation.z = c0[1]*Math.PI/180; earthGroup.rotation.y = -(c0[0])*Math.PI/180;
 
@@ -516,7 +548,7 @@ async function init3D(){
   /* procedural surface texture (satellite-style palette, explicitly illustrative) + alpha mask */
   const TEX=1024; const texC=document.createElement('canvas'); texC.width=TEX; texC.height=Math.round(TEX*spanZ/spanX); const tctx=texC.getContext('2d');
   const maskC=document.createElement('canvas'); maskC.width=texC.width; maskC.height=texC.height; const mctx=maskC.getContext('2d');
-  { const img=tctx.createImageData(texC.width,texC.height); const d=img.data; const cols=[[36,74,52],[58,96,52],[94,118,56],[132,126,68],[160,140,84],[112,120,92]];
+  { const img=tctx.createImageData(texC.width,texC.height); const d=img.data; const cols=[[13,51,51],[22,70,56],[35,84,57],[52,98,65],[78,106,73],[64,88,81]];
     for (let y=0;y<texC.height;y++) for (let x=0;x<texC.width;x++){ const lon=bbox[0]-(bbox[2]-bbox[0])*.02+(x/texC.width)*(bbox[2]-bbox[0])*1.04, lat=bbox[3]+(bbox[3]-bbox[1])*.02-(y/texC.height)*(bbox[3]-bbox[1])*1.04;
       const n=fbm(lon*1.3+7.1,lat*1.3+3.3), m=fbm(lon*9+4,lat*9+2), f=fbm(lon*30,lat*30); const t=Math.min(.999,Math.max(0,n*.75+m*.25)); const k=t*(cols.length-1), i0=Math.floor(k), fr=k-i0; const a=cols[i0], b=cols[Math.min(i0+1,cols.length-1)];
       const sh=.82+f*.36; const o=(y*texC.width+x)*4; d[o]=(a[0]+(b[0]-a[0])*fr)*sh; d[o+1]=(a[1]+(b[1]-a[1])*fr)*sh; d[o+2]=(a[2]+(b[2]-a[2])*fr)*sh; d[o+3]=255; }
@@ -591,10 +623,10 @@ async function init3D(){
 
   /* ---------- satellites (schematic) ------------------------------------- */
   const SATS = [
-    { name:'Terra', sensor:'MODIS', color:PAL.ember, r:15.5, tilt:0.62, speed:0.055, phase:0.0, alt:7.2 },
-    { name:'Aqua', sensor:'MODIS', color:PAL.ember, r:16.5, tilt:-0.55, speed:0.05, phase:2.1, alt:7.8 },
-    { name:'Suomi NPP', sensor:'VIIRS', color:PAL.orange, r:17.5, tilt:1.25, speed:0.046, phase:4.0, alt:8.4 },
-    { name:'NOAA-20', sensor:'VIIRS', color:PAL.orange, r:18.5, tilt:1.05, speed:0.043, phase:5.3, alt:9.0 },
+    { name:'Terra', sensor:'MODIS', color:PAL.ember, r:6.2, tilt:0.12, speed:0.022, phase:4.7, alt:6.2 },
+    { name:'Aqua', sensor:'MODIS', color:PAL.ember, r:8.3, tilt:-0.55, speed:0.077, phase:2.1, alt:5.4 },
+    { name:'Suomi NPP', sensor:'VIIRS', color:PAL.orange, r:8.9, tilt:1.25, speed:0.071, phase:4.0, alt:5.7 },
+    { name:'NOAA-20', sensor:'VIIRS', color:PAL.orange, r:9.5, tilt:1.05, speed:0.065, phase:5.3, alt:6.1 },
   ];
   const satGroup = new THREE.Group(); scene.add(satGroup); const satObjs=[]; const labelsEl=$('satlabels');
   function buildSat(s){
@@ -607,15 +639,16 @@ async function init3D(){
     const lamp=new THREE.Mesh(new THREE.SphereGeometry(.04,10,10), new THREE.MeshBasicMaterial({ color:s.color })); lamp.position.set(0,-.16,.2); g.add(lamp);
     /* beam toward Uruguay */
     const beamLen=Math.hypot(s.r*0.86, s.alt);
-    const beam=new THREE.Mesh(new THREE.ConeGeometry(2.6, beamLen, 28, 1, true), new THREE.MeshBasicMaterial({ color:s.sensor==='MODIS'?0xff8a5a:0x4ea1ff, transparent:true, opacity:.07, side:THREE.DoubleSide, depthWrite:false, blending:THREE.AdditiveBlending }));
+    const beam=new THREE.Mesh(new THREE.ConeGeometry(1.35, beamLen, 20, 1, true), new THREE.MeshBasicMaterial({ color:s.sensor==='MODIS'?0xff8a5a:0x4ea1ff, transparent:true, opacity:.024, side:THREE.DoubleSide, depthWrite:false, blending:THREE.AdditiveBlending }));
     beam.geometry.translate(0,-beamLen/2,0); beam.rotation.x=Math.PI; g.add(beam);
-    const beamEdge=new THREE.Mesh(new THREE.ConeGeometry(2.6, beamLen, 28, 1, true), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.035, wireframe:true, depthWrite:false, blending:THREE.AdditiveBlending })); beamEdge.geometry.translate(0,-beamLen/2,0); beamEdge.rotation.x=Math.PI; g.add(beamEdge);
+    const beamEdge=new THREE.Mesh(new THREE.ConeGeometry(1.35, beamLen, 20, 1, true), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.008, wireframe:true, depthWrite:false, blending:THREE.AdditiveBlending })); beamEdge.geometry.translate(0,-beamLen/2,0); beamEdge.rotation.x=Math.PI; g.add(beamEdge);
     /* orbit trail: fading polyline */
     const TR=120, trailPos=new Float32Array(TR*3), trailCol=new Float32Array(TR*3); const tg=new THREE.BufferGeometry(); tg.setAttribute('position',new THREE.BufferAttribute(trailPos,3)); tg.setAttribute('color',new THREE.BufferAttribute(trailCol,3));
-    const trail=new THREE.Line(tg, new THREE.LineBasicMaterial({ vertexColors:true, transparent:true, opacity:.9, blending:THREE.AdditiveBlending, depthWrite:false })); scene.add(trail);
-    const col=new THREE.Color(s.color); for(let i=0;i<TR;i++){ const f=i/TR; trailCol[i*3]=col.r*f; trailCol[i*3+1]=col.g*f; trailCol[i*3+2]=col.b*f; }
+    const trail=new THREE.Line(tg, new THREE.LineBasicMaterial({ vertexColors:true, transparent:true, opacity:.36, blending:THREE.AdditiveBlending, depthWrite:false })); scene.add(trail);
+    const col=new THREE.Color(0x4ab9d6); for(let i=0;i<TR;i++){ const f=i/TR; trailCol[i*3]=col.r*f; trailCol[i*3+1]=col.g*f; trailCol[i*3+2]=col.b*f; }
     const lbl=document.createElement('div'); lbl.innerHTML=`${s.name}<small>${s.sensor} · illustrative</small>`; lbl.addEventListener('click',()=>showSatInfo(s)); labelsEl.appendChild(lbl);
     body.userData={kind:'sat',data:s}; g.children.forEach(ch=>{ if(!ch.userData.kind) ch.userData={kind:'sat',data:s}; });
+    g.scale.setScalar(.72); /* Schematically scaled for legible on-screen spacecraft. */
     satGroup.add(g); satObjs.push({ s, g, pivot, beam, beamEdge, trail, trailPos, TR, lbl, t:s.phase });
   }
   SATS.forEach(buildSat);
@@ -623,7 +656,7 @@ async function init3D(){
   function updateSats(dt, t){
     satObjs.forEach(o=>{ if(!reduceMotion) o.t += dt*o.s.speed; const p=satPos(o.s,o.t); o.g.position.copy(p); o.g.lookAt(0,0,0); o.g.rotateX(Math.PI/2);
       if(!reduceMotion) o.pivot.rotation.x = Math.sin(t*0.25+o.s.phase)*0.35;
-      const vis=$('tgBeams').checked; o.beam.visible=vis; o.beamEdge.visible=vis; o.beam.material.opacity = .05 + (reduceMotion?0:Math.sin(t*1.3+o.s.phase)*.02+.02);
+      const vis=$('tgBeams').checked; o.beam.visible=vis; o.beamEdge.visible=vis; o.beam.material.opacity = .017 + (reduceMotion?0:(Math.sin(t*1.3+o.s.phase)+1)*.004);
       o.trail.visible=$('tgOrbits').checked; if (o.trail.visible){ for(let i=0;i<o.TR;i++){ const q=satPos(o.s, o.t-(o.TR-i)*0.028); o.trailPos[i*3]=q.x; o.trailPos[i*3+1]=q.y; o.trailPos[i*3+2]=q.z; } o.trail.geometry.attributes.position.needsUpdate=true; }
       /* label projection */
       const v=p.clone().project(camera); const w=renderer.domElement.clientWidth, h=renderer.domElement.clientHeight; const onScreen=v.z<1 && Math.abs(v.x)<1.1 && Math.abs(v.y)<1.1;
@@ -719,7 +752,7 @@ async function init3D(){
   $('rReset').addEventListener('click',()=>{ viewIdx=0; tweenTo(HOME.pos.clone(),HOME.tgt.clone(),1200); controls.autoRotate=false; });
   $('rLayer').addEventListener('click',()=>{ surfIdx=(surfIdx+1)%surfOrder.length; top.material=surfMats[surfOrder[surfIdx]]; setStatus(`Surface style: ${surfOrder[surfIdx]} (illustrative)`); });
   $('rFull').addEventListener('click',()=>{ const el=document.documentElement; if(document.fullscreenElement){ document.exitFullscreen&&document.exitFullscreen(); return; } (el.requestFullscreen||el.webkitRequestFullscreen||function(){ setStatus('Full screen is blocked by the embedding frame; use the browser full-screen shortcut.'); }).call(el)?.catch?.(()=>setStatus('Full screen not allowed in this frame.')); });
-  function setCine(on){ stage.classList.toggle('cine',on); radial.classList.remove('open'); if(on){ stopTour(); controls.autoRotate=!reduceMotion; controls.autoRotateSpeed=0.35; info.classList.remove('show'); } else { controls.autoRotate=false; } }
+  function setCine(on){ if(on)setFocus(false); stage.classList.toggle('cine',on); radial.classList.remove('open'); if(on){ stopTour(); controls.autoRotate=!reduceMotion; controls.autoRotateSpeed=0.35; info.classList.remove('show'); } else { controls.autoRotate=false; } }
   $('rCine').addEventListener('click',()=>setCine(true)); $('cine-exit').addEventListener('click',()=>setCine(false));
   window.addEventListener('keydown', ev=>{ if(ev.key==='Escape') setCine(false); if(ev.key===' '&&ev.target.tagName!=='SELECT'&&ev.target.tagName!=='INPUT'){ ev.preventDefault(); togglePlay(); } if(ev.key==='ArrowLeft') setYear(year-1); if(ev.key==='ArrowRight') setYear(year+1); });
   wireTimeline(rebuildInstances);
