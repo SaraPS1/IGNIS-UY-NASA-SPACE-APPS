@@ -578,7 +578,7 @@ async function init3D(){
 
   /* ---------- thermal observations (instanced) --------------------------- */
   const maxInst = Math.max(N,1);
-  const dotGeo = new THREE.ConeGeometry(.060,1,8); dotGeo.translate(0,.5,0);
+  const dotGeo = new THREE.SphereGeometry(.095,14,10); dotGeo.translate(0,0,0);
   const dotMat = new THREE.MeshStandardMaterial({ roughness:.35, metalness:.1, emissive:0xffffff, emissiveIntensity:.55, toneMapped:true });
   dotMat.onBeforeCompile = (sh)=>{ sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance *= diffuseColor.rgb * 1.6;'); };
   const dots = new THREE.InstancedMesh(dotGeo, dotMat, maxInst); dots.castShadow = true; dots.count = 0; dots.userData.kind='dot'; uy.add(dots);
@@ -594,7 +594,7 @@ async function init3D(){
   function rebuildInstances(){
     active = activeIndices();
     dots.count = active.length; halos.count = active.length;
-    for (let k=0;k<active.length;k++){ const i=active[k]; const [x,z]=toXZ(P.lon[i],P.lat[i]); const h = 0.11 + frpLog(P.frp[i])*0.22; baseH[k]=h; phases[k]=(i*0.618)%1;
+    for (let k=0;k<active.length;k++){ const i=active[k]; const [x,z]=toXZ(P.lon[i],P.lat[i]); const h = 0.70 + frpLog(P.frp[i])*0.22; baseH[k]=h; phases[k]=(i*0.618)%1;
       tmpM.compose(tmpP.set(x,surfH[i],z), tmpQ.identity(), tmpS.set(1,h,1)); dots.setMatrixAt(k,tmpM); dots.setColorAt(k, famColor[P.fam[i]]);
       const s = .22 + frpLog(P.frp[i])*.4; tmpM.compose(tmpP.set(x,surfH[i]+.01,z), tmpQ, tmpS.set(s,1,s)); halos.setMatrixAt(k,tmpM); halos.setColorAt(k, famColor[P.fam[i]]); }
     dots.instanceMatrix.needsUpdate = true; if (dots.instanceColor) dots.instanceColor.needsUpdate = true;
@@ -606,10 +606,10 @@ async function init3D(){
 
   /* ---------- satellites (schematic) ------------------------------------- */
   const SATS = [
-    { name:'Terra', sensor:'MODIS', color:PAL.ember, r:15.5, tilt:0.62, speed:0.055, phase:0.0, alt:7.2 },
-    { name:'Aqua', sensor:'MODIS', color:PAL.ember, r:16.5, tilt:-0.55, speed:0.05, phase:2.1, alt:7.8 },
-    { name:'Suomi NPP', sensor:'VIIRS', color:PAL.orange, r:17.5, tilt:1.25, speed:0.046, phase:4.0, alt:8.4 },
-    { name:'NOAA-20', sensor:'VIIRS', color:PAL.orange, r:18.5, tilt:1.05, speed:0.043, phase:5.3, alt:9.0 },
+    { name:'Terra', sensor:'MODIS', color:PAL.ember, r:7.8, tilt:0.62, speed:0.09, phase:0.0, alt:3.8 },
+    { name:'Aqua', sensor:'MODIS', color:PAL.ember, r:8.8, tilt:-0.55, speed:0.075, phase:2.1, alt:4.5 },
+    { name:'Suomi NPP', sensor:'VIIRS', color:PAL.cyan, r:9.4, tilt:1.25, speed:0.065, phase:4.0, alt:5.0 },
+    { name:'NOAA-20', sensor:'VIIRS', color:PAL.cyan, r:10.2, tilt:1.05, speed:0.060, phase:5.3, alt:5.4 },
   ];
   const satGroup = new THREE.Group(); scene.add(satGroup); const satObjs=[]; const labelsEl=$('satlabels');
   function buildSat(s){
@@ -759,7 +759,7 @@ async function init3D(){
     if (tween){ const k=Math.min(1,(now-tween.s)/tween.d), e=easeInOut(k); camera.position.lerpVectors(tween.p0,tween.p1,e); controls.target.lerpVectors(tween.t0,tween.t1,e); if(k>=1) tween=null; }
     controls.update();
     if(!reduceMotion){ orbitHaloGroup.rotation.y += dt*.045; clouds.rotation.y += dt*0.002; earth.rotation.y += dt*0.00025;
-      for (let k=0;k<active.length;k++){ const i=active[k]; const pulse=1+Math.sin(t*2.2+phases[k]*6.283)*0.08; const [x,z]=toXZ(P.lon[i],P.lat[i]); tmpM.compose(tmpP.set(x,surfH[i],z),tmpQ.identity(),tmpS.set(pulse,baseH[k],pulse)); dots.setMatrixAt(k,tmpM); const s=(.22+frpLog(P.frp[i])*.4)*(1+Math.sin(t*2.2+phases[k]*6.283)*.25); tmpM.compose(tmpP.set(x,surfH[i]+.01,z),tmpQ,tmpS.set(s,1,s)); halos.setMatrixAt(k,tmpM); }
+      for (let k=0;k<active.length;k++){ const i=active[k]; const pulse=1+Math.sin(t*2.2+phases[k]*6.283)*0.08; const [x,z]=toXZ(P.lon[i],P.lat[i]); tmpM.compose(tmpP.set(x,surfH[i]+.10,z),tmpQ.identity(),tmpS.set(pulse,baseH[k]*pulse,pulse)); dots.setMatrixAt(k,tmpM); const s=(.22+frpLog(P.frp[i])*.4)*(1+Math.sin(t*2.2+phases[k]*6.283)*.25); tmpM.compose(tmpP.set(x,surfH[i]+.01,z),tmpQ,tmpS.set(s,1,s)); halos.setMatrixAt(k,tmpM); }
       if(active.length){ dots.instanceMatrix.needsUpdate=true; halos.instanceMatrix.needsUpdate=true; }
       glowTube.material.opacity = .22 + Math.sin(t*0.9)*.06; }
     updateSats(dt,t); adapt(dt); renderer.render(scene,camera); raf=requestAnimationFrame(animate);
