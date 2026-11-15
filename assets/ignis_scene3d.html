@@ -623,10 +623,10 @@ async function init3D(){
 
   /* ---------- satellites (schematic) ------------------------------------- */
   const SATS = [
-    { name:'Terra', sensor:'MODIS', color:PAL.ember, r:15.5, tilt:0.62, speed:0.055, phase:0.0, alt:7.2 },
-    { name:'Aqua', sensor:'MODIS', color:PAL.ember, r:16.5, tilt:-0.55, speed:0.05, phase:2.1, alt:7.8 },
-    { name:'Suomi NPP', sensor:'VIIRS', color:PAL.orange, r:17.5, tilt:1.25, speed:0.046, phase:4.0, alt:8.4 },
-    { name:'NOAA-20', sensor:'VIIRS', color:PAL.orange, r:18.5, tilt:1.05, speed:0.043, phase:5.3, alt:9.0 },
+    { name:'Terra', sensor:'MODIS', color:PAL.ember, r:7.6, tilt:0.62, speed:0.085, phase:0.0, alt:5.0 },
+    { name:'Aqua', sensor:'MODIS', color:PAL.ember, r:8.3, tilt:-0.55, speed:0.077, phase:2.1, alt:5.4 },
+    { name:'Suomi NPP', sensor:'VIIRS', color:PAL.orange, r:8.9, tilt:1.25, speed:0.071, phase:4.0, alt:5.7 },
+    { name:'NOAA-20', sensor:'VIIRS', color:PAL.orange, r:9.5, tilt:1.05, speed:0.065, phase:5.3, alt:6.1 },
   ];
   const satGroup = new THREE.Group(); scene.add(satGroup); const satObjs=[]; const labelsEl=$('satlabels');
   function buildSat(s){
@@ -648,6 +648,7 @@ async function init3D(){
     const col=new THREE.Color(s.color); for(let i=0;i<TR;i++){ const f=i/TR; trailCol[i*3]=col.r*f; trailCol[i*3+1]=col.g*f; trailCol[i*3+2]=col.b*f; }
     const lbl=document.createElement('div'); lbl.innerHTML=`${s.name}<small>${s.sensor} · illustrative</small>`; lbl.addEventListener('click',()=>showSatInfo(s)); labelsEl.appendChild(lbl);
     body.userData={kind:'sat',data:s}; g.children.forEach(ch=>{ if(!ch.userData.kind) ch.userData={kind:'sat',data:s}; });
+    g.scale.setScalar(.72); /* Schematically scaled for legible on-screen spacecraft. */
     satGroup.add(g); satObjs.push({ s, g, pivot, beam, beamEdge, trail, trailPos, TR, lbl, t:s.phase });
   }
   SATS.forEach(buildSat);
