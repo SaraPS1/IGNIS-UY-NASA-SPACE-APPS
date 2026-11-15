@@ -537,7 +537,7 @@ with st.sidebar:
         f'<div class="ignis-side-logo">{logo_markup}</div>'
         '<div class="ignis-side-brand-copy">'
         '<strong>IGNIS <span>UY</span></strong>'
-        '<span class="ignis-side-logo-ai-note" role="note">IA generated</span>'
+        '<span class="ignis-side-logo-ai-note" role="note">SI-generated logo</span>'
          '<small>HISTORICAL ARCHIVE · URUGUAY</small>'
         '</div></div>'
         '<div class="ignis-side-project">NASA FIRMS <span>·</span> MODIS + VIIRS</div>',
