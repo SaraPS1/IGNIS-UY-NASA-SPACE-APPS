@@ -1299,6 +1299,12 @@ def mostrar_fusion_terrestre(maestro:pd.DataFrame|None=None) -> None:
     # Expose the current calculated associations to the 3D control center.
     # This is derived from uploaded records; do not create synthetic matches.
     st.session_state['ignis_fusion_results'] = fusion if not fusion.empty else None
+    st.markdown("### 3D spatial fusion · NASA observations and imported evidence")
+    from ignis_spatial import render_spatial_3d
+    render_spatial_3d(periodo, year=ano,
+                      associations=fusion if not fusion.empty else None, height=650)
+    st.caption("3D terrain is illustrative. Satellite–ground proximity is for review, "
+               "not validated fire confirmation. Use the 2D grid chart above to select a cell.")
     if not fusion.empty:
         celda_fusion=fusion.loc[fusion.lat.ge(lat0)&fusion.lat.lt(lat1)&
                                fusion.lon.ge(lon0)&fusion.lon.lt(lon1)].copy()
