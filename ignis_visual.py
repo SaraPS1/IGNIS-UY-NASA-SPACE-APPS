@@ -703,12 +703,16 @@ def render_project_home(base, asset_uri, pages, navigate):
                 unsafe_allow_html=True,
             )
     st.caption(
-        "SI disclosure: generative AI tools assisted development of code, "
-        "documentation and illustrative background artwork; artwork is visibly "
-        "marked SI-generated. Imported NASA FIRMS observations are external source "
-        "data, not synthetic AI detections. IGNIS UY is independent and does not "
-        "represent or reproduce NASA branding. Full provenance: docs/SI_USAGE.md. "
-        "Thermal anomalies are not confirmed wildfires."
+        "Independent research in the context of NASA Space Apps "
+        "Challenge 2026. The space scene is illustrative. The backgrounds "
+        "are digital illustrations, not dated satellite photographs "
+        "or wildfire validation. Thermal anomalies are not "
+        "confirmed wildfires; harmonization remains experimental "
+        "and coverage depends on the uploaded files. "
+        "SI disclosure: generative AI tools assisted code, documentation "
+        "and illustrative background artwork. Artwork is marked "
+        "SI-generated; imported NASA FIRMS records are external data, "
+        "not SI-generated observations. Provenance: docs/SI_USAGE.md."
     )
 
 
