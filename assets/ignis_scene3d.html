@@ -644,6 +644,10 @@ async function init3D(){
   /* ---------- satellites (schematic) ------------------------------------- */
   /* Orbital data is authoritative in scientific mode. */
   const orbital=D.orbit||{satellites:[]};
+  const selectedUtc=orbital.clock_mode==='selected_utc';
+  const selectedUtcMs=Date.parse(orbital.reference_utc||'');
+  function orbitalReferenceMs(){return selectedUtc&&Number.isFinite(selectedUtcMs)?selectedUtcMs:Date.now();}
+
   const SATS=(orbital.satellites||[]).map((s,i)=>({
     ...s,r:4.6+i*.35,alt:2.4+i*.22,tilt:i*.4,phase:i*1.7,speed:.055+i*.006,
     color:s.color||PAL.cyan
@@ -685,7 +689,8 @@ async function init3D(){
     orbitSelector.appendChild(option);
   }
   let orbitalMode='calculated',replayMode='current',replayTrack=null;
-  let orbitalTimeMs=Date.now(),replayRunning=false,selectedOrbit=0;
+  let orbitalTimeMs=orbitalReferenceMs(),replayRunning=false,selectedOrbit=0;
+  if(selectedUtc)$('orbital-live').textContent='Selected UTC';
   selectedOrbit=Math.max(0,SATS.findIndex(s=>s.mode==='sgp4'));
   if(SATS.length)orbitSelector.value=String(selectedOrbit);
   orbitHaloGroup.visible=false;
@@ -739,7 +744,7 @@ async function init3D(){
       orbitProvenance.textContent=sat?(sat.status||'Suitable TLE unavailable'):
         'No orbital records loaded';
     }else{
-      const prefix=replayMode==='current'?'Current UTC estimate':
+      const prefix=replayMode==='current'?(selectedUtc?'Selected UTC estimate':'Current UTC estimate'):
         replayMode==='last'?'Last ground-track replay':'Next ground-track replay';
       orbitClock.textContent=prefix+' · '+new Date(orbitalTimeMs).toISOString().replace('.000Z','Z');
       const ev=chosenPass(replayMode);
@@ -761,7 +766,7 @@ async function init3D(){
   $('orbital-next').onclick=()=>replayPass('next');
   $('orbital-live').onclick=()=>{
     replayMode='current';replayTrack=null;replayRunning=false;
-    orbitalTimeMs=Date.now();updateOrbitPanel();
+    orbitalTimeMs=orbitalReferenceMs();updateOrbitPanel();
   };
   orbitSelector.onchange=()=>{
     selectedOrbit=Number(orbitSelector.value)||0;
@@ -789,7 +794,7 @@ async function init3D(){
   }
   function updateSats(dt,t){
     if(orbitalMode==='calculated'){
-      if(replayMode==='current')orbitalTimeMs=Date.now();
+      if(replayMode==='current')orbitalTimeMs=orbitalReferenceMs();
       else if(replayRunning&&!reduceMotion){
         orbitalTimeMs+=dt*1000*50;
         const stop=Date.parse(replayTrack[replayTrack.length-1].t);
