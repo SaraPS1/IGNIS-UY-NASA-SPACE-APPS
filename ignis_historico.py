@@ -519,7 +519,7 @@ with st.sidebar:
     # Each section button has a unique key. We do not depend on the internal
     # structure of st.radio or on nth-child: this removes the duplicated
     # house icons and the visible radio controls.
-    st.session_state.setdefault("ignis_nav", NAV_PAGES[0])
+    st.session_state.setdefault("ignis_nav", NAV_PAGES[1])
     if st.session_state["ignis_nav"] not in NAV_PAGES:
         _ignis_navigate_to(NAV_PAGES[0])
     current_section = st.session_state["ignis_nav"]
