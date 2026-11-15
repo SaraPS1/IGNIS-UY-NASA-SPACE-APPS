@@ -66,6 +66,7 @@ jobs:
             preview/ignis-globe-webgl.png
             preview/ignis-globe-no-textures.png
             preview/ignis-globe-fallback2d.png
+            preview/ignis-globe-context-lost2d.png
             preview/ignis-globe-runtime-results.json
             preview/ignis-globe-synthetic.html
           if-no-files-found: ignore
