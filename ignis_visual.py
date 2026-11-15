@@ -795,6 +795,9 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
     _header("Scientific Atlas · Spatial exploration",
             "Thermal activity Atlas",
             "Choose a time range and explore uploaded thermal observations for Uruguay.")
+    from ignis_modes import is_explorer, show_explorer_entry, show_presentation_return
+    if is_explorer():
+        show_presentation_return("ignis_atlas_back_to_presentation")
     if sample.empty:
         st.info("Import ZIP/CSV files or the IGNIS Master dataset before using the Atlas.")
         left,right=st.columns([2,1],gap="medium")
@@ -820,9 +823,14 @@ def render_scientific_atlas(sample,selected,base,map_fn,columns,pages,navigate):
         with st.container(border=True):
             st.markdown("#### 🗺️ Geographic distribution")
             if not mapped.empty:
-                from ignis_spatial import render_spatial_pair
-                render_spatial_pair(mapped, year=None if selector=="All uploaded historical records" else selected,
-                                    height=620, context="atlas")
+                if is_explorer():
+                    from ignis_spatial import render_spatial_pair
+                    render_spatial_pair(mapped, year=None if selector=="All uploaded historical records" else selected,
+                                        height=620, context="atlas")
+                else:
+                    # Original scientific map, with its established Plotly widget key.
+                    map_fn(mapped, "ignis_atlas_scientific")
+                    show_explorer_entry("ignis_atlas_explore_3d", "Explore this map in 3D")
             else:
                 st.info("No points for the selected period.")
                 _empty_uruguay_outline(base,"ignis_atlas_selection_empty")
