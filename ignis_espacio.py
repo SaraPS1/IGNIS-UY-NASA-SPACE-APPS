@@ -250,7 +250,8 @@ def _country_regions_html() -> str:
 
 
 def _render_globe_html(config: Dict[str, Any]) -> str:
-    payload = json.dumps(config)
+    # Do not let imported source text close the embedded JSON script element.
+    payload = json.dumps(config, allow_nan=False).replace("</", "<\\/")
     return f"""
     <html>
       <head>
@@ -313,9 +314,19 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           }}
           #ignis-orbit-ctl button, #ignis-orbit-ctl select {{
             background:#0b2237; color:#effcff; border:1px solid #326180;
-            border-radius:7px; padding:3px 9px; font:12px Arial,sans-serif;
-            cursor:pointer;
+            border-radius:7px; padding:8px 10px; font:11px Arial,sans-serif;
+            cursor:pointer; min-height:35px;
           }}
+          #ignis-orbit-ctl button:hover, #ignis-orbit-ctl select:hover {{border-color:#5ee5fc; background:#134061;}}
+          #ignis-orbit-ctl button:focus-visible, #ignis-orbit-ctl select:focus-visible {{outline:2px solid #67dffb;outline-offset:2px}}
+          #ignis-orbit-ctl button:disabled, #ignis-orbit-ctl select:disabled {{opacity:.43;cursor:not-allowed}}
+          #ignis-orbit-ctl label {{font-size:10px;color:#acd9e9;font-weight:700;letter-spacing:.06em}}
+          #ignis-orbit-ctl {{box-shadow:0 12px 48px #0009;border:1px solid #244c68;max-width:calc(100% - 250px)}}
+          #globe-shell {{border:1px solid rgba(72,165,198,.34);box-shadow:inset 0 0 80px #041020b0}}
+          #ignis-globe-status {{border-radius:6px;max-width:62%}}
+          @media(max-width:970px){{#ignis-orbit-ctl{{max-width:94%;bottom:65px}}.ignis-globe-help{{display:none}}}}
+          @media(prefers-reduced-motion:reduce){{#globe-shell *{{scroll-behavior:auto!important}}}}
+
         </style>
       </head>
       <body>
@@ -335,15 +346,17 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             Marker height ∝ FRP
           </div>
           <div id="ignis-orbit-ctl">
-            <select id="ignis-tracked-sat" aria-label="Choose satellite to replay"></select>
+            <label for="ignis-tracked-sat">SATELLITE</label><select id="ignis-tracked-sat" aria-label="Choose satellite to replay"></select>
             <button id="ignis-last-pass" type="button">Last pass</button>
             <button id="ignis-next-pass" type="button">Next pass</button>
             <button id="ignis-current" type="button">Current UTC</button>
             <button id="ignis-play" type="button">⏸ Pause</button>
-            <select id="ignis-speed" aria-label="Orbital playback speed">
-              <option value="1">1×</option>
+            <label for="ignis-speed">REPLAY SPEED</label><select id="ignis-speed" aria-label="Orbital playback speed">
+              <option value="1" selected>1×</option>
+              <option value="5">5×</option>
               <option value="10">10×</option>
-              <option value="60" selected>60×</option>
+              <option value="30">30×</option>
+              <option value="60">60×</option>
             </select>
             <span id="ignis-orbit-clock" aria-live="polite"></span>
           </div>
@@ -358,9 +371,6 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           }}
         </script>
         <script type="module">
-          import * as THREE from "three";
-          import {{ OrbitControls }} from "three/addons/controls/OrbitControls.js";
-
           const payload = {payload};
           const status = document.getElementById('ignis-globe-status');
           const shell = document.getElementById('globe-shell');
@@ -373,6 +383,9 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           }};
 
           try {{
+            // Catch network/CORS/module failures in this same error boundary.
+            const THREE = await import("three");
+            const {{ OrbitControls }} = await import("three/addons/controls/OrbitControls.js");
             if (!window.WebGLRenderingContext) {{
               throw new Error('WebGL is not available in this browser.');
             }}
@@ -391,8 +404,8 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             camera.position.set(0, 1.2, 6.4);
 
             const renderer = new THREE.WebGLRenderer({{ antialias: true, alpha: false }});
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.75));
             renderer.setSize(root.clientWidth, root.clientHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             root.appendChild(renderer.domElement);
 
             const controls = new OrbitControls(camera, renderer.domElement);
@@ -402,8 +415,8 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           controls.minDistance = 3.1;
           controls.maxDistance = 12;
           controls.enableZoom = true;
-          controls.autoRotate = true;
-          controls.autoRotateSpeed = 0.5;
+          controls.autoRotate = payload.orbit_mode==='illustrative';
+          controls.autoRotateSpeed = 0.24;
           controls.target.set(-0.1, -0.25, 0);
 
           const ambient = new THREE.AmbientLight(0x9bbdff, 1.15);
@@ -482,16 +495,25 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             }})
           );
           earthGroup.add(earth);
-          let textureCount = 0;
-          function loadGlobeTexture(url, key) {{
-            textureLoader.load(url,(image) => {{
-              image.colorSpace = THREE.SRGBColorSpace;
-              image.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+          let textureCount=0;
+          let textureFailures=0;
+          let sceneReady=false;
+          function reportSceneStatus(){{
+            if(!sceneReady)return;
+            const incomplete=textureFailures>0 || textureCount<2;
+            setStatus(incomplete?'3D active with fallback visuals':'3D ready · Earth textures loaded');
+          }}
+          function loadGlobeTexture(url,key){{
+            textureLoader.load(url,(image)=>{{
+              image.colorSpace=THREE.SRGBColorSpace;
+              image.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);
               globeUniforms[key].value=image;
+              globeUniforms[key].value.needsUpdate=true;
               textureCount++;
-              if(textureCount === 2) setStatus('3D listo · Blue/Black Marble');
-            }},undefined,() => {{
-              setStatus('3D available · texture unavailable (check network)','error');
+              reportSceneStatus();
+            }},undefined,()=>{{
+              textureFailures++;
+              reportSceneStatus();
             }});
           }}
           loadGlobeTexture(blueMarbleUrl,'dayMap');
@@ -600,13 +622,15 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           let tleOrbits=0;
           const movers=[];
           const orbitalRecords=Array.isArray(payload.satellites)?payload.satellites:[];
-          if(showSatellites||showOrbits){{
-            orbitalRecords.forEach((sat,index)=>{{
-              const scientific=payload.orbit_mode==='sgp4';
+          // Must be in the module's top-level scene scope, NOT inside forEach.
+          // The playback controls and animation loop use these same references.
+          const scientific=payload.orbit_mode==='sgp4';
           const selectedUtc=payload.orbit_clock_mode==='selected_utc';
           const selectedMs=Date.parse(payload.orbit_reference_utc||'');
           const referenceUtcMs=()=>selectedUtc&&Number.isFinite(selectedMs)?selectedMs:Date.now();
           document.getElementById('ignis-current').textContent=selectedUtc?'Selected UTC':'Current UTC';
+          if(showSatellites||showOrbits){{
+            orbitalRecords.forEach((sat,index)=>{{
               const valid=scientific&&sat.mode==='sgp4'&&
                 Array.isArray(sat.positions)&&sat.positions.length>=2;
               const demo=payload.orbit_mode==='illustrative';
@@ -735,12 +759,12 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             renderer.render(scene, camera);
           }}, 180);
 
-          setStatus('Loading Blue/Black Marble textures…');
+          setStatus('Initializing 3D · optional textures are loading…');
 
           /* Scientific mode and last/next crossing replay use the SAME UTC
              timestamped ephemerides as the Uruguay mission-control scene. */
           const scientific=payload.orbit_mode==='sgp4';
-          let playing=!scientific,orbitT=0,orbitSpeed=60;
+          let playing=!scientific,orbitT=0,orbitSpeed=1;
           let orbitalUtcMs=referenceUtcMs(),replayKind='current',replayTrack=null;
           let replaySelected=0;
           const orbitClock=document.getElementById('ignis-orbit-clock');
@@ -769,6 +793,7 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
             document.getElementById('ignis-next-pass').disabled=!trackedPass('next');
             document.getElementById('ignis-current').disabled=!scientific;
             playButton.disabled=scientific&&replayKind==='current';
+            speedSelect.disabled=scientific&&replayKind==='current';
             if(!scientific)playButton.textContent=playing?'⏸ Pause':'▶ Play';
             else playButton.textContent=replayKind==='current'?'Current UTC':playing?'⏸ Pause':'▶ Play';
           }}
@@ -876,14 +901,15 @@ def _render_globe_html(config: Dict[str, Any]) -> str:
           const hotspotNote = (showHotspots && totalHotspots > shownHotspots)
             ? ' · hotspots: ' + shownHotspots + ' of ' + totalHotspots + ' (highest FRP)'
             : (showHotspots && shownHotspots ? ' · hotspots: ' + shownHotspots : '');
-          setStatus('3D ready'+orbitStatus+hotspotNote);
+          sceneReady=true;
+          window.__ignisGlobeReady=true;
+          renderer.render(scene,camera);
+          reportSceneStatus();
           }} catch (error) {{
             console.error('IGNIS 3D error:', error);
             const message = error && error.message ? error.message : 'Unknown error while initializing the 3D view.';
             setStatus('Error 3D: ' + message, 'error');
-            if (root) {{
-              root.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:2rem;color:#fce5e5;text-align:center;font:14px Arial,sans-serif;background:linear-gradient(180deg,#0b1220,#090d18);">Could not initialize the 3D view. Check your browser WebGL support or reload this page.</div>';
-            }}
+            window.__ignisRenderFallback?.(message);
           }}
         </script>
       </body>
