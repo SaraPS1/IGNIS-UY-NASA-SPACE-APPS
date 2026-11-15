@@ -642,12 +642,12 @@ async function init3D(){
   }
 
   /* ---------- satellites (schematic) ------------------------------------- */
-  const SATS = [
-    { name:'Terra', sensor:'MODIS', color:PAL.ember, r:4.6, tilt:0.62, speed:0.09, phase:0.0, alt:2.3 },
-    { name:'Aqua', sensor:'MODIS', color:PAL.ember, r:5.0, tilt:-0.55, speed:0.075, phase:2.1, alt:3.8 },
-    { name:'Suomi NPP', sensor:'VIIRS', color:PAL.cyan, r:5.4, tilt:1.25, speed:0.065, phase:4.0, alt:4.0 },
-    { name:'NOAA-20', sensor:'VIIRS', color:PAL.cyan, r:5.8, tilt:1.05, speed:0.060, phase:5.3, alt:2.9 },
-  ];
+  /* Orbital data is authoritative in scientific mode. */
+  const orbital=D.orbit||{satellites:[]};
+  const SATS=(orbital.satellites||[]).map((s,i)=>({
+    ...s,r:4.6+i*.35,alt:2.4+i*.22,tilt:i*.4,phase:i*1.7,speed:.055+i*.006,
+    color:s.color||PAL.cyan
+  }));
   const satGroup = new THREE.Group(); scene.add(satGroup); const satObjs=[]; const labelsEl=$('satlabels');
   function buildSat(s){
     const g=new THREE.Group(); g.scale.setScalar(0.66);
