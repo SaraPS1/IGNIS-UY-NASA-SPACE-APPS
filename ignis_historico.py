@@ -510,6 +510,12 @@ NAV_PAGES = [
     "💬 Team & Contributions",
 ]
 
+# Sidebar order only. NAV_PAGES remains the stable source of truth for
+# existing callbacks, page dispatch, hero links, icons, and reports.
+# Move the Data upload button above Dashboard without changing their identities.
+NAV_DISPLAY_ORDER = [0, 2, 1, *range(3, len(NAV_PAGES))]
+
+
 def _ignis_navigate_to(section: str) -> None:
     """El callback corre antes de reinstanciar el widget 'ignis_nav'."""
     st.session_state["ignis_nav"] = section
@@ -546,7 +552,8 @@ with st.sidebar:
     if st.session_state["ignis_nav"] not in NAV_PAGES:
         _ignis_navigate_to(NAV_PAGES[0])
     current_section = st.session_state["ignis_nav"]
-    for i, section in enumerate(NAV_PAGES):
+    for i in NAV_DISPLAY_ORDER:
+        section = NAV_PAGES[i]
         clean_label = section.split(" ", 1)[1] if " " in section else section
         st.button(
             clean_label,
