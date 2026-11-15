@@ -716,15 +716,68 @@ async function init3D(){
   function satelliteInViewport(lon,lat){
     return lon>-60&&lon< -51.7&&lat>-36.6&&lat< -28.7;
   }
-  function satPos(s, t){ const a=t; const x=Math.cos(a)*s.r, y=s.alt+Math.sin(a*2)*0.4, z=Math.sin(a)*s.r*0.72; const v=new THREE.Vector3(x,y,z); v.applyAxisAngle(new THREE.Vector3(0,1,0), s.tilt); return v; }
-  function updateSats(dt, t){
-    satObjs.forEach(o=>{ if(!reduceMotion) o.t += dt*o.s.speed; const p=satPos(o.s,o.t); o.g.position.copy(p); o.g.lookAt(0,0,0); o.g.rotateX(Math.PI/2);
-      if(!reduceMotion) o.pivot.rotation.x = Math.sin(t*0.25+o.s.phase)*0.35;
-      const vis=$('tgBeams').checked; o.beam.visible=vis; o.beamEdge.visible=vis; o.beam.material.opacity = .05 + (reduceMotion?0:Math.sin(t*1.3+o.s.phase)*.02+.02);
-      o.trail.visible=$('tgOrbits').checked; if (o.trail.visible){ for(let i=0;i<o.TR;i++){ const q=satPos(o.s, o.t-(o.TR-i)*0.028); o.trailPos[i*3]=q.x; o.trailPos[i*3+1]=q.y; o.trailPos[i*3+2]=q.z; } o.trail.geometry.attributes.position.needsUpdate=true; }
-      /* label projection */
-      const v=p.clone().project(camera); const w=renderer.domElement.clientWidth, h=renderer.domElement.clientHeight; const onScreen=v.z<1 && Math.abs(v.x)<1.1 && Math.abs(v.y)<1.1;
-      o.lbl.style.display = onScreen && !stage.classList.contains('cine') ? 'block' : 'none'; o.lbl.style.left=((v.x+1)/2*w)+'px'; o.lbl.style.top=((1-v.y)/2*h)+'px'; });
+  function satPos(s,t){
+    if(orbitalMode==='illustrative'){
+      const x=Math.cos(t)*s.r,y=s.alt+Math.sin(t*2)*.4,z=Math.sin(t)*s.r*.72;
+      return new THREE.Vector3(x,y,z).applyAxisAngle(new THREE.Vector3(0,1,0),s.tilt);
+    }
+    if(s.mode!=='sgp4'||(replayMode!=='current'&&s!==chosenSatellite()))return null;
+    const samples=replayMode==='current'?s.track:replayTrack;
+    const sample=interpolateOrbit(samples,orbitalTimeMs);
+    if(!sample||!satelliteInViewport(sample.lon,sample.lat))return null;
+    const point=toXZ(sample.lon,sample.lat);
+    return new THREE.Vector3(point[0],Math.max(2,Math.min(5.3,sample.alt_km/170)),point[1]);
+  }
+  function updateSats(dt,t){
+    if(orbitalMode==='calculated'){
+      if(replayMode==='current')orbitalTimeMs=Date.now();
+      else if(replayRunning&&!reduceMotion){
+        orbitalTimeMs+=dt*1000*50;
+        const stop=Date.parse(replayTrack[replayTrack.length-1].t);
+        if(orbitalTimeMs>=stop){orbitalTimeMs=stop;replayRunning=false;}
+      }
+    }
+    satObjs.forEach(o=>{
+      if(orbitalMode==='illustrative'&&!reduceMotion)o.t+=dt*o.s.speed;
+      const p=satPos(o.s,o.t);
+      o.g.visible=!!p;o.trail.visible=false;o.lbl.style.display='none';
+      if(!p)return;
+      o.g.position.copy(p);o.g.lookAt(0,.2,0);o.g.rotateX(Math.PI/2);
+      if(!reduceMotion)o.pivot.rotation.x=Math.sin(t*.25+o.s.phase)*.35;
+      const showBeam=orbitalMode==='illustrative'&&$('tgBeams').checked;
+      o.beam.visible=showBeam;o.beamEdge.visible=showBeam;
+      if(orbitalMode==='calculated'&&$('tgOrbits').checked){
+        const track=replayMode==='current'?o.s.track:replayTrack;
+        if(track){
+          let n=0;
+          for(let i=0;i<track.length&&n<o.TR;i++){
+            const p=track[i];
+            if(Date.parse(p.t)>orbitalTimeMs||!satelliteInViewport(p.lon,p.lat))continue;
+            const [x,z]=toXZ(p.lon,p.lat);
+            o.trailPos[n*3]=x;
+            o.trailPos[n*3+1]=Math.max(2,Math.min(5.3,p.alt_km/170));
+            o.trailPos[n*3+2]=z;
+            n++;
+          }
+          if(n>=2){
+            o.trail.geometry.setDrawRange(0,n);
+            o.trail.geometry.attributes.position.needsUpdate=true;
+            o.trail.visible=true;
+          }
+        }
+      }
+      const v=p.clone().project(camera);
+      const width=renderer.domElement.clientWidth,height=renderer.domElement.clientHeight;
+      if(v.z<1&&Math.abs(v.x)<1.1&&Math.abs(v.y)<1.1&&!stage.classList.contains('cine')){
+        o.lbl.style.display='block';
+        o.lbl.style.left=((v.x+1)/2*width)+'px';
+        o.lbl.style.top=((1-v.y)/2*height)+'px';
+      }
+    });
+    if(!updateSats.lastUpdate||t-updateSats.lastUpdate>1){
+      updateSats.lastUpdate=t;
+      updateOrbitPanel();
+    }
   }
 
   /* ---------- info / tooltip ---------------------------------------------- */
