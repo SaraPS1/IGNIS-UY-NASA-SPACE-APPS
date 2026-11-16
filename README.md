@@ -18,6 +18,12 @@ IGNIS UY organizes NASA FIRMS MODIS and VIIRS thermal anomaly observations, expl
 
 **For judges:** Start with the [live Streamlit app](https://ignis-uy-nasa-space-apps-jhw9zqnrnsardpgxulfzq9.streamlit.app/) to interact with IGNIS UY, then examine the code and scientific methodology in this repository. The official competition demo is separate from the optional long-form walkthrough. The link was supplied by the team; its logged-out availability, loaded dataset and current commit are **not independently verified**.
 
+## Language and documentation accessibility
+
+**All six technical guides linked below from this README are written in English**, including [Scientific methodology](docs/METODO_CIENTIFICO.md), [Validation and limitations](docs/VALIDACION_Y_LIMITES.md), [V5 data quality and matching](docs/V5_CALIDAD_Y_PAREO.md), [Data sources](docs/FUENTES_DATOS.md), [AI usage notes](docs/USO_DE_IA.md), and the [Roadmap](docs/HOJA_DE_RUTA.md). Their legacy Spanish filenames are retained to preserve stable GitHub links and code references; **the file contents are English**.
+
+Scientific formulas, identifiers, units, original dataset labels, test commands, and factual limitations are preserved. Original-language strings in input datasets are quoted as literal metadata when needed, not untranslated reader instructions.
+
 ## The challenge and our approach
 
 MODIS and VIIRS observe thermal activity with different detection sensitivity, spatial resolution, observation times and platform availability. Comparing raw counts without accounting for these differences can misrepresent historical patterns.
