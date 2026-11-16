@@ -38,7 +38,7 @@ The application aims to make these uncertainties understandable rather than conc
 | **Uruguay Map** | 3D view by default; optional 2D zoomable and density maps | Coordinates display observations, not confirmed events |
 | **Alerts & Traceability** | Statistical screening and documentary research | Not operational wildfire warnings |
 | **Final Calendar** | Organize imported observations by date/sensor | No record is not proof of no fire |
-| **PDF Report** | Export scientific summaries | Reports must be read with source and coverage caveats |
+| **PDF Report** | Export scientific summaries | Reports identify SI-assisted report-generation code in visible text and PDF metadata; NASA FIRMS source measurements are not SI-generated |
 | **Recent Monitoring** | Optional recent FIRMS API queries | Requires configured key; NRT differs from definitive archived products |
 | **3D Earth & Satellites** | Interactive globe and satellite context | Scientific SGP4 positions require valid TLEs; otherwise explicitly illustrative |
 
@@ -101,6 +101,7 @@ The tutorial follows all 14 navigation tabs, including Data Upload, Dashboard, H
 
 - **Generated artwork:** The website labels illustrative backgrounds **SI-generated illustration** and the team emblem **SI-generated logo**. Web overlays **do not embed watermarks into the raw image files**. Standalone images, exported graphics, slides and any generated videos must carry visible SI watermarks.
 - **Code and data:** SI-assisted data-processing code is disclosed in project documents and metadata exported with Master ZIP files. **NASA FIRMS satellite observations are externally sourced, not AI-generated measurements.**
+- **Scientific PDF exports:** Both the general report and selected-cell fusion report visibly acknowledge SI-assisted report-generation code and include provenance in PDF metadata. The reports retain NASA FIRMS attribution in text without embedding NASA insignia. Any accompanying illustrative graphic or team emblem is identified as SI-generated or SI-assisted where displayed.
 - **Audio/video:** The **supplemental ten-minute website walkthrough uses SI-generated narration** produced with HeyGen AI Voice (Janet, en-US). Its final public video must acknowledge the synthetic voice in **description and metadata**. This does not imply that the app includes synthetic voice or that the screen recording is generated footage. Any separately SI-generated video footage requires its own visible watermark.
 - **Branding:** Do not include, recreate or modify NASA insignia, flags, mission logos or identifier designs in SI-generated art. Factual NASA FIRMS source attribution is not a claim of endorsement. The team must separately review all existing media and permissions before submission.
 

@@ -916,18 +916,16 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
     estilo.add(ParagraphStyle(name='IGNISCell',parent=estilo['Normal'],fontSize=7.1,leading=9))
     buf=io.BytesIO()
     doc=SimpleDocTemplate(buf,pagesize=A4,rightMargin=1.55*cm,leftMargin=1.55*cm,
-                          topMargin=2.55*cm,bottomMargin=1.75*cm, title='IGNIS - Exploratory grid-cell analysis')
+                          topMargin=2.55*cm,bottomMargin=1.75*cm, title='IGNIS - Exploratory grid-cell analysis',
+                          author='IGNIS UY project', subject='SI-assisted Python report generation from imported NASA FIRMS and user-supplied evidence, including identified synthetic test records',
+                          keywords=['IGNIS UY','SI-assisted code','NASA FIRMS','exploratory association','synthetic evidence when indicated'])
 
     def pagina(c, doc_):
         w,h=A4
         c.setFillColor(C.HexColor('#10243c'))
         c.rect(0,h-1.75*cm,w,1.75*cm,fill=1,stroke=0)
         base=Path(__file__).resolve().parent
-        logo_nasa=base/'logo_nasa_informe.png'
-        if logo_nasa.exists():
-            try: c.drawImage(ImageReader(str(logo_nasa)),w-3.55*cm,h-1.52*cm,
-                             width=1.5*cm,height=1.22*cm,preserveAspectRatio=True,mask='auto')
-            except (OSError,ValueError): pass
+        # Do not embed NASA-branded insignia into generated report assets.
         logo_sinae=base/'logo_sinae.png'
         if logo_sinae.exists():
             try:c.drawImage(ImageReader(str(logo_sinae)),w-5.10*cm,h-1.48*cm,
@@ -944,10 +942,11 @@ def generar_informe_pdf_celda(malla: pd.DataFrame, celda: tuple[int,int],
         c.setStrokeColor(C.HexColor('#b6c7d9'));c.line(1.55*cm,1.36*cm,w-1.55*cm,1.36*cm)
         c.setFillColor(C.HexColor('#586678'));c.setFont('Helvetica',7)
         c.drawString(1.55*cm,1.05*cm,
-                     'Names and logos identify sources; they do not imply validation or institutional endorsement.')
+                     'SI-assisted report generation | NASA FIRMS source data | No institutional endorsement.')
         c.drawRightString(w-1.55*cm,1.05*cm,f'Page {doc_.page}')
 
     partes.append(Paragraph('Observation record and associated evidence',estilo['IGNISTitle']))
+    partes.append(Paragraph('<b>SI provenance:</b> This PDF was created with SI-assisted Python/ReportLab code using imported NASA FIRMS observations and any user-supplied institutional records. Satellite measurements are not SI-generated; candidate associations are exploratory, and synthetic demonstration records are explicitly identified. See README.md and docs/SI_USAGE.md in the IGNIS UY repository.',estilo['IGNISNote']))
     periodo='Full historical archive' if ano_filtro is None else str(ano_filtro)
     partes.append(Paragraph(f'<b>0.2-degree grid cell:</b> {zona_texto} &nbsp; | &nbsp; '
                              f'<b>Display period:</b> {periodo}',estilo['IGNISSmall']))

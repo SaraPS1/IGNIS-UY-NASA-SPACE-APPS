@@ -10,6 +10,9 @@ on:
       - "docs/SI_USAGE.md"
       - "docs/si_usage.json"
       - "tests/test_si_compliance.py"
+      - "tests/test_pdf_si_disclosure.py"
+      - "ignis_informe.py"
+      - "ignis_fusion_terrestre.py"
       - ".github/workflows/ignis-si-compliance.yml"
   push:
     branches: [main]
@@ -28,4 +31,5 @@ jobs:
       - name: Validate SI-use disclosure and watermark wiring
         run: |
           python -m unittest discover -s tests -p 'test_si_compliance.py' -v
+          python -m unittest discover -s tests -p 'test_pdf_si_disclosure.py' -v
           python -m compileall -q ignis_visual.py ignis_historico.py
