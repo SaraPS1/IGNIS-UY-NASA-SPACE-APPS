@@ -1,39 +1,41 @@
-# Fuentes de datos y procedencia — IGNIS UY
+# Data sources and provenance — IGNIS UY
 
-> **Estado de implementación verificado en el repositorio.** Una fuente citada como futura no se considera integrada.
+> **Implementation status documented in this repository.** A source identified as planned must not be presented as integrated.
 
-| Fuente / servicio | Estado | Uso actual o propuesto | URL |
+| Source / service | Status | Current or proposed use | URL |
 |---|---|---|---|
-| NASA FIRMS: MODIS Collection 6.1 | Implementado | Importación manual histórica CSV/ZIP, metadatos del instrumento | https://www.earthdata.nasa.gov/data/tools/firms |
-| NASA FIRMS: VIIRS S-NPP Collection 2 | Implementado | Registros históricos importados por el equipo | https://www.earthdata.nasa.gov/data/tools/firms |
-| NASA FIRMS: VIIRS NOAA-20 | Implementado | Datos históricos importados y consultas NRT | https://www.earthdata.nasa.gov/data/tools/firms |
-| NASA FIRMS: VIIRS NOAA-21 | NRT implementado; importación histórica en revisión | Monitor reciente mediante API, necesidad de ampliar y validar histórico | https://firms.modaps.eosdis.nasa.gov/api/ |
-| NASA FIRMS Area API | Implementado, opt-in | Consulta reciente activada por usuario con `FIRMS_MAP_KEY` | https://firms.modaps.eosdis.nasa.gov/api/ |
-| Fuentes nacionales y prensa (Bomberos/PAIF, SINAE/MIRA) | Módulo piloto; validación institucional pendiente | Asociación exploratoria con datos cargados, catálogo y evidencia documental | https://www.gub.uy/sistema-nacional-emergencias/ |
-| NASA GIBS | Propuesto | Imágenes y capas por fecha para contexto independiente | https://gibs.earthdata.nasa.gov/ |
-| NASA Worldview | Propuesto | Enlace de inspección de un área y fecha | https://worldview.earthdata.nasa.gov/ |
-| NASA EONET | Propuesto | Eventos naturales como contexto, NO verdad absoluta de incendios | https://eonet.gsfc.nasa.gov/ |
-| NASA POWER | Propuesto (variable auxiliar) | Contexto meteorológico; no detector de incendios | https://power.larc.nasa.gov/ |
-| Blue Marble / Black Marble | Referencia visual, no prueba térmica | Fondos e inspiración para visualizaciones; distinguir arte de datos | https://visibleearth.nasa.gov/ |
+| NASA FIRMS: MODIS Collection 6.1 | Implemented | Manual historical CSV/ZIP import, instrument metadata | https://www.earthdata.nasa.gov/data/tools/firms |
+| NASA FIRMS: VIIRS S-NPP Collection 2 | Implemented | Historical records imported by the team | https://www.earthdata.nasa.gov/data/tools/firms |
+| NASA FIRMS: VIIRS NOAA-20 | Implemented | Historical imported data and NRT queries | https://www.earthdata.nasa.gov/data/tools/firms |
+| NASA FIRMS: VIIRS NOAA-21 | NRT implemented; historical import under review | Recent monitoring via API; historical expansion and validation needed | https://firms.modaps.eosdis.nasa.gov/api/ |
+| NASA FIRMS Area API | Implemented, opt-in | User-initiated recent queries with `FIRMS_MAP_KEY` | https://firms.modaps.eosdis.nasa.gov/api/ |
+| National and press sources (Fire Service/PAIF, SINAE/MIRA) | Pilot module; institutional validation pending | Exploratory association with uploaded data, catalogue, and documentary evidence | https://www.gub.uy/sistema-nacional-emergencias/ |
+| NASA GIBS | Proposed | Date-based imagery and layers for independent context | https://gibs.earthdata.nasa.gov/ |
+| NASA Worldview | Proposed in this source inventory | Link for inspecting a location and date | https://worldview.earthdata.nasa.gov/ |
+| NASA EONET | Proposed | Natural events as contextual information, **not** absolute wildfire ground truth | https://eonet.gsfc.nasa.gov/ |
+| NASA POWER | Proposed (auxiliary variable) | Meteorological context; not a fire detector | https://power.larc.nasa.gov/ |
+| Blue Marble / Black Marble | Visual reference, not thermal evidence | Backgrounds and inspiration for visualizations; distinguish art from data | https://visibleearth.nasa.gov/ |
 
-## Qué significa cada estado
+## What each status means
 
-- **Implementado:** código presente en la aplicación. No implica prueba de disponibilidad continua del proveedor.
-- **Piloto:** se pueden cruzar datos, pero la exactitud de las asociaciones no está validada por autoridades.
-- **Propuesto:** recurso todavía no integrado al procesamiento o visualización; no debe citarse como usado.
+- **Implemented:** Code is present in the application. This does not imply continuous provider availability.
+- **Pilot:** Data can be associated, but the accuracy of those associations has not been validated by authorities.
+- **Proposed:** A resource not yet integrated into processing or visualization; it must not be cited as implemented.
 
-## Procedencia
+**Cross-document note:** This original inventory classifies NASA Worldview as proposed, while [the V5 implementation documentation](V5_CALIDAD_Y_PAREO.md) describes live Worldview **links** in Atlas and NRT monitoring. These statements should be reconciled with the deployed version; embedded GIBS imagery is not claimed.
 
-`ignis_historico.py` registra archivo de origen, fecha, latitud, longitud, instrumento, hora, FRP cuando existe y un identificador estable por registro. El resumen de cada archivo importado incluye SHA-256 de su contenido. La deduplicación de observaciones **no** identifica incendios únicos.
+## Provenance
 
-El Maestro IGNIS se guarda manualmente con descarga y reimportación entre sesiones. No existe un almacén histórico global automáticamente sincronizado ni cobertura demostrada para todos los meses.
+`ignis_historico.py` records the source file, date, latitude, longitude, instrument, time, FRP when available, and a stable identifier per record. The summary of each imported file includes a SHA-256 content hash. Deduplicating observations **does not** identify unique wildfires.
 
-La API NRT no garantiza equivalencia con el archivo científico definitivo. Cuando estén disponibles las colecciones científicas posteriores, deben preferirse para análisis históricos y registrarse sus versiones.
+The IGNIS Master dataset is stored manually by downloading and reimporting between sessions. There is no automatically synchronized global historical store or proven coverage for every month.
 
-**Precaución:** ausencia de observaciones en archivos cargados ≠ satélite observó una zona sin fuego. Los cambios de satélite, órbita, sensibilidad, nubosidad, productos y calidad deben documentarse antes de comparar tendencias.
+The NRT API does not guarantee equivalence with the definitive historical science archive. Where later science collections are available, they should be preferred for historical analysis and their versions documented.
 
-## Licencias y atribución
+**Caution:** Missing observations in uploaded files ≠ a satellite observed the area without fire. Changes in satellites, orbits, sensitivity, clouds, products, and quality must be documented before comparing trends.
 
-Los datos de anomalías térmicas proceden de NASA FIRMS / EOSDIS. IGNIS UY es un proyecto independiente y no representa un producto ni una validación oficial de NASA.
+## Licensing and attribution
 
-Referencia: [atribución y productos de NASA FIRMS](https://www.earthdata.nasa.gov/data/tools/firms).
+Thermal anomaly observations are sourced from NASA FIRMS / EOSDIS. IGNIS UY is independent and does not represent an official NASA product or validation.
+
+Reference: [NASA FIRMS attribution and products](https://www.earthdata.nasa.gov/data/tools/firms).
