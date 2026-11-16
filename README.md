@@ -13,7 +13,7 @@ IGNIS UY organizes NASA FIRMS MODIS and VIIRS thermal anomaly observations, expl
 | **GitHub project and source** | [IGNIS UY repository](https://github.com/SaraPS1/IGNIS-UY-NASA-SPACE-APPS) | Public source, methods, tests and documentation |
 | **Official short demo** | [Seven-slide presentation on Canva](https://canva.link/ta32fjqimlmpur6) | Team-provided link; **verify anonymous access and latest exported revision** before final submission |
 | **Additional files and reports** | [IGNIS UY project Drive folder](https://drive.google.com/drive/folders/1GAA0pQ4IglPLJJnTzFsizzOmaVGKQjy2) | Supporting documents; anonymous access has **not been independently verified** |
-| **Long-form website walkthrough** | To be added after recording | Approximately five-minute **supplemental guide**, not the required short demo |
+| **Long-form website walkthrough** | Link to be added after the screen recording is published | Approximately ten-minute **supplemental guide** with SI-generated female narration (HeyGen); separate from the required short demo |
 | **Live Streamlit app** | Link pending verification | A stable public deployment URL has **not been independently verified**; use local instructions below |
 
 **For judges:** The source code can be inspected here without relying on the Drive folder. The official competition demo is separate from the optional long-form walkthrough. A GitHub repository is **not by itself proof** that a deployed Streamlit app is running.
@@ -87,17 +87,13 @@ python -m unittest discover -s tests -p "test_3d_panel_no_overlap.py" -v
 
 GitHub Actions additionally tests scientific methods, UI compatibility, source fidelity, 3D rendering paths and SI documentation. **Passing automated tests does not replace real-browser testing or field validation.**
 
-## Suggested five-minute website tour (supplemental)
+## Supplementary narrated website walkthrough (approximately 10 minutes)
 
-| Time | Focus |
-| --- | --- |
-| 0:00–0:35 | Project purpose, thermal anomalies versus confirmed fires |
-| 0:35–1:15 | Upload a provenance-checked Master/FIRMS dataset |
-| 1:15–2:05 | Dashboard and interactive 3D layers/timeline |
-| 2:05–2:55 | Historical archive and candidate harmonization rules |
-| 2:55–3:40 | Uruguay 3D/2D maps and Final Calendar |
-| 3:40–4:25 | Traceability, experimental ground matching, Ask IGNIS |
-| 4:25–5:00 | PDF report, limitations, source and SI disclosures |
+A ten-minute English-language guided tour has **SI-generated female voice narration**, created using **HeyGen AI Voice (Janet — Warm & Approachable, en-US)** from a team-reviewed script prepared with SI assistance. The narration audio is **generated**, not recorded by a human narrator; the website screen recording and final edited video are separate media. The completed public video link will be added here after publication; the audio link is not presented as a completed or uploaded video.
+
+**Required attribution for the published walkthrough:** place the following notice in the video's public description **and in its metadata**: *“SI-generated voice narration: HeyGen AI Voice (Janet, US English). Script prepared with SI assistance and reviewed by the IGNIS UY team. Screen recording demonstrates the IGNIS UY application.”* Do not claim the voice is a human teammate. If any video imagery itself is SI-generated, mark that imagery visibly as SI-generated as required by the challenge; screen recordings of the existing site are not automatically wholly SI-generated video.
+
+The tutorial follows all 14 navigation tabs, including Data Upload, Dashboard, Historical Archive, Harmonization, Uruguay Map, Alerts & Traceability, Final Calendar, PDF Report, Recent Monitoring, 3D Earth & Satellites, Ask IGNIS, Satellite–Ground Fusion and Team & Contributions. It is **supplementary** and does not replace the required competition short demo.
 
 ## Super Intelligence (SI) — transparent disclosure
 
@@ -105,7 +101,7 @@ GitHub Actions additionally tests scientific methods, UI compatibility, source f
 
 - **Generated artwork:** The website labels illustrative backgrounds **SI-generated illustration** and the team emblem **SI-generated logo**. Web overlays **do not embed watermarks into the raw image files**. Standalone images, exported graphics, slides and any generated videos must carry visible SI watermarks.
 - **Code and data:** SI-assisted data-processing code is disclosed in project documents and metadata exported with Master ZIP files. **NASA FIRMS satellite observations are externally sourced, not AI-generated measurements.**
-- **Audio/video:** No SI-generated audio or video was identified in the reviewed app. If any is used later, comply with applicable descriptive-text/metadata requirements for audio and visible-watermark requirements for video.
+- **Audio/video:** The **supplemental ten-minute website walkthrough uses SI-generated narration** produced with HeyGen AI Voice (Janet, en-US). Its final public video must acknowledge the synthetic voice in **description and metadata**. This does not imply that the app includes synthetic voice or that the screen recording is generated footage. Any separately SI-generated video footage requires its own visible watermark.
 - **Branding:** Do not include, recreate or modify NASA insignia, flags, mission logos or identifier designs in SI-generated art. Factual NASA FIRMS source attribution is not a claim of endorsement. The team must separately review all existing media and permissions before submission.
 
 Full details: [SI use and provenance](docs/SI_USAGE.md) · [Machine-readable SI disclosure](docs/si_usage.json) · [Ask IGNIS and tool-use notes](docs/USO_DE_IA.md).
