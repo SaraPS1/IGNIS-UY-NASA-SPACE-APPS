@@ -23,6 +23,12 @@ This disclosure is part of the public project, visible to reviewers and visitors
 
 This inventory reflects identified UI usages. **A rendered overlay is not baked into the original WebP/JPEG/SVG file.** Anyone distributing raw source image files, screenshots that crop out the watermark, or exported imagery must apply a visible watermark to that exported media itself before submission. Do not infer that all image assets in the repository have been checked simply from this list.
 
+## Exported PDF scientific reports
+
+Both programmatically generated report types — the main historical/scientific PDF (`ignis_informe.py`) and selected-cell satellite–ground fusion PDF (`ignis_fusion_terrestre.py`) — are assembled using **SI-assisted Python code** with ReportLab. Each PDF now includes **visible SI provenance text** and **machine-readable PDF subject/keywords**. NASA FIRMS source observations themselves are externally supplied scientific measurements, **not SI-generated data**. Output charts and scientific map illustrations are computed from imported inputs and should not be misrepresented as independently validated fire imagery.
+
+For compliance clarity, these generated PDF layouts do not embed NASA insignia. Factual NASA FIRMS attribution remains in the report prose, and any displayed team emblem or illustrative art is identified as SI-generated / SI-assisted. Original external assets, licensing and possible embedded branding still require team review.
+
 ## NASA identifiers, branding and source attribution
 
 SI-generated artwork must **not** contain, recreate, or alter NASA insignia, logos, flags, mission patches or other protected NASA branding/design elements. The use of the words NASA FIRMS, MODIS and VIIRS in factual citations and source attribution is distinct from depicting branded insignia in generated artwork. No NASA logo, patch, flag or mission identifier should be introduced into any SI-created visual. NASA FIRMS observations must retain clear data-source credit. IGNIS UY is not affiliated with or endorsed by NASA.
