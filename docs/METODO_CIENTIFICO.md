@@ -1,70 +1,70 @@
-# Método científico — IGNIS UY
+# Scientific methodology — IGNIS UY
 
-## Unidad de análisis
+## Unit of analysis
 
-Cada fila representa una **observación térmica satelital**, no un incendio confirmado ni una superficie quemada. El Maestro conserva fecha UTC, latitud, longitud, instrumento, satélite, hora de adquisición, FRP si está presente, confianza, procedencia e ID.
+Each row represents a **satellite thermal observation**, not a confirmed wildfire or burned area. The Master dataset retains the UTC date, latitude, longitude, instrument, satellite, acquisition time, FRP when available, confidence, provenance, and ID.
 
-## 1. Coincidencia por celda-día
+## 1. Grid-cell/day coincidence
 
-El análisis actual asigna cada observación a una cuadrícula:
-
-```text
-celda_lat = round(latitud / resolución_en_grados)
-celda_lon = round(longitud / resolución_en_grados)
-```
-
-Para cada combinación `(día UTC, celda_lat, celda_lon)` se comprueba si hay al menos una observación MODIS y una VIIRS. Se cuenta **una** celda-día coincidente aunque existan varias detecciones en esa celda-día.
+The current analysis assigns each observation to a grid:
 
 ```text
-C(r) = suma_{día, celda} 1[MODIS > 0 y VIIRS > 0]
+cell_lat = round(latitude / resolution_in_degrees)
+cell_lon = round(longitude / resolution_in_degrees)
 ```
 
-La resolución **0,20° es un parámetro exploratorio, no una resolución nativa del sensor**. Cerca de 33° S representa aproximadamente 22 km de norte a sur y 19 km de este a oeste, con variaciones según latitud. Dos observaciones próximas pueden caer en celdas diferentes; dos observaciones lejanas pueden pertenecer a la misma celda.
+For each `(UTC day, cell_lat, cell_lon)` combination, the system checks whether there is at least one MODIS and one VIIRS observation. It counts **one** coincident cell-day even if multiple detections exist within it.
 
-El nuevo laboratorio `ignis_sensibilidad.py` ejecuta exactamente esta regla para 0,05°, 0,10°, 0,20° y 0,40° en el mismo subconjunto importado. Identifica cambios debidos a la escala; **no demuestra por sí mismo un tamaño óptimo**.
+```text
+C(r) = sum_{day, cell} 1[MODIS > 0 and VIIRS > 0]
+```
 
-## 2. Pareo espacial y temporal
+The **0.20° resolution is an exploratory parameter, not a sensor's native resolution**. Near 33° S, it represents approximately 22 km north–south and 19 km east–west, with variations according to latitude. Two nearby observations may fall into different cells; two distant observations may belong to the same cell.
 
-`ignis_coincidencias.py` busca pares candidatos MODIS–VIIRS del mismo día UTC mediante coordenadas sobre una esfera y un `cKDTree`. La distancia se calcula con el radio terrestre medio de 6.371,0088 km. Los umbrales de referencia son **5 km** y **30 minutos**, configurables en la interfaz.
+The new `ignis_sensibilidad.py` laboratory runs exactly this rule for 0.05°, 0.10°, 0.20°, and 0.40° on the same imported subset. It identifies scale-dependent changes; **it does not establish an optimal grid size by itself**.
 
-Los candidatos se ordenan por menor diferencia temporal y distancia, con selección no repetida dentro de cada comparación MODIS–plataforma VIIRS. Un punto MODIS puede figurar en comparaciones separadas contra plataformas distintas. Los pares **no son incendios únicos**.
+## 2. Spatial and temporal matching
 
-## 3. Estadística temporal
+`ignis_coincidencias.py` searches for candidate MODIS–VIIRS pairs on the same UTC day using spherical coordinates and a `cKDTree`. Distance is calculated using a mean Earth radius of 6,371.0088 km. The reference thresholds are **5 km** and **30 minutes**, configurable in the interface.
 
-Se cuentan registros por `(año, mes, instrumento)` y se muestra la serie **sin normalización por oportunidades de observación**. La señal piloto de actividad inusual exige al menos tres años de referencia para el mismo mes/sensor, cinco registros y el doble de la mediana de otros años.
+Candidates are ordered by smaller time difference and distance, with non-reuse within each MODIS-to-VIIRS-platform comparison. A MODIS point may appear in separate comparisons against different platforms. These pairs **are not unique wildfires**.
 
-No se interpreta la ausencia de registros como un mes de cobertura completa con cero incendios.
+## 3. Temporal statistics
 
-## 4. Concentración frente a recurrencia
+Records are counted by `(year, month, instrument)` and displayed **without normalization for observation opportunities**. The pilot unusual-activity signal requires at least three reference years for the same month and sensor, five records, and twice the median of other years.
 
-- **Concentración:** cantidad de observaciones en una celda espacial.
-- **Recurrencia:** número de años distintos con observaciones en una celda.
-- **Densidad visual:** histograma espacial suavizado con filtro gaussiano, no superficie quemada.
+The absence of imported records is not interpreted as a month with complete coverage and zero fires.
 
-## 5. Fusión cielo–tierra
+## 4. Concentration versus recurrence
 
-`ignis_fusion_terrestre.py` asocia candidatos por distancia y tiempo, con parámetros por defecto de 10 km y 24 horas. Cuando el registro externo solo tiene fecha, se usa coincidencia por día local sin inventar una hora exacta. Los CSV sintéticos se identifican y no son validación independiente.
+- **Concentration:** Number of observations in a spatial cell.
+- **Recurrence:** Number of distinct years containing observations in a cell.
+- **Visual density:** A spatial histogram smoothed with a Gaussian filter, not burned area.
 
-## 6. Requisitos para una armonización cuantitativa futura
+## 5. Satellite–ground fusion
 
-Una serie armonizada exige, como mínimo:
+`ignis_fusion_terrestre.py` creates candidate associations by distance and time, with default parameters of 10 km and 24 hours. When an external record contains only a date, the system matches by local calendar day rather than inventing an exact time. Synthetic CSV files are identified as such and are not independent validation.
 
-1. Disponibilidad instrumental y oportunidades de observación verificadas, separando productos y horas de sobrevuelo.
-2. Períodos de solapamiento MODIS–VIIRS representativos para estimar correcciones.
-3. Corrección o estratificación de cobertura y diferencias de detección; distinguir día y noche.
-4. Validación en años/zonas excluidas del ajuste, métricas de error e intervalos de incertidumbre.
-5. Criterios explícitos de no estimar cuando falta información suficiente.
+## 6. Requirements for future quantitative harmonization
 
-Los cocientes de recuentos crudos **no deben etiquetarse como calibración**. Actualmente IGNIS no publica series cuantitativamente armonizadas ni probabilidades calibradas.
+A harmonized series requires, at minimum:
 
-## Reproducibilidad
+1. Verified instrument availability and observation opportunities, distinguishing products and overpass times.
+2. Representative MODIS–VIIRS overlap periods to estimate corrections.
+3. Correction or stratification for coverage and detection differences, distinguishing day and night.
+4. Validation on years or areas excluded from fitting, with error metrics and uncertainty intervals.
+5. Explicit criteria for declining to estimate when sufficient information is unavailable.
 
-El laboratorio de sensibilidad es determinista, no requiere servicios externos ni modifica el Maestro; el CSV exportado incluye las cuatro escalas y el recorte del año/región/sensores actualmente seleccionados.
+Raw-count ratios **must not be labeled as calibration**. IGNIS currently publishes neither quantitatively harmonized series nor calibrated probabilities.
 
-Ejecutar las pruebas:
+## Reproducibility
+
+The sensitivity laboratory is deterministic, does not require external services, and does not modify the Master dataset. Its exported CSV includes the four spatial scales and the currently selected year/region/sensor subset.
+
+Run the tests:
 
 ```bash
 python -m unittest discover -s tests -p "test_ignis_sensibilidad.py" -v
 ```
 
-Ver también [fuentes](FUENTES_DATOS.md), [validación y límites](VALIDACION_Y_LIMITES.md) y los scripts indicados arriba.
+See also [data sources](FUENTES_DATOS.md), [validation and limitations](VALIDACION_Y_LIMITES.md), and the scripts named above.

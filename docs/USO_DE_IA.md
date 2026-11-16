@@ -1,27 +1,29 @@
-# Uso de inteligencia artificial — IGNIS UY
+# Artificial intelligence usage — IGNIS UY
 
-La documentación debe reflejar **herramientas realmente usadas por el equipo**, no herramientas mencionadas por otros proyectos ni atribuciones inferidas de archivos de código.
+Documentation must reflect **tools actually used by the team**, not tools mentioned by other projects or inferred from source-code files.
 
-## Componente actual de la aplicación
+## Current application component
 
-| Función | Tecnología verificada | Uso |
+| Function | Verified technology | Use |
 |---|---|---|
-| Ask IGNIS (`ignis_ask.py`) | Reglas explícitas en Python + Pandas | Responde consultas estadísticas exclusivamente sobre los archivos cargados en la sesión |
-| Cálculos geoespaciales e históricos | Python, NumPy, Pandas, SciPy | Conteos, coordenadas, umbrales, gráficos y resultados deterministas |
-| IA generativa en ejecución | **No identificada** | No etiquetar Ask IGNIS como GPT, Gemini u otro LLM |
+| Ask IGNIS (`ignis_ask.py`) | Explicit Python + Pandas rules | Answers statistical questions exclusively using files uploaded in the session |
+| Geospatial and historical calculations | Python, NumPy, Pandas, SciPy | Deterministic counts, coordinates, thresholds, charts, and results |
+| Generative AI at runtime | **Not identified** | Do not label Ask IGNIS as GPT, Gemini, or another LLM |
 
-No hay evidencia de que un modelo de IA genere números de los informes o detecte incendios. Las salidas cuantitativas corresponden al código.
+There is no evidence that an AI model generates report numbers or detects wildfires. Quantitative outputs come from application code.
 
-## Registro que debe completar el equipo antes de la entrega
+## Team usage log to complete before submission
 
-Para cada herramienta generativa utilizada durante planificación, investigación, diseño, programación o revisión, especificar:
+For each generative tool used during planning, research, design, programming, or review, specify:
 
-| Herramienta / modelo y versión | Fase | Función realizada | Entradas aportadas | Revisión humana | Responsable |
+| Tool / model and version | Stage | Work performed | Inputs supplied | Human review | Responsible person |
 |---|---|---|---|---|---|
-| Por completar y verificar | Por completar | Por completar | Por completar | Por completar | Por completar |
+| Pending confirmation and completion | Pending confirmation | Pending confirmation | Pending confirmation | Pending confirmation | Pending confirmation |
 
-No se deben inventar modelos o versiones, atribuir validación científica a una IA, ni incluir secretos, datos personales o credenciales en documentación pública.
+Do not invent model names or versions, attribute scientific validation to an AI, or include secrets, personal information, or credentials in public documentation.
 
-El uso de asistentes de programación **no sustituye pruebas, evaluación científica ni responsabilidad del equipo**.
+Using programming assistants **does not replace testing, scientific evaluation, or team responsibility**.
 
-Para agregar posteriormente un analista generativo: mantener una capa determinista de herramientas y proporcionar citas y filtros de cada resultado; el modelo solo explica los datos ya calculados y debe indicar incertidumbre.
+For any future generative analyst, maintain a deterministic tool layer and include citations and filters for each result. The model should only explain already calculated data and should indicate uncertainty.
+
+**See also:** [SI usage and provenance](SI_USAGE.md) and [machine-readable disclosures](si_usage.json) for project-level declarations, including generated artwork and audio.

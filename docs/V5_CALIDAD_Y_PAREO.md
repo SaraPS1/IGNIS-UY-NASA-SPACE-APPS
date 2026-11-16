@@ -1,50 +1,50 @@
-# IGNIS V5.2 — auditoría, pareo único y contexto NASA
+# IGNIS V5.2 — data-quality audit, unique matching, and NASA context
 
-## Alcance de esta entrega
+## Scope of this release
 
-Este módulo mejora la calidad de la investigación y las herramientas de exploración. **No** implementa corrección de sensibilidad, cobertura nubosa u oportunidades de observación ni estima número de incendios únicos.
+This module improves research quality and exploratory tools. It **does not** correct for sensitivity, cloud coverage, or observation opportunities, nor does it estimate the number of unique wildfires.
 
-### 1. Importación FIRMS por fila (`ignis_firms_sensor.py`)
+### 1. Row-level FIRMS import (`ignis_firms_sensor.py`)
 
-Hasta ahora, cada archivo CSV importado se clasificaba en su conjunto: si mezclaba VIIRS S-NPP, NOAA-20 y NOAA-21, un único nombre podía sustituir las identidades individuales.
+Previously, each imported CSV was classified as a whole: if it mixed VIIRS S-NPP, NOAA-20, and NOAA-21, a single name could replace their individual identities.
 
-Ahora el campo `instrumento` se determina **por fila**, primero por los metadatos `instrument` y `satellite` y, cuando faltan, por un identificador inequívoco de archivo. Una plataforma no identificable se conserva explícitamente como `VIIRS (plataforma no identificada)`; un instrumento desconocido no se convierte arbitrariamente en MODIS/VIIRS y genera una advertencia.
+The `instrumento` field is now determined **row by row**, first from `instrument` and `satellite` metadata and, when unavailable, from an unambiguous filename identifier. An unidentified platform remains explicitly marked as `VIIRS (plataforma no identificada)` (literally, “VIIRS, platform unidentified”); an unknown instrument is not arbitrarily converted to MODIS or VIIRS and triggers a warning.
 
-La procedencia de los archivos, los identificadores estables y el ZIP del Maestro se preservan.
+Source-file provenance, stable identifiers, and the Master ZIP are preserved.
 
-### 2. Pareo V5 (`ignis_pareo_v5.py`)
+### 2. V5 matching (`ignis_pareo_v5.py`)
 
-Complementa (no sustituye silenciosamente) el método anterior `ignis_coincidencias.emparejar`.
+This complements — and does not silently replace — the earlier `ignis_coincidencias.emparejar` method.
 
-1. Convierte `fecha + acq_time` a un **instante UTC completo**, rechazando horas HHMM inválidas.
-2. Filtra coordenadas fuera de rango, fechas inválidas e instrumentos no reconocidos.
-3. Busca candidatos en esfera mediante `cKDTree` con `radio_km` y diferencia temporal `ventana_min`.
-4. Considera registros de días contiguos, incluso **a ambos lados de medianoche UTC**, y del cambio de año cuando corresponde.
-5. Ordena candidatos por diferencia temporal y después distancia.
-6. Selecciona pares sin reutilizar ninguna observación de ambas familias en el resultado total, incluso entre plataformas VIIRS distintas.
-7. Mantiene las dos horas, distancias, coordenadas y FRP **sin calibrar** en el CSV descargable.
+1. Converts `fecha + acq_time` into a **complete UTC instant**, rejecting invalid HHMM values.
+2. Filters out-of-range coordinates, invalid dates, and unrecognized instruments.
+3. Searches for spherical-coordinate candidates with `cKDTree`, using `radio_km` and the `ventana_min` time difference.
+4. Includes records on adjacent dates, including **both sides of UTC midnight**, and across the year boundary where applicable.
+5. Orders candidates by time difference, then by distance.
+6. Selects pairs without reusing any observation from either family in the complete result, including across different VIIRS platforms.
+7. Retains both acquisition times, distances, coordinates, and **uncalibrated** FRP in the downloadable CSV.
 
-Limitación: la selección es **greedy** (voraz), no una solución matemática de asignación de costo mínimo global. Un par satisface umbrales de compatibilidad; no demuestra que dos observaciones sean el mismo incendio.
+Limitation: Selection is **greedy**, not a mathematically global minimum-cost assignment solution. A candidate meets compatibility thresholds; it does not establish that two observations describe the same fire.
 
-Los resultados V5 pueden diferir de los resultados históricos por el cruce de medianoche o la unicidad global; no deben reemplazarse las tablas antiguas sin indicar la versión del algoritmo.
+V5 results may differ from historical results because of midnight crossing or global uniqueness; older tables must not be replaced without identifying the algorithm version.
 
-### 3. Auditoría (`ignis_calidad.py`)
+### 3. Data-quality audit (`ignis_calidad.py`)
 
-Cuenta registros totales, coordenadas válidas, fechas válidas, horas UTC válidas, instrumentos reconocidos, FRP informado y posibles identificadores duplicados. Genera un inventario mensual de registros importados y días **con detecciones** por plataforma.
+Counts total records, valid coordinates, valid dates, valid UTC times, recognized instruments, available FRP, and possible duplicate identifiers. Produces a monthly inventory of imported records and days **with detections**, by platform.
 
-**La columna «Días con detecciones» NO es la cantidad de días de sobrevuelo o exposición satelital.** Los meses sin registros se etiquetan «SIN REGISTROS IMPORTADOS» en lugar de afirmar actividad nula. La auditoría no justifica extrapolación temporal ni calibración de recuentos.
+The column labeled `Días con detecciones` (“Days with detections”) **is NOT the number of satellite overpass days or observation opportunities**. Months without records are labeled `SIN REGISTROS IMPORTADOS` (“NO IMPORTED RECORDS”) rather than asserting zero activity. The audit does not justify temporal extrapolation or count calibration.
 
 ### 4. NASA Worldview (`ignis_worldview.py`)
 
-En Atlas y monitoreo NRT se ofrecen enlaces directos a [NASA Worldview](https://worldview.earthdata.nasa.gov/) con fecha y extensión geográfica correspondientes a una observación.
+Atlas and NRT monitoring provide direct links to [NASA Worldview](https://worldview.earthdata.nasa.gov/) with an observation's date and geographic extent.
 
-Los parámetros `t` y `v` están documentados en el [repositorio oficial de Worldview](https://github.com/nasa-gibs/worldview/blob/main/doc/url_parameters.md).
+The `t` and `v` URL parameters are documented in the [official Worldview repository](https://github.com/nasa-gibs/worldview/blob/main/doc/url_parameters.md).
 
-El usuario debe seleccionar las capas satelitales apropiadas dentro de Worldview. La fecha y el área no garantizan disponibilidad de imagen útil ni ausencia de nubes; la visualización no confirma un incendio.
+The user must select appropriate satellite layers inside Worldview. The date and area do not guarantee useful imagery or cloud-free conditions; the visualization does not confirm a wildfire.
 
-### 5. Reproducibilidad
+### 5. Reproducibility
 
-Desde la raíz:
+From the repository root:
 
 ```bash
 python -m pip install "numpy>=1.24" "pandas>=2" "scipy>=1.11"
@@ -52,16 +52,16 @@ python -m unittest discover -s tests -p 'test_ignis_sensibilidad.py' -v
 python -m unittest discover -s tests -p 'test_ignis_pareo_calidad_v5.py' -v
 ```
 
-Se ejecutan en CI con Python 3.11 y 3.12. Los casos sintéticos contemplan medianoche, cambio de año, satélites mezclados, valores HHMM inválidos, ausencia de cobertura, IDs duplicados y enlaces Worldview.
+The tests run in CI with Python 3.11 and 3.12. Synthetic cases cover midnight, the year boundary, mixed satellites, invalid HHMM values, missing coverage, duplicate IDs, and Worldview links.
 
-## Qué sigue pendiente
+## Outstanding work
 
-- Ingestión histórica automatizada con versiones y hashes de producto científico y registro verificable de cobertura real.
-- Calibración cuantitativa MODIS–VIIRS con oportunidades de observación equivalentes, día/noche, períodos de solapamiento y control de cambios instrumentales.
-- Validación retrospectiva fuera de muestra, límites de incertidumbre y criterios de abstención.
-- Capas térmicas NASA GIBS embebidas: aún se ofrece únicamente el **enlace** de verificación Worldview.
-- Comparación con eventos confirmados de Bomberos/SINAE usando evidencias reales, no CSV de ensayo.
+- Automated historical ingestion with scientific product versions and hashes, plus a verifiable record of actual coverage.
+- Quantitative MODIS–VIIRS calibration with equivalent observation opportunities, day/night distinctions, overlap periods, and instrument-change controls.
+- Out-of-sample retrospective validation, uncertainty bounds, and abstention criteria.
+- Embedded NASA GIBS thermal layers: the application currently provides only the **Worldview verification link**.
+- Comparison with Fire Service/SINAE confirmed events using real evidence rather than test CSV files.
 
-NASA indica que las observaciones NRT pueden ser reemplazadas por datos de calidad científica en el archivo histórico: [NASA FIRMS Archive](https://firms2.modaps.eosdis.nasa.gov/download/). No es correcto combinar silenciosamente productos NRT y definitivos para una calibración.
+NASA notes that NRT observations may be replaced by science-quality data in the historical archive: [NASA FIRMS Archive](https://firms2.modaps.eosdis.nasa.gov/download/). NRT and definitive products must not be silently combined for calibration.
 
-**Principio científico:** datos importados ≠ cobertura total; anomalías ≠ incendios confirmados; coincidencias ≠ calibración instrumental.
+**Scientific principle:** Imported data ≠ complete coverage; anomalies ≠ confirmed wildfires; coincidences ≠ instrument calibration.
