@@ -14,9 +14,9 @@ IGNIS UY organizes NASA FIRMS MODIS and VIIRS thermal anomaly observations, expl
 | **Official short demo** | [Seven-slide presentation on Canva](https://canva.link/ta32fjqimlmpur6) | Team-provided link; **verify anonymous access and latest exported revision** before final submission |
 | **Additional files and reports** | [IGNIS UY project Drive folder](https://drive.google.com/drive/folders/1GAA0pQ4IglPLJJnTzFsizzOmaVGKQjy2) | Supporting documents; anonymous access has **not been independently verified** |
 | **Long-form website walkthrough** | Link to be added after the screen recording is published | Approximately ten-minute **supplemental guide** with SI-generated female narration (HeyGen); separate from the required short demo |
-| **Live Streamlit app** | Link pending verification | A stable public deployment URL has **not been independently verified**; use local instructions below |
+| **Live Streamlit app** | [Open IGNIS UY on Streamlit](https://ignis-uy-nasa-space-apps-jhw9zqnrnsardpgxulfzq9.streamlit.app/) | Team-provided deployment URL; **anonymous access and current deployment version still require final verification** |
 
-**For judges:** The source code can be inspected here without relying on the Drive folder. The official competition demo is separate from the optional long-form walkthrough. A GitHub repository is **not by itself proof** that a deployed Streamlit app is running.
+**For judges:** Start with the [live Streamlit app](https://ignis-uy-nasa-space-apps-jhw9zqnrnsardpgxulfzq9.streamlit.app/) to interact with IGNIS UY, then examine the code and scientific methodology in this repository. The official competition demo is separate from the optional long-form walkthrough. The link was supplied by the team; its logged-out availability, loaded dataset and current commit are **not independently verified**.
 
 ## The challenge and our approach
 
@@ -123,9 +123,26 @@ Full details: [SI use and provenance](docs/SI_USAGE.md) · [Machine-readable SI 
 - **Completeness:** Some historical periods and instruments have partial uploads; missing observations are not zero events.
 - **Scientific map limits:** Approximate boundary/geometry may be used; density heatmaps show observation concentration, not burned area.
 - **Operational status:** Not for emergency dispatch, official alerting or predictive fire-risk claims.
-- **Deployment & public access:** The live Streamlit URL and anonymous access to the Canva/Drive assets should be checked by a team member in a logged-out browser before submission.
+- **Deployment & public access:** A team-provided [live Streamlit deployment](https://ignis-uy-nasa-space-apps-jhw9zqnrnsardpgxulfzq9.streamlit.app/) is linked above; its logged-out accessibility and actual deployed version, as well as the Canva/Drive links, must still be checked by the team.
 - **SI compliance and attribution:** Final independent review of every binary image, presentation asset, video, logo and license is still required.
 - **Hackathon development provenance:** The team must accurately represent any work created before the challenge and confirm relevant eligibility requirements with organizers where applicable.
+
+## Submission-ready verification checklist
+
+This README records the project's known capabilities and caveats; it is **not** a guarantee of eligibility or successful deployment. Before using this repository as the competition submission link, the team should:
+
+- [ ] Open the **Streamlit app**, **Canva demo** and **Google Drive** folder in a logged-out/incognito browser; verify no login, permission request or missing assets.
+- [ ] Confirm the Streamlit app is running the intended latest `main` version, with the correct 3D map defaults, no overlapping HUD panels and English interface labels.
+- [ ] Import the intended IGNIS Master ZIP and test the Dashboard, Harmonization, Uruguay Map, Calendar, reports, Ask IGNIS and Satellite–Ground Fusion; do not assume historical files auto-load in new sessions.
+- [ ] Check the short competition demo is a public **maximum 7-slide presentation** or **maximum 30-second video**; the ten-minute tutorial and five-person Spanish pitch are **supplemental**, not replacements.
+- [ ] Add the final published links to each walkthrough/pitch here after uploading; remove placeholder wording only when public access is confirmed.
+- [ ] Attribute the **SI-generated English narration** and any **SI-generated Spanish pitch voices** in the published descriptions and audio/video metadata. Add visible watermarks to any truly SI-generated imagery or footage, and check all generated assets for prohibited NASA branding.
+- [ ] Verify licensing, rights to third-party artwork, official source references, team credits, and the provenance/eligibility of any work created before the event. The repository does **not** currently declare an approved root LICENSE.
+- [ ] Ensure the final submission form accurately describes exploratory matching, partial historical coverage, synthetic ground test records and the difference between NASA FIRMS source observations and SI-assisted processing.
+
+### Spanish five-person pitch (supplementary audio)
+
+A five-speaker Spanish group presentation is being prepared with **five distinct SI-generated voices using HeyGen AI Voice**. This voiceover is a rehearsal/reference production, **not a claim that the real team members provided these voices**. After the final audio/video is published, link it here and disclose the synthetic voices in the public description **and** media metadata. A human team performance can use this script without claiming the generated reference voices are their own.
 
 ## Documentation and team contributions
 
