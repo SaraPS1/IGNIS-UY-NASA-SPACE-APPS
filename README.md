@@ -115,7 +115,13 @@ Full details: [SI use and provenance](docs/SI_USAGE.md) · [Machine-readable SI 
 
 **Other evidence sources:** Fire service/PAIF, SINAE/MIRA records and press references are **pilot/proposed external sources**, not a claim of an official data integration or agency endorsement. NASA POWER, EONET and GIBS are documented as proposed resources where not actually integrated; do not list proposed resources as successfully used in the final submission. Inspect [source inventory](docs/FUENTES_DATOS.md) for precise current statuses.
 
-**Intellectual property and release rights:** An open-source LICENSE file has **not been established** for this project. Do not assume unrestricted reuse of contributed graphics, external imagery or other materials. The team should verify contributor permissions and select a software license, if appropriate, **before** claiming the repository is open-source licensed. Independent NASA data attribution does not confer NASA endorsement.
+## License and third-party rights
+
+**Original IGNIS UY software:** [Apache License 2.0](LICENSE) is proposed for original contributor-owned code. This is an OSI-approved open-source license; release under these terms requires confirmation from the copyright holders of the contributed work. See the [project NOTICE](NOTICE).
+
+**Third-party content and attribution:** The Apache license **does not automatically grant rights** to NASA datasets, official agency logos, third-party code/assets, externally sourced imagery, satellite textures, or AI-generated media subject to third-party terms. Those resources remain subject to their respective owners' licenses and permissions. Consult the [third-party licensing and source inventory](THIRD_PARTY_LICENSES.md), [data provenance](docs/FUENTES_DATOS.md), and [SI disclosure](docs/SI_USAGE.md).
+
+The project is independent and is not endorsed or certified by NASA or Uruguayan authorities. The remaining asset ownership and contributor approvals are release checks, not established clearances.
 
 ## What remains uncertain or unfinished
 
