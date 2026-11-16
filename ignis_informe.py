@@ -291,8 +291,18 @@ def generar_informe_pdf(datos,ano,region,sensores,alertas_func=None):
 
     hero=BASE/'hero_espacio.jpg'
     if hero.exists():
-        story.extend([RLImage(str(hero), width=16.3*cm, height=3.1*cm),
-                      P('SI-generated / SI-assisted illustrative artwork; not NASA imagery or scientific evidence.', 'PaperCaption'),
+        class SIWatermarkedImage(RLImage):
+            """Visible disclosure printed on the exported image itself."""
+            def draw(self):
+                super().draw()
+                label='SI-generated / SI-assisted illustration'
+                self.canv.setFillColor(colors.HexColor('#10243c'))
+                self.canv.roundRect(0.15*cm,0.15*cm,8.0*cm,0.49*cm,0.09*cm,fill=1,stroke=0)
+                self.canv.setFillColor(colors.white)
+                self.canv.setFont('Helvetica-Bold',7.2)
+                self.canv.drawString(0.27*cm,0.30*cm,label)
+        story.extend([SIWatermarkedImage(str(hero), width=16.3*cm, height=3.1*cm),
+                      P('Illustrative image; not NASA satellite imagery or scientific evidence.', 'PaperCaption'),
                       Spacer(1,0.15*cm)])
 
     meta=Table([
