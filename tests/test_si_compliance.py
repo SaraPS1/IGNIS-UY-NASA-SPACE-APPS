@@ -19,6 +19,25 @@ class SIComplianceTests(unittest.TestCase):
         self.assertTrue(info["policy"]["generated_artwork_must_not_contain_nasa_branding"])
         self.assertIn("SI-generated", (ROOT / "docs" / "SI_USAGE.md").read_text(encoding="utf-8"))
 
+    def test_walkthrough_voice_disclosure(self):
+        info = json.loads((ROOT / "docs" / "si_usage.json").read_text(encoding="utf-8"))
+        audio = info["categories"]["audio"]
+        self.assertTrue(audio["si_generated_assets_identified"])
+        self.assertEqual(audio["provider"], "HeyGen AI Voice")
+        self.assertTrue(audio["description_and_metadata_required"])
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("SI-generated female voice narration", readme)
+        self.assertIn("description **and in its metadata**", readme)
+        doc = (ROOT / "docs" / "SI_USAGE.md").read_text(encoding="utf-8")
+        self.assertIn("HeyGen AI Voice", doc)
+
+    def test_documentary_traceability_labels_in_english(self):
+        source = (ROOT / "ignis_evidencias.py").read_text(encoding="utf-8")
+        self.assertIn("Additional sources uploaded by the user", source)
+        self.assertIn("Import an additional IGNIS documentary Master", source)
+        self.assertNotIn("Fuentes adicionales incorporadas por el usuario", source)
+        self.assertNotIn("Importar otro Maestro IGNIS documental", source)
+
     def test_home_illustrations_have_visible_watermark(self):
         src = (ROOT / "ignis_visual.py").read_text(encoding="utf-8")
         self.assertIn('class="ignis-si-watermark"', src)
