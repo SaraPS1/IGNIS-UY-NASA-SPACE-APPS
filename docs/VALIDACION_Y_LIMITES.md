@@ -1,44 +1,44 @@
-# Validación, sensibilidad y limitaciones de IGNIS UY
+# Validation, sensitivity, and limitations — IGNIS UY
 
-## Evidencia disponible
+## Available evidence
 
-El repositorio contiene `biblioteca_ignis/validacion_seis_casos.csv` y `biblioteca_ignis/sensibilidad_seis_casos.csv`, que permiten revisar seis casos uruguayos (Cerro del Toro, Durazno, Artigas, Canelones, Lavalleja y Treinta y Tres) con diferentes radios y ventanas temporales.
+The repository includes `biblioteca_ignis/validacion_seis_casos.csv` and `biblioteca_ignis/sensibilidad_seis_casos.csv`, which support review of six Uruguayan cases (Cerro del Toro, Durazno, Artigas, Canelones, Lavalleja, and Treinta y Tres) with different distance radii and temporal windows.
 
-Los campos de *pares candidatos* documentan asociaciones entre registros, **no** pruebas independientes de que los incendios se hayan confirmado ni de exactitud instrumental. Los archivos deben identificarse con su versión y método: no asumir que equivalen automáticamente al pareo actual si fueron generados con otro algoritmo o rango.
+*Candidate pair* fields document associations between records, **not** independent proof of confirmed wildfires or instrument accuracy. Each file should be identified by version and method: do not assume it automatically matches the current matching implementation if it was produced with another algorithm or range.
 
-## Qué valida el laboratorio de sensibilidad
+## What the sensitivity laboratory validates
 
-- Que la cuenta de celdas-día depende de la resolución espacial elegida.
-- Que una coincidencia requiere ambas familias, misma fecha UTC y misma celda según el criterio de redondeo.
-- Que duplicar observaciones no duplica la cuenta de celdas-día.
-- Que registros de fechas diferentes no se transforman en coincidencias.
-- Que no se inventa cobertura en períodos sin datos.
+- Cell-day counts depend on the chosen spatial resolution.
+- Coincidence requires both instrument families, the same UTC date, and the same cell under the rounding rule.
+- Duplicating observations does not duplicate the coincident cell-day count.
+- Records from different dates do not become coincidences.
+- Coverage is not invented for periods without data.
 
-## Qué **no** valida
+## What it **does not** validate
 
-- Exactitud de la detección de incendios en terreno.
-- Probabilidad de coincidencia de un mismo incendio.
-- Igual sensibilidad, cobertura y resolución de MODIS y VIIRS.
-- Tendencia temporal de incendios en Uruguay a partir de recuentos crudos.
-- Intervalos del 95 % o desempeño predictivo.
-- Sustitución de métodos de detección y alertas oficiales.
+- Accuracy of on-the-ground wildfire detection.
+- Probability that two detections refer to the same fire.
+- Equal sensitivity, coverage, and resolution between MODIS and VIIRS.
+- A temporal trend in Uruguay's fires derived from raw counts.
+- 95% intervals or predictive performance.
+- Replacement of official detection and alert methods.
 
-## Riesgos conocidos
+## Known risks
 
-1. **Sesgo de muestreo:** el histórico de la demo es parcial, concentrado en meses estivales; días sin observaciones importadas son ambiguos.
-2. **Modificación del sensor:** nuevos satélites y cambios de órbita crean cambios artificiales de recuentos.
-3. **Cuadrícula:** la resolución y el anclaje de celdas afectan la coincidencia; `0,2°` es una convención exploratoria.
-4. **Pareos:** un par candidato satisface umbrales, pero no prueba identidad del evento.
-5. **Territorio:** los mapas usan un contorno y cajas geográficas aproximadas.
-6. **Datos externos:** noticias y registros institucionales requieren verificación; en la demostración de fusión hay fuentes sintéticas.
-7. **IA:** Ask IGNIS es un motor estadístico con reglas, no un LLM de pronóstico.
+1. **Sampling bias:** The demonstration's historical archive is partial and concentrated in summer months; days without imported observations are ambiguous.
+2. **Instrument changes:** New satellites and orbital changes create artificial shifts in counts.
+3. **Grid:** Cell size and grid anchoring affect matches; `0.2°` is an exploratory convention.
+4. **Matching:** A candidate pair meets thresholds but does not prove event identity.
+5. **Geography:** Maps use approximate outlines and geographic bounding boxes.
+6. **External data:** News and institutional records require verification; the fusion demonstration includes synthetic sources.
+7. **AI:** Ask IGNIS is a rule-based statistical engine, not a forecasting LLM.
 
-## Próximos experimentos de validación (no implementados aún)
+## Future validation experiments (not implemented yet)
 
-- Completar cobertura diaria por instrumento, región y producto científico.
-- Calibración entre sensores bajo oportunidades de observación comparables.
-- Validación retrospectiva por exclusión de sensores, años y regiones.
-- Métricas de error, incertidumbre e intervalos reproducibles.
-- Contraste sistemático con datos externos reales, auditando falsos positivos y omisiones.
+- Complete daily coverage inventories by instrument, region, and scientific product.
+- Cross-sensor calibration under comparable observation opportunities.
+- Retrospective validation using held-out sensors, years, and regions.
+- Reproducible error metrics, uncertainty, and confidence intervals.
+- Systematic comparisons against real external evidence, auditing false positives and omissions.
 
-**Principio del proyecto:** anomalía térmica ≠ incendio confirmado. IGNIS UY no emite alertas oficiales, pronósticos validados ni órdenes operativas.
+**Project principle:** Thermal anomaly ≠ confirmed wildfire. IGNIS UY does not issue official alerts, validated forecasts, or operational instructions.
