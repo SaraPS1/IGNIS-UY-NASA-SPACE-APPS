@@ -1,0 +1,31 @@
+IGNIS UY — Independent geospatial research prototype
+Copyright 2026 IGNIS UY contributors, to the extent of their original
+copyrightable contributions and subject to contributor approval.
+
+Original project software is proposed for release under the
+Apache License, Version 2.0. See LICENSE.
+
+This notice does not claim ownership of NASA data, official emblems,
+institutional names or trademarks, third-party software, source records,
+independently owned media, or externally sourced images. These retain
+their applicable original terms and attribution obligations.
+
+Primary scientific-data source:
+NASA Fire Information for Resource Management System (FIRMS),
+including MODIS and VIIRS active-fire/thermal-anomaly observations.
+https://www.earthdata.nasa.gov/data/tools/firms
+
+NASA FIRMS source attribution is factual and does not imply that NASA
+designed, approved, endorsed, or certified IGNIS UY.
+
+Third-party dependency and media inventory:
+See THIRD_PARTY_LICENSES.md and docs/FUENTES_DATOS.md.
+
+Super Intelligence (SI) assistance was used in coding, debugging,
+technical writing, data processing design, and some visual/audio
+materials. Original NASA satellite measurements are not SI-generated.
+See docs/SI_USAGE.md and docs/si_usage.json.
+
+Important: The named contributors must approve licensing of their
+respective original contributions. Third-party assets and redistribution
+rights must be verified independently prior to submission or reuse.
