@@ -36,12 +36,21 @@
       "outputs": "normalized, filtered, deduplicated source records and computed summaries"
     },
     "audio": {
-      "si_generated_assets_identified": false,
-      "requirement_if_added": "SI-generation acknowledgement in description and metadata"
+      "si_generated_assets_identified": true,
+      "usage": "Supplemental ten-minute website walkthrough narration (planned video, not Streamlit app audio)",
+      "provider": "HeyGen AI Voice",
+      "voice": "Janet - Warm & Approachable",
+      "language": "en-US",
+      "published_video": false,
+      "description_and_metadata_required": true,
+      "disclosure": "SI-generated voice narration by HeyGen AI Voice; script SI-assisted and reviewed by IGNIS UY team"
     },
     "video": {
       "si_generated_assets_identified": false,
-      "requirement_if_added": "visible SI-generated watermark on each released file"
+      "planned_website_screen_recording": true,
+      "published_video": false,
+      "si_generated_voice_narration": true,
+      "requirement_if_generated_visuals_added": "Visible SI-generated watermark on all generated images/video footage"
     }
   },
   "policy": {
