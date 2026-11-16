@@ -99,8 +99,8 @@ def mostrar_evidencias(datos: pd.DataFrame | None = None, año: int | None = Non
     st.markdown(f"##### Verified external evidence · {etiqueta_año}")
     st.info("A news story, Fire Service statement, or SINAE report provides context for the reported fire but does not validate every FIRMS detection or its perimeter.")
 
-    with st.expander("Fuentes adicionales incorporadas por el usuario", expanded=False):
-        maestro = st.file_uploader("Importar otro Maestro IGNIS documental (JSON, opcional)", type=["json"], key="maestro_documental")
+    with st.expander("Additional sources uploaded by the user", expanded=False):
+        maestro = st.file_uploader("Import an additional IGNIS documentary Master (optional JSON)", type=["json"], key="maestro_documental")
         if maestro is not None:
             try:
                 candidato = json.loads(maestro.getvalue().decode("utf-8-sig"))

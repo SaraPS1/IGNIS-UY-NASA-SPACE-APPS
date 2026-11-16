@@ -8,8 +8,8 @@ This disclosure is part of the public project, visible to reviewers and visitors
 - **Images:** YES. The illustrative home hero and three feature-card background artworks are treated as SI-generated/assisted. A prominent **“SI-generated illustration”** watermark is rendered directly over each image wherever the web app displays it. These illustrations are not NASA imagery or evidence of wildfire activity.
 - **Data:** SI-assisted code organizes and derives summaries from externally sourced NASA FIRMS MODIS/VIIRS observations. **The source observations are not SI-generated.** No fabricated hotspot measurements, dates, satellite passes or fire confirmations should be supplied by SI. Exported Master ZIPs include code-processing and data-source provenance in `manifest.json`.
 - **Text:** YES. SI tools assisted explanatory, interface and documentation prose. Statements require human review and external evidence for scientific accuracy.
-- **Audio:** No SI-generated audio is identified in the current deployed app; if audio is added, its description **and** metadata must say SI-generated before publication.
-- **Videos:** No SI-generated video is identified in the current deployed app; if a generated video is added, every displayed version must carry a visible `SI-generated` watermark.
+- **Audio:** YES, in the planned supplemental website walkthrough: HeyGen AI Voice (Janet — Warm & Approachable, en-US) synthesized the approximately 10-minute English narration from a script prepared with SI assistance. The synthesized narration is not part of the Streamlit app itself. **Before the video is published, label the narration as SI-generated in its public description and video/audio metadata.**
+- **Videos:** A website screen-recording walkthrough is planned with the SI-generated voice above; the completed video has not yet been published or audited. A human-captured screen recording is not automatically a wholly SI-generated visual. If generated footage or images are incorporated, their displayed versions must bear visible `SI-generated` watermarks.
 
 ## Illustrated UI inventory
 
