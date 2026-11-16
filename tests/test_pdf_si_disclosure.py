@@ -10,7 +10,8 @@ class PDFSIDisclosureTests(unittest.TestCase):
         self.assertIn("subject='SI-assisted Python report generation",s)
         self.assertIn("Super Intelligence (SI) provenance:",s)
         self.assertIn("SI-generated team logo",s)
-        self.assertIn("SI-generated / SI-assisted illustration",s)\n        self.assertIn("class SIWatermarkedImage(RLImage)",s)
+        self.assertIn("SI-generated / SI-assisted illustration",s)
+        self.assertIn("class SIWatermarkedImage(RLImage)",s)
         self.assertNotIn("image_asset('logo_nasa",s)
         self.assertIn("SI-assisted report generation",s)
 
